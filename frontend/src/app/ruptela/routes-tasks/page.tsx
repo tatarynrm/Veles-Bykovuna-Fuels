@@ -4,6 +4,8 @@ import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import RuptelaShell from '@/components/RuptelaShell';
+import { GuestBanner } from '@/components/GuestLock';
+import { useSessionUser } from '@/lib/useAuthGuard';
 import { apiGet, apiList, apiSend } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import {
@@ -34,6 +36,7 @@ import {
   Pencil,
   Trash2,
   PlusCircle,
+  Lock,
   RefreshCw,
   Search,
   AlertCircle,
@@ -64,6 +67,7 @@ export default function RuptelaRoutesTasksPage() {
 }
 
 function RoutesTasksView() {
+  const { isGuest } = useSessionUser();
   const searchParams = useSearchParams();
   const deepLinkTripId = searchParams.get('trip');
 
@@ -214,6 +218,7 @@ function RoutesTasksView() {
   };
 
   const toggleTask = async (trip: RuptelaTrip, taskId: string, completed: boolean) => {
+    if (isGuest) return; // PATCH — the server rejects it for guests anyway
     // Optimistic: the flag is dispatcher-local anyway, so a round trip would
     // only add latency to a checkbox.
     patchTrip({
@@ -274,13 +279,34 @@ function RoutesTasksView() {
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Оновити</span>
           </button>
-          <Link href="/ruptela/create-trip" className="btn btn-warn">
-            <PlusCircle className="h-3.5 w-3.5" />
-            <span>Нова поїздка</span>
-          </Link>
+          {isGuest ? (
+            <button
+              type="button"
+              disabled
+              className="btn btn-ghost"
+              title="Гостьовий доступ: створення поїздок вимкнено"
+            >
+              <Lock className="h-3.5 w-3.5" />
+              <span>Нова поїздка</span>
+            </button>
+          ) : (
+            <Link href="/ruptela/create-trip" className="btn btn-warn">
+              <PlusCircle className="h-3.5 w-3.5" />
+              <span>Нова поїздка</span>
+            </Link>
+          )}
         </>
       }
     >
+      {isGuest && (
+        <div className="mb-4">
+          <GuestBanner>
+            <strong className="font-semibold text-warn">Гостьовий доступ.</strong> Маршрути
+            та завдання доступні для перегляду; створення, редагування, видалення й
+            позначення завдань вимкнені.
+          </GuestBanner>
+        </div>
+      )}
       {error && (
         <div
           role="alert"
@@ -646,29 +672,38 @@ function RoutesTasksView() {
                   </div>
 
                   <div className="flex shrink-0 items-center gap-2">
-                    {/* Full editor: route, waypoints, tasks — the same form that creates trips */}
-                    <Link
-                      href={`/ruptela/create-trip?edit=${selected.id}`}
-                      className="btn btn-warn"
-                    >
-                      <Route className="h-3.5 w-3.5" />
-                      Редагувати маршрут
-                    </Link>
-                    <button
-                      onClick={() => setEditing(selected)}
-                      className="btn btn-ghost"
-                      title="Швидка зміна назви, нотаток, ТЗ і водія"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                      Швидке редагування
-                    </button>
-                    <button
-                      onClick={() => setDeleting(selected)}
-                      className="btn btn-ghost hover:text-danger"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Видалити
-                    </button>
+                    {isGuest ? (
+                      <span className="badge badge-warn">
+                        <Lock className="h-3 w-3" />
+                        Лише перегляд
+                      </span>
+                    ) : (
+                      <>
+                        {/* Full editor: route, waypoints, tasks — the same form that creates trips */}
+                        <Link
+                          href={`/ruptela/create-trip?edit=${selected.id}`}
+                          className="btn btn-warn"
+                        >
+                          <Route className="h-3.5 w-3.5" />
+                          Редагувати маршрут
+                        </Link>
+                        <button
+                          onClick={() => setEditing(selected)}
+                          className="btn btn-ghost"
+                          title="Швидка зміна назви, нотаток, ТЗ і водія"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          Швидке редагування
+                        </button>
+                        <button
+                          onClick={() => setDeleting(selected)}
+                          className="btn btn-ghost hover:text-danger"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Видалити
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -788,7 +823,15 @@ function RoutesTasksView() {
                           onClick={() =>
                             task.id && toggleTask(selected, task.id, !task.completed)
                           }
-                          className="glass-inset glass-inset-hover flex w-full items-center gap-3 p-3 text-left transition-colors"
+                          disabled={isGuest}
+                          title={
+                            isGuest
+                              ? 'Гостьовий доступ: позначення завдань вимкнено'
+                              : undefined
+                          }
+                          className={`glass-inset flex w-full items-center gap-3 p-3 text-left transition-colors ${
+                            isGuest ? 'cursor-not-allowed' : 'glass-inset-hover'
+                          }`}
                         >
                           {task.completed ? (
                             <CheckCircle2 className="h-4 w-4 shrink-0 text-accent" />

@@ -398,7 +398,10 @@ function LiveWatchView() {
     >
       <div className="space-y-5">
         {/* ── Controls ─────────────────────────────────────────────────── */}
-        <section className="glass-panel p-5">
+        {/* relative z-30: .glass-panel makes its own stacking context (backdrop-filter),
+            so without this the KPI cards below — later siblings — paint over the
+            vehicle dropdown no matter how high its own z-index is. */}
+        <section className="glass-panel relative z-30 p-5">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
             <div className="lg:col-span-5">
               <RuptelaVehicleSearchSelect

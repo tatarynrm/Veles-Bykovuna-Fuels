@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
+import { ReadOnlyGuard } from './auth/read-only.guard';
 import { OkkoModule } from './okko/okko.module';
 import { ShellModule } from './shell/shell.module';
 import { AuthModule } from './auth/auth.module';
@@ -24,6 +26,10 @@ import { RuptelaModule } from './ruptela/ruptela.module';
     TransactionsModule,
     AnalyticsModule,
     RuptelaModule,
+  ],
+  providers: [
+    // Global, so a route added later is covered without anyone remembering to opt in.
+    { provide: APP_GUARD, useClass: ReadOnlyGuard },
   ],
 })
 export class AppModule {}

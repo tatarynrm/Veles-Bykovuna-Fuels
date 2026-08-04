@@ -6,6 +6,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import RuptelaShell from '@/components/RuptelaShell';
 import { apiGet, apiList, apiObject } from '@/lib/api';
+import { useSessionUser } from '@/lib/useAuthGuard';
 import {
   NO_DATA,
   STATUS_LABEL,
@@ -56,6 +57,7 @@ interface ApiStatus {
 
 export default function RuptelaFleetPage() {
   const router = useRouter();
+  const { isGuest } = useSessionUser();
   const [vehicles, setVehicles] = useState<RuptelaVehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -201,10 +203,12 @@ export default function RuptelaFleetPage() {
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin text-warn' : ''}`} />
             <span className="hidden sm:inline">Оновити</span>
           </button>
-          <Link href="/ruptela/create-trip" className="btn btn-warn">
-            <PlusCircle className="h-3.5 w-3.5" />
-            <span>Нова поїздка</span>
-          </Link>
+          {!isGuest && (
+            <Link href="/ruptela/create-trip" className="btn btn-warn">
+              <PlusCircle className="h-3.5 w-3.5" />
+              <span>Нова поїздка</span>
+            </Link>
+          )}
         </>
       }
     >
@@ -260,6 +264,7 @@ export default function RuptelaFleetPage() {
               vehicles={filteredVehicles}
               selectedVehicle={selectedVehicle}
               onSelectVehicle={(v) => setSelectedId(v.id)}
+              canCreateTrip={!isGuest}
               onCreateTrip={(vehicleId) => router.push(`/ruptela/create-trip?vehicleId=${vehicleId}`)}
             />
 
@@ -414,18 +419,20 @@ export default function RuptelaFleetPage() {
                   <span>Спостерігати в реальному часі</span>
                 </Link>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className={`grid gap-2 ${isGuest ? 'grid-cols-1' : 'grid-cols-2'}`}>
                   <button onClick={() => handleOpenHistory(selectedVehicle)} className="btn btn-ghost">
                     <History className="h-4 w-4" />
                     <span>Історія поїздок</span>
                   </button>
-                  <button
-                    onClick={() => router.push(`/ruptela/create-trip?vehicleId=${selectedVehicle.id}`)}
-                    className="btn btn-ghost"
-                  >
-                    <PlusCircle className="h-4 w-4" />
-                    <span>Створити поїздку</span>
-                  </button>
+                  {!isGuest && (
+                    <button
+                      onClick={() => router.push(`/ruptela/create-trip?vehicleId=${selectedVehicle.id}`)}
+                      className="btn btn-ghost"
+                    >
+                      <PlusCircle className="h-4 w-4" />
+                      <span>Створити поїздку</span>
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (
@@ -544,15 +551,17 @@ export default function RuptelaFleetPage() {
                       >
                         Історія
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/ruptela/create-trip?vehicleId=${v.id}`);
-                        }}
-                        className="btn btn-warn btn-sm"
-                      >
-                        + Поїздка
-                      </button>
+                      {!isGuest && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/ruptela/create-trip?vehicleId=${v.id}`);
+                          }}
+                          className="btn btn-warn btn-sm"
+                        >
+                          + Поїздка
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

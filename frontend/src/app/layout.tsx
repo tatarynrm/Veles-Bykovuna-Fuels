@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { TourProvider } from '@/context/TourContext';
 import CommandPalette from '@/components/ui/CommandPalette';
+import OnboardingTour from '@/components/OnboardingTour';
 
 export const metadata: Metadata = {
   title: 'VELES ERP | Veles Bykovuna Fuels',
@@ -37,9 +39,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="bg-page text-txt-primary antialiased">
         <ThemeProvider>
-          {children}
-          {/* Global ⌘K — renders nothing until opened, and never on /login. */}
-          <CommandPalette />
+          <TourProvider>
+            {children}
+            {/* Global ⌘K — renders nothing until opened, and never on /login. */}
+            <CommandPalette />
+            {/* Onboarding: offered once per browser, restartable from the sidebar. */}
+            <OnboardingTour />
+          </TourProvider>
         </ThemeProvider>
       </body>
     </html>

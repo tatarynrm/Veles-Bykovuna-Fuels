@@ -6,11 +6,18 @@ import { usePathname } from 'next/navigation';
 import { Truck, PlusCircle, Route, Radio, Sun, Moon, BarChart3 } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { useTheme } from '@/context/ThemeContext';
+import { useSessionUser } from '@/lib/useAuthGuard';
 
 const TABS = [
   { href: '/ruptela/fleet', label: 'Мій автопарк', icon: Truck },
   { href: '/ruptela/live', label: 'Реальний час', icon: Radio },
-  { href: '/ruptela/create-trip', label: 'Створити поїздку', icon: PlusCircle },
+  {
+    href: '/ruptela/create-trip',
+    label: 'Створити поїздку',
+    icon: PlusCircle,
+    /** Writes to Ruptela — not offered to the read-only guest role. */
+    staffOnly: true,
+  },
   { href: '/ruptela/routes-tasks', label: 'Маршрут і завдання', icon: Route },
   { href: '/ruptela/insights', label: 'Звіти FMS', icon: BarChart3 },
 ];
@@ -35,6 +42,8 @@ export default function RuptelaShell({
 }: RuptelaShellProps) {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
+  const { isGuest } = useSessionUser();
+  const tabs = TABS.filter((tab) => !(tab.staffOnly && isGuest));
 
   return (
     <div className="flex min-h-screen w-full">
@@ -71,7 +80,7 @@ export default function RuptelaShell({
 
           <nav className="mt-3 flex gap-1 overflow-x-auto" aria-label="Розділи Ruptela">
             <div className="segmented">
-              {TABS.map((tab) => {
+              {tabs.map((tab) => {
                 const active = pathname === tab.href;
                 const Icon = tab.icon;
                 return (

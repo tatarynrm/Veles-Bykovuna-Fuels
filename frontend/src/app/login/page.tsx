@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, User, Fuel, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import { Lock, User, Fuel, ArrowRight, AlertCircle, Loader2, Eye } from 'lucide-react';
 import { API_BASE } from '@/lib/api';
 
 const QUICK_LOGINS = [
@@ -11,6 +11,9 @@ const QUICK_LOGINS = [
   { user: 'shell', label: 'Shell' },
 ];
 
+/** Published on purpose — the guest role is read-only and enforced server-side. */
+const GUEST_CREDENTIALS = { user: 'guest', password: 'guest' };
+
 export default function LoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState('');
@@ -18,8 +21,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitLogin = async (login: string, pass: string) => {
     setError('');
     setLoading(true);
 
@@ -27,7 +29,7 @@ export default function LoginPage() {
       const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username: login, password: pass }),
       });
       const data = await res.json();
 
@@ -43,6 +45,11 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await submitLogin(username, password);
   };
 
   return (
@@ -123,7 +130,25 @@ export default function LoginPage() {
           </button>
         </form>
 
+        {/* Guest access — credentials are public, so they are printed here. */}
         <div className="hairline-t mt-7 pt-5">
+          <button
+            type="button"
+            onClick={() => submitLogin(GUEST_CREDENTIALS.user, GUEST_CREDENTIALS.password)}
+            disabled={loading}
+            className="btn btn-ghost w-full py-2.5 text-xs"
+          >
+            <Eye className="h-4 w-4" />
+            Гостьовий вхід — лише перегляд
+          </button>
+          <p className="mt-2 text-center text-micro leading-relaxed text-txt-muted">
+            Логін <span className="font-mono text-txt-secondary">guest</span> · пароль{' '}
+            <span className="font-mono text-txt-secondary">guest</span>. Доступні всі дані
+            для перегляду; створення та редагування маршрутів заблоковані.
+          </p>
+        </div>
+
+        <div className="hairline-t mt-5 pt-5">
           <p className="micro-label mb-2.5 text-center">Швидкий вхід</p>
           <div className="grid grid-cols-3 gap-2">
             {QUICK_LOGINS.map((q) => (

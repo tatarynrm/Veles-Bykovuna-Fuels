@@ -4,6 +4,8 @@ import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import RuptelaShell from '@/components/RuptelaShell';
+import { GuestBlockedPanel } from '@/components/GuestLock';
+import { useSessionUser } from '@/lib/useAuthGuard';
 import RuptelaVehicleSearchSelect from '@/components/RuptelaVehicleSearchSelect';
 import { apiGet, apiList, apiSend } from '@/lib/api';
 import {
@@ -133,6 +135,7 @@ const tripToDraftWaypoints = (trip: RuptelaTrip): DraftWaypoint[] =>
 
 function CreateTripView() {
   const router = useRouter();
+  const { isGuest } = useSessionUser();
   const searchParams = useSearchParams();
   const preselectedVehicleId = searchParams.get('vehicleId');
   /** Present → the same form edits an existing trip instead of creating one. */
@@ -419,6 +422,19 @@ function CreateTripView() {
       setSubmitting(false);
     }
   };
+
+  // A guest never reaches the form: the backend would reject the write anyway, and a
+  // filled-in form that fails on submit is a worse answer than saying so up front.
+  if (isGuest) {
+    return (
+      <RuptelaShell
+        title={editTripId ? 'Редагувати поїздку' : 'Створити поїздку'}
+        subtitle="Гостьовий режим — лише перегляд"
+      >
+        <GuestBlockedPanel />
+      </RuptelaShell>
+    );
+  }
 
   return (
     <RuptelaShell

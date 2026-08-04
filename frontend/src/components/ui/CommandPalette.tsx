@@ -8,9 +8,11 @@ import {
   Boxes,
   CreditCard,
   Fuel,
+  GraduationCap,
   History,
   Link2,
   LogOut,
+  Radio,
   MapPin,
   Moon,
   PlusCircle,
@@ -22,7 +24,8 @@ import {
   Truck,
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { signOut } from '@/lib/useAuthGuard';
+import { useTour } from '@/context/TourContext';
+import { signOut, useSessionUser } from '@/lib/useAuthGuard';
 import { cn } from '@/lib/cn';
 
 /** Dispatch on `window` to open the palette from anywhere. */
@@ -103,6 +106,8 @@ export default function CommandPalette() {
   const router = useRouter();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { startTour } = useTour();
+  const { isGuest } = useSessionUser();
 
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
@@ -129,7 +134,11 @@ export default function CommandPalette() {
       { id: 'nav-merchants', label: 'Мережа АЗК', group: 'Навігація', icon: MapPin, hint: '/merchants', keywords: 'merchants azs stancii mapa', run: go('/merchants') },
       { id: 'nav-fleet3d', label: 'Моніторинг 3D', group: 'Навігація', icon: Boxes, hint: '/fleet', keywords: 'fleet 3d diagnostyka truck', run: go('/fleet') },
       { id: 'nav-ruptela-fleet', label: 'Мій автопарк — телематика', group: 'Навігація', icon: Truck, hint: '/ruptela/fleet', keywords: 'ruptela avtopark telematyka gps', run: go('/ruptela/fleet') },
-      { id: 'nav-trip-new', label: 'Створити поїздку', group: 'Навігація', icon: PlusCircle, hint: '/ruptela/create-trip', keywords: 'trip poizdka nova reis', run: go('/ruptela/create-trip') },
+      { id: 'nav-live', label: 'Реальний час — спостереження за ТЗ', group: 'Навігація', icon: Radio, hint: '/ruptela/live', keywords: 'live realnyi chas track monitoring gps', run: go('/ruptela/live') },
+      // Creating a trip writes to Ruptela — a guest would be rejected by the server.
+      ...(isGuest
+        ? []
+        : [{ id: 'nav-trip-new', label: 'Створити поїздку', group: 'Навігація' as const, icon: PlusCircle, hint: '/ruptela/create-trip', keywords: 'trip poizdka nova reis', run: go('/ruptela/create-trip') }]),
       { id: 'nav-routes', label: 'Маршрут і завдання', group: 'Навігація', icon: Route, hint: '/ruptela/routes-tasks', keywords: 'routes marshrut zavdannia', run: go('/ruptela/routes-tasks') },
       { id: 'nav-api', label: 'API Консоль', group: 'Навігація', icon: Terminal, hint: '/api-console', keywords: 'api konsol debug zapyty', run: go('/api-console') },
       { id: 'nav-uikit', label: 'UI Kit — бібліотека компонентів', group: 'Навігація', icon: Boxes, hint: '/ui-kit', keywords: 'ui kit komponenty design system', run: go('/ui-kit') },
@@ -154,6 +163,14 @@ export default function CommandPalette() {
         },
       },
       {
+        id: 'act-tour',
+        label: 'Навчання — екскурсія інтерфейсом',
+        group: 'Дії',
+        icon: GraduationCap,
+        keywords: 'tour navchannia onboarding pidkazky help dopomoga',
+        run: startTour,
+      },
+      {
         id: 'act-signout',
         label: 'Вийти з системи',
         group: 'Дії',
@@ -174,7 +191,7 @@ export default function CommandPalette() {
         run: () => setTheme(theme === 'dark' ? 'light' : 'dark'),
       },
     ];
-  }, [router, theme, setTheme]);
+  }, [router, theme, setTheme, isGuest, startTour]);
 
   /** Groups in display order, filtered and ranked against the query. */
   const sections = useMemo(() => {

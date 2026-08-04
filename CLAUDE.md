@@ -135,8 +135,19 @@ not HTTP status, when data looks missing.
 
 `auth/auth.controller.ts` is a stub: credentials come from env (`AUTH_ADMIN_USER` /
 `AUTH_ADMIN_PASSWORD`; passwordless demo logins `okko`/`shell`/`demo` only when
-`AUTH_DEMO_ENABLED=true`), but the "token" is still a timestamp string and no other
-route has a guard.
+`AUTH_DEMO_ENABLED=true`), and the "token" is still `veles_session_<ms>_<ROLE>` —
+minted and parsed only in `auth/session.ts`. No route requires authentication.
+
+The one thing that token *is* trusted for is the **guest role**. `guest`/`guest`
+(public, printed on the login screen, disabled with `AUTH_GUEST_ENABLED=false`) logs in
+as `GUEST`, and `auth/read-only.guard.ts` — registered as a global `APP_GUARD` — rejects
+every non-GET request carrying a `_GUEST` token with 403, except `/api/auth/*`. Hiding
+the UI would not be enough: a trip created from the dashboard is written to Ruptela's
+live Routing & Tasking API and can be pushed to a real driver. This is also why
+`frontend/src/lib/api.ts` now sends `Authorization: Bearer <token>` on every request —
+drop that header and the server-side ban stops working. The frontend mirror is
+`isGuestUser()` / `permissionsOf()` in `src/lib/useAuthGuard.ts` (`useSessionUser()` for
+chrome that must not redirect); guest-facing copy lives in `components/GuestLock.tsx`.
 
 ### Frontend: page-level fetching through a thin lib layer
 
@@ -155,6 +166,15 @@ Every page under `src/app/` is a `'use client'` component. The shared pieces:
 
 Shared per-page state (`activeBrand`, `DateRange`) is still local `useState` prop-drilled
 into the shell.
+
+`context/TourContext.tsx` + `components/OnboardingTour.tsx` are the onboarding tour: it is
+offered once per browser (`veles_tour_v1` = `done` | `declined`) and afterwards started from
+the «Навчання» button in the sidebar or ⌘K. Steps point at `data-tour="…"` attributes rather
+than at class names, so restyling the sidebar does not silently break the tour — but
+renaming a `data-tour` value does; the step then falls back to a centred card with no
+spotlight. Sidebar markup is rendered **twice** (desktop rail + mobile drawer), so the
+overlay spotlights the first match that actually has a size. Steps can be marked
+`guestOnly` / `staffOnly`.
 
 `/fleet` (1100+ lines) is a standalone 3D truck-diagnostics view with **local mock state
 only** — it never calls the backend. `/ruptela/fleet` is the real telematics view.

@@ -10,6 +10,8 @@ interface RuptelaFleetMapProps {
   selectedVehicle: RuptelaVehicle | null;
   onSelectVehicle: (vehicle: RuptelaVehicle) => void;
   onCreateTrip: (vehicleId: string) => void;
+  /** False for a guest session — the popup then offers no write action. */
+  canCreateTrip?: boolean;
 }
 
 const TILES = {
@@ -29,6 +31,7 @@ export default function RuptelaFleetMap({
   selectedVehicle,
   onSelectVehicle,
   onCreateTrip,
+  canCreateTrip = true,
 }: RuptelaFleetMapProps) {
   const { theme } = useTheme();
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -162,12 +165,16 @@ export default function RuptelaFleetMap({
             </div>
           </div>
 
-          <button id="btn-create-trip-${v.id}" style="
+          ${
+            canCreateTrip
+              ? `<button id="btn-create-trip-${v.id}" style="
             width:100%;margin-top:10px;padding:7px 12px;border:none;cursor:pointer;
             border-radius:10px;background:var(--warn);color:#1A1206;
             font-size:11px;font-weight:600;font-family:inherit">
             Створити поїздку
-          </button>
+          </button>`
+              : ''
+          }
         </div>
       `;
 
@@ -192,7 +199,7 @@ export default function RuptelaFleetMap({
     if (selectedVehicle && markersRef.current[selectedVehicle.id] && focus?.latitude !== null && focus?.longitude != null) {
       map.panTo([focus.latitude as number, focus.longitude as number], { animate: true });
     }
-  }, [vehicles, selectedVehicle, onSelectVehicle, onCreateTrip]);
+  }, [vehicles, selectedVehicle, onSelectVehicle, onCreateTrip, canCreateTrip]);
 
   const counts = vehicles.reduce(
     (acc, v) => {

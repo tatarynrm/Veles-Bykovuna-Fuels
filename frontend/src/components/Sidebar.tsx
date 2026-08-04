@@ -4,7 +4,12 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/context/ThemeContext';
+import { useTour } from '@/context/TourContext';
+import { useSessionUser } from '@/lib/useAuthGuard';
 import {
+  Eye,
+  GraduationCap,
+  UserCheck,
   Fuel,
   CreditCard,
   MapPin,
@@ -27,34 +32,44 @@ interface SidebarProps {
   apiStatus?: any;
 }
 
+/** `tour` marks the element the onboarding overlay spotlights (see TourContext). */
 const primaryNav = [
-  { href: '/', label: 'Панель керування', icon: Fuel },
-  { href: '/cards', label: 'Паливні картки', icon: CreditCard },
-  { href: '/transactions', label: 'Журнал транзакцій', icon: History },
-  { href: '/analytics', label: 'Аналітика палива', icon: BarChart3 },
-  { href: '/merchants', label: 'Мережа АЗК', icon: MapPin },
+  { href: '/', label: 'Панель керування', icon: Fuel, tour: 'nav-overview' },
+  { href: '/cards', label: 'Паливні картки', icon: CreditCard, tour: 'nav-cards' },
+  { href: '/transactions', label: 'Журнал транзакцій', icon: History, tour: 'nav-transactions' },
+  { href: '/analytics', label: 'Аналітика палива', icon: BarChart3, tour: 'nav-analytics' },
+  { href: '/merchants', label: 'Мережа АЗК', icon: MapPin, tour: 'nav-merchants' },
 ];
 
 const fleetNav = [
-  { href: '/fleet', label: 'Моніторинг 3D', icon: Boxes },
+  { href: '/fleet', label: 'Моніторинг 3D', icon: Boxes, tour: 'nav-fleet3d' },
 ];
 
 const ruptelaNav = [
-  { href: '/ruptela/fleet', label: 'Мій автопарк', icon: Truck },
-  { href: '/ruptela/live', label: 'Реальний час', icon: Radio },
-  { href: '/ruptela/create-trip', label: 'Створити поїздку', icon: PlusCircle },
-  { href: '/ruptela/routes-tasks', label: 'Маршрут і завдання', icon: Route },
-  { href: '/ruptela/insights', label: 'Звіти FMS', icon: BarChart3 },
+  { href: '/ruptela/fleet', label: 'Мій автопарк', icon: Truck, tour: 'nav-ruptela-fleet' },
+  { href: '/ruptela/live', label: 'Реальний час', icon: Radio, tour: 'nav-live' },
+  {
+    href: '/ruptela/create-trip',
+    label: 'Створити поїздку',
+    icon: PlusCircle,
+    tour: 'nav-create-trip',
+    /** Writes to Ruptela — hidden for the read-only guest role. */
+    staffOnly: true,
+  },
+  { href: '/ruptela/routes-tasks', label: 'Маршрут і завдання', icon: Route, tour: 'nav-routes' },
+  { href: '/ruptela/insights', label: 'Звіти FMS', icon: BarChart3, tour: 'nav-insights' },
 ];
 
 const systemNav = [
-  { href: '/api-console', label: 'API Консоль', icon: Terminal },
-  { href: '/ui-kit', label: 'UI Kit', icon: Boxes },
+  { href: '/api-console', label: 'API Консоль', icon: Terminal, tour: 'nav-api' },
+  { href: '/ui-kit', label: 'UI Kit', icon: Boxes, tour: 'nav-uikit' },
 ];
 
 export default function Sidebar({ apiStatus }: SidebarProps) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { startTour } = useTour();
+  const { user, isGuest } = useSessionUser();
   const [isOpen, setIsOpen] = useState(false);
   const [ruptelaOpen, setRuptelaOpen] = useState(true);
 
@@ -90,16 +105,19 @@ export default function Sidebar({ apiStatus }: SidebarProps) {
     label,
     icon: Icon,
     compact = false,
+    tour,
   }: {
     href: string;
     label: string;
     icon: React.ElementType;
     compact?: boolean;
+    tour?: string;
   }) => {
     const active = pathname === href;
     return (
       <Link
         href={href}
+        data-tour={tour}
         className={`nav-item ${active ? 'nav-item-active' : ''} ${compact ? 'py-1.5' : ''}`}
         aria-current={active ? 'page' : undefined}
       >
@@ -124,7 +142,7 @@ export default function Sidebar({ apiStatus }: SidebarProps) {
       <div>
         {/* Brand */}
         <div className="mb-2 flex items-center justify-between px-1">
-          <Link href="/" className="group flex items-center gap-2.5">
+          <Link href="/" data-tour="brand" className="group flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-field bg-accent-sheen shadow-accent-glow transition-transform duration-200 group-hover:scale-105">
               <Fuel className="h-4 w-4 text-white" />
             </div>
@@ -162,7 +180,7 @@ export default function Sidebar({ apiStatus }: SidebarProps) {
             ))}
 
             {/* Ruptela telematics group */}
-            <div className="glass-inset mt-1 p-1">
+            <div className="glass-inset mt-1 p-1" data-tour="nav-ruptela">
               <button
                 type="button"
                 onClick={() => setRuptelaOpen((v) => !v)}
@@ -186,26 +204,29 @@ export default function Sidebar({ apiStatus }: SidebarProps) {
 
               {ruptelaOpen && (
                 <div className="mt-0.5 space-y-0.5 pl-1">
-                  {ruptelaNav.map((sub) => {
-                    const active = pathname === sub.href;
-                    const SubIcon = sub.icon;
-                    return (
-                      <Link
-                        key={sub.href}
-                        href={sub.href}
-                        className={`flex items-center gap-2.5 rounded-control px-2.5 py-1.5 text-2xs transition-colors ${
-                          active
-                            ? 'bg-warn/10 font-semibold text-warn'
-                            : 'text-txt-secondary hover:bg-surface-hover hover:text-txt-primary'
-                        }`}
-                      >
-                        <SubIcon
-                          className={`h-3.5 w-3.5 shrink-0 ${active ? 'text-warn' : 'text-txt-muted'}`}
-                        />
-                        <span className="truncate">{sub.label}</span>
-                      </Link>
-                    );
-                  })}
+                  {ruptelaNav
+                    .filter((sub) => !(sub.staffOnly && isGuest))
+                    .map((sub) => {
+                      const active = pathname === sub.href;
+                      const SubIcon = sub.icon;
+                      return (
+                        <Link
+                          key={sub.href}
+                          href={sub.href}
+                          data-tour={sub.tour}
+                          className={`flex items-center gap-2.5 rounded-control px-2.5 py-1.5 text-2xs transition-colors ${
+                            active
+                              ? 'bg-warn/10 font-semibold text-warn'
+                              : 'text-txt-secondary hover:bg-surface-hover hover:text-txt-primary'
+                          }`}
+                        >
+                          <SubIcon
+                            className={`h-3.5 w-3.5 shrink-0 ${active ? 'text-warn' : 'text-txt-muted'}`}
+                          />
+                          <span className="truncate">{sub.label}</span>
+                        </Link>
+                      );
+                    })}
                 </div>
               )}
             </div>
@@ -222,8 +243,41 @@ export default function Sidebar({ apiStatus }: SidebarProps) {
 
       {/* Footer */}
       <div className="space-y-2.5 pt-5">
+        {/* Onboarding — always reachable, whether or not the first-run offer was taken */}
+        <button
+          type="button"
+          data-tour="tour-button"
+          onClick={startTour}
+          className="btn btn-ghost w-full justify-start"
+          title="Пройти навчання по інтерфейсу"
+        >
+          <GraduationCap className="h-4 w-4 text-accent" />
+          <span>Навчання</span>
+        </button>
+
+        {/* Who is signed in — a guest needs to know why buttons are missing */}
+        {user && (
+          <div data-tour="role" className="glass-inset flex items-center gap-2.5 p-2.5">
+            <span
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-control ${
+                isGuest ? 'bg-warn/10 text-warn' : 'bg-accent-soft text-accent'
+              }`}
+            >
+              {isGuest ? <Eye className="h-3.5 w-3.5" /> : <UserCheck className="h-3.5 w-3.5" />}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-2xs font-medium text-txt-primary">
+                {user.name ?? user.username}
+              </p>
+              <p className="truncate text-micro text-txt-muted">
+                {isGuest ? 'Лише перегляд' : 'Повний доступ'}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Theme */}
-        <div className="segmented w-full">
+        <div className="segmented w-full" data-tour="theme">
           <button
             onClick={() => setTheme('light')}
             className={`segmented-item flex-1 ${theme === 'light' ? 'segmented-item-active' : ''}`}

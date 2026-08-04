@@ -30,6 +30,17 @@ function buildUrl(path: string, params?: Record<string, QueryValue>): string {
 }
 
 /**
+ * The session token rides on every request. The backend ignores it everywhere except
+ * `ReadOnlyGuard`, which uses it to reject writes from a guest session — so dropping
+ * this header would let a guest through the server-side ban.
+ */
+function authHeaders(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  const token = window.localStorage.getItem('veles_token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+/**
  * Nest sends `{ statusCode, message, error }` on failure, and upstream vendor
  * text (Ruptela's GraphQL validation, for instance) arrives in `message`.
  * Surface that verbatim — a bare status code tells the dispatcher nothing.
@@ -51,7 +62,7 @@ export async function apiGet<T>(
   params?: Record<string, QueryValue>,
 ): Promise<T> {
   const res = await fetch(buildUrl(path, params), {
-    headers: { Accept: 'application/json' },
+    headers: { Accept: 'application/json', ...authHeaders() },
   });
   if (!res.ok) throw await toError(res, 'GET', path);
   return res.json() as Promise<T>;
@@ -64,7 +75,11 @@ export async function apiSend<T>(
 ): Promise<T> {
   const res = await fetch(buildUrl(path), {
     method,
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...authHeaders(),
+    },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) throw await toError(res, method, path);
