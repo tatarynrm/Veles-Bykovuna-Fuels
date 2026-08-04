@@ -56,7 +56,7 @@ export class AnalyticsService {
     const transactions = this.filterByDateRange(rawTransactions, dateFrom, dateTo);
 
     const totalBalance = contracts.reduce((sum, c) => sum + (c.balance || 0), 0);
-    const activeCards = cards.filter(c => c.status === 'ACTV').length;
+    const activeCards = cards.filter(c => c.is_active).length;
     const okkoSpend = transactions.reduce((sum, t) => sum + (t.amnt_trans || 0), 0);
     const okkoVolume = transactions.reduce((sum, t) => sum + (t.volume || 0), 0);
     const okkoDiscounts = transactions.reduce((sum, t) => sum + (t.amount_discount || 0), 0);

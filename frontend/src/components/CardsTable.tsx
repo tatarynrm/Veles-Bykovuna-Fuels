@@ -21,6 +21,8 @@ interface Card {
   contract_id: string;
   status: string;
   status_desc: string;
+  /** Set by the backend from the vendor's status dictionary. */
+  is_active?: boolean;
   card_owner_f_name?: string;
   card_owner_l_name?: string;
   exp_date?: string;
@@ -212,7 +214,13 @@ export default function CardsTable({ cards, contracts }: CardsTableProps) {
                 <tbody>
                   {paginated.map((c) => {
                     const limit = c.limits?.[0];
-                    const isActive = c.status === 'ACTV' || c.status === 'CHST5';
+                    // Fallback covers cached payloads from before is_active existed:
+                    // CHST0 = «Активовано», CHST4 = «обслуговувати з документом».
+                    const isActive =
+                      c.is_active ??
+                      (c.status === 'ACTV' || c.status === 'CHST0' || c.status === 'CHST4');
+                    // Not-yet-activated states are a warning, not a hard block.
+                    const isPending = /^CHST(1|12|14|16|17|18)$/.test(c.status);
                     const used =
                       limit && limit.limit_value > 0
                         ? Math.min(100, Math.round((limit.limit_used / limit.limit_value) * 100))
@@ -282,9 +290,18 @@ export default function CardsTable({ cards, contracts }: CardsTableProps) {
                         </td>
 
                         <td className="text-center">
-                          <span className={`badge ${isActive ? 'badge-success' : 'badge-danger'}`}>
+                          <span
+                            className={`badge ${
+                              isActive
+                                ? 'badge-success'
+                                : isPending
+                                  ? 'badge-warn'
+                                  : 'badge-danger'
+                            }`}
+                            title={c.status}
+                          >
                             <span className="badge-dot" />
-                            {isActive ? 'Активна' : 'Блокована'}
+                            {c.status_desc || (isActive ? 'Активна' : 'Блокована')}
                           </span>
                         </td>
                       </tr>

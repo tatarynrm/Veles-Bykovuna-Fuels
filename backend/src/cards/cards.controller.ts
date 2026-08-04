@@ -32,6 +32,7 @@ export class CardsController {
         contract_id: c.PayerNumber,
         status: c.CardStatus === 'ACTIVE' ? 'ACTV' : 'BLCK',
         status_desc: c.CardStatus === 'ACTIVE' ? 'Активна Shell Card' : 'Заблокована',
+        is_active: c.CardStatus === 'ACTIVE',
         card_owner_f_name: c.DriverName,
         card_owner_l_name: `(${c.VehicleRegistration})`,
         exp_date: c.ExpiryDate,
@@ -68,8 +69,8 @@ export class CardsController {
   @Get('stats')
   async getCardStats() {
     const cards = await this.okkoApiService.getCards();
-    const activeCards = cards.filter(c => c.status === 'ACTV').length;
-    const blockedCards = cards.filter(c => c.status !== 'ACTV').length;
+    const activeCards = cards.filter(c => c.is_active).length;
+    const blockedCards = cards.length - activeCards;
 
     return {
       totalCards: cards.length,

@@ -17,11 +17,49 @@ export interface OkkoContract {
   created_at: string;
 }
 
+/**
+ * Official CHST ("Hot card status") dictionary, pulled from the live
+ * GET /v2/metadata endpoint (KEY="CHST", LANG=3). CHST0 is the normal state of
+ * a working card; CHST5 is BLOCKED — the previous code had these inverted.
+ */
+export const OKKO_CARD_STATUS: Record<string, string> = {
+  CHST0: 'Активовано',
+  CHST1: 'Неактивована',
+  CHST2: 'Використано',
+  CHST3: 'Анульовано',
+  CHST4: 'Обслуговувати з документом',
+  CHST5: 'Заблоковано',
+  CHST6: 'Загублено',
+  CHST7: 'Викрадено',
+  CHST8: 'Зверніться в службу безпеки емітента',
+  CHST9: 'Недійсна карта',
+  CHST10: 'Вилучити карту через спеціальні умови',
+  CHST11: 'Зверніться в службу безпеки еквайєра',
+  CHST12: 'Не активовано',
+  CHST13: 'Заблоковано після невдалого вводу PIN',
+  CHST14: 'Очікує активації',
+  CHST15: 'Кредиторська заборгованість',
+  CHST16: 'Віртуальна карта неактивна',
+  CHST17: 'Необхідна активація PIN',
+  CHST18: 'Миттєва карта, очікується персоніфікація',
+  CHST19: 'Підозра в шахрайстві',
+  CHST20: 'Тимчасово заблокована клієнтом',
+  CHST21: 'Заблокована клієнтом',
+  CHST99: 'Перенесено між контрактами',
+};
+
+/** Statuses under which the card is actually serviceable at a station. */
+const OKKO_ACTIVE_STATUSES = new Set(['CHST0', 'CHST4', 'ACTV']);
+
 export interface OkkoCard {
   card_num: string;
   contract_id: string;
+  /** Raw CHST code from the API (e.g. "CHST0"). */
   status: string;
+  /** Ukrainian label resolved from the CHST dictionary. */
   status_desc: string;
+  /** True when the card can be used for fueling right now. */
+  is_active: boolean;
   coupon_type?: string;
   coupon_type_desc?: string;
   card_owner_f_name?: string;
@@ -240,11 +278,15 @@ export class OkkoApiService {
       this.isConnectedToLiveApi = true;
       const rawCards = response.data?.cards || response.data || [];
 
-      return rawCards.map((c: any) => ({
+      return rawCards.map((c: any) => {
+        // Absent status is treated as the normal state — matches old behavior.
+        const statusCode: string = c.card_status || 'CHST0';
+        return {
         card_num: c.card_num,
         contract_id: targetContract,
-        status: c.card_status === 'CHST5' ? 'ACTV' : c.card_status || 'ACTV',
-        status_desc: c.card_status === 'CHST5' ? 'Активна (Smart Card)' : c.card_status,
+        status: statusCode,
+        status_desc: OKKO_CARD_STATUS[statusCode] ?? statusCode,
+        is_active: OKKO_ACTIVE_STATUSES.has(statusCode),
         card_owner_f_name: c.c_owner_f_name !== 'Default' ? c.c_owner_f_name : 'Водій Велес',
         card_owner_l_name: c.c_owner_l_name ? `#${c.c_owner_l_name}` : '',
         exp_date: c.exp_date || '2040-02-29',
@@ -257,7 +299,8 @@ export class OkkoApiService {
           limit_used: Number(l.limit_used || 0) / 100,
           cycle_type_desc: l.cycle_type_desc || 'доба'
         }))
-      }));
+        };
+      });
     } catch (error) {
       this.logger.error(`OKKO API /v2/cards error: ${error.message}`);
       return [];

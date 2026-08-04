@@ -21,7 +21,7 @@ module.exports = {
       max_memory_restart: '512M',
       env: {
         NODE_ENV: 'production',
-        PORT: 3001,
+        PORT: 7001,
       },
       out_file: './logs/backend-out.log',
       error_file: './logs/backend-error.log',
@@ -32,7 +32,7 @@ module.exports = {
       name: 'veles-frontend',
       cwd: './frontend',
       script: 'node_modules/next/dist/bin/next',
-      args: 'start -p 3000',
+      args: 'start -p 7002',
       instances: 1,
       autorestart: true,
       max_restarts: 10,
