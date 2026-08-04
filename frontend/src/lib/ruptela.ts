@@ -71,6 +71,50 @@ export interface RuptelaTripHistoryItem {
   end_address: string;
 }
 
+/**
+ * One record of the coordinate history (`/api/ruptela/vehicles/:id/coordinates`,
+ * fm-track `/objects/{id}/coordinates?version=2`). Position and CAN values come from
+ * the same record, so a point is internally consistent.
+ */
+export interface RuptelaTrackPoint {
+  datetime: string;
+  latitude: number | null;
+  longitude: number | null;
+  speed: number | null; // km/h
+  heading: number | null; // degrees
+  altitude: number | null; // m
+  satellites: number | null;
+  ignition: boolean | null;
+  trip_type: string | null;
+  engine_rpm: number | null;
+  engine_hours: number | null; // h
+  odometer_km: number | null; // km
+  fuel_level_liters: number | null; // L
+  fuel_level_percent: number | null; // %
+  fuel_rate_lph: number | null; // L/h
+  fuel_used_total_liters: number | null; // L, lifetime
+  coolant_temp: number | null; // °C — null while the engine is off
+  power_supply_voltage: number | null; // V
+  device_battery_voltage: number | null; // V
+  pedal_position: number | null; // %
+  gsm_signal: number | null;
+  hdop: number | null;
+  driver_state: string | null;
+}
+
+export interface RuptelaVehicleTrack {
+  object_id: string;
+  from: string;
+  to: string;
+  /** Oldest-first. */
+  points: RuptelaTrackPoint[];
+  latest: RuptelaTrackPoint | null;
+  count: number;
+  truncated: boolean;
+  fetched_at: string;
+  error: string | null;
+}
+
 export const STATUS_LABEL: Record<RuptelaStatus, string> = {
   moving: 'В русі',
   idle: 'Холостий хід',

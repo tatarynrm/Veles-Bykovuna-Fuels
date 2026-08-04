@@ -33,6 +33,7 @@ import {
   History,
   X,
   Route,
+  Radio,
 } from 'lucide-react';
 
 const RuptelaFleetMap = dynamic(() => import('@/components/RuptelaFleetMap'), {
@@ -405,6 +406,14 @@ export default function RuptelaFleetPage() {
                   </div>
                 </dl>
 
+                <Link
+                  href={`/ruptela/live?vehicle=${selectedVehicle.id}`}
+                  className="btn btn-warn w-full"
+                >
+                  <Radio className="h-4 w-4" />
+                  <span>Спостерігати в реальному часі</span>
+                </Link>
+
                 <div className="grid grid-cols-2 gap-2">
                   <button onClick={() => handleOpenHistory(selectedVehicle)} className="btn btn-ghost">
                     <History className="h-4 w-4" />
@@ -412,7 +421,7 @@ export default function RuptelaFleetPage() {
                   </button>
                   <button
                     onClick={() => router.push(`/ruptela/create-trip?vehicleId=${selectedVehicle.id}`)}
-                    className="btn btn-warn"
+                    className="btn btn-ghost"
                   >
                     <PlusCircle className="h-4 w-4" />
                     <span>Створити поїздку</span>

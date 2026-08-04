@@ -79,6 +79,18 @@ Everything else consumes their normalized TypeScript interfaces.
   snapshot is cached 30 s with stale-while-revalidate so the page's 5 s polling does not
   become ~65 upstream calls a tick.
 
+  `getVehicleTrack()` (→ `GET /api/ruptela/vehicles/:id/coordinates`) is the exception to the
+  snapshot rule: it backs the real-time watch screen, so it hits
+  `/objects/{id}/coordinates?version=2` on **every** call for a single vehicle. Position and
+  CAN arrive in the same record there — note the shape differs from
+  `/objects-last-coordinate`, where position is flat rather than nested under `position`.
+  The vendor pages with a datetime `continuation_token` (max `limit` 1000); when a window
+  holds more records than asked for, the **newest** are kept. Callers should pass the newest
+  timestamp they already hold as `from` so a 5 s poll transfers a couple of records instead of
+  the whole window — `from_datetime` is inclusive, so the anchor record repeats and the client
+  dedupes by `datetime`. Identical concurrent requests share one upstream call
+  (`inflightTracks`), because several dispatchers watching one truck poll on the same clock.
+
   Fields the hardware does not report at all: door status and reefer temperatures (these are
   tractors), driver phone, and vehicle year. Do not reintroduce them.
   Coolant reads `0` whenever the engine is off — that is "no reading", surfaced as `null`.
@@ -146,6 +158,11 @@ into the shell.
 
 `/fleet` (1100+ lines) is a standalone 3D truck-diagnostics view with **local mock state
 only** — it never calls the backend. `/ruptela/fleet` is the real telematics view.
+`/ruptela/live` watches **one** vehicle: it polls `/coordinates` on a dispatcher-chosen
+interval (3/5/10/30 s), keeps an incremental client-side buffer keyed by `datetime`, trims it
+to the selected window (15 хв–3 год), and draws the track on `RuptelaLiveTrackMap`. When the
+chosen window is empty it widens **once** to 24 h and says so, rather than showing a blank
+map for a truck that has been parked overnight.
 Both `ThreeTruckViewer` (react-three-fiber) and `RuptelaFleetMap` (Leaflet) are loaded via
 `next/dynamic` because they touch `window`; keep any new map/3D component the same way.
 Anything using `useSearchParams()` needs a `<Suspense>` boundary or the static export fails.

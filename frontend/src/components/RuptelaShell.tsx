@@ -9,6 +9,7 @@ import { useTheme } from '@/context/ThemeContext';
 
 const TABS = [
   { href: '/ruptela/fleet', label: 'Мій автопарк', icon: Truck },
+  { href: '/ruptela/live', label: 'Реальний час', icon: Radio },
   { href: '/ruptela/create-trip', label: 'Створити поїздку', icon: PlusCircle },
   { href: '/ruptela/routes-tasks', label: 'Маршрут і завдання', icon: Route },
   { href: '/ruptela/insights', label: 'Звіти FMS', icon: BarChart3 },

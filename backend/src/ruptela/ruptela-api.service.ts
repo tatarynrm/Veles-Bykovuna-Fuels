@@ -80,6 +80,54 @@ export interface RuptelaVehicleTripHistoryItem {
   end_longitude?: number;
 }
 
+/**
+ * One record from GET /objects/{id}/coordinates?version=2 — the coordinate *history*
+ * endpoint, which is the only source that carries position and CAN data in the same
+ * item. Same rule as everywhere else here: `null` means the device reported nothing.
+ */
+export interface RuptelaTrackPoint {
+  datetime: string;
+  latitude: number | null;
+  longitude: number | null;
+  speed: number | null; // km/h
+  heading: number | null; // degrees
+  altitude: number | null; // m
+  satellites: number | null;
+  ignition: boolean | null;
+  trip_type: string | null;
+  engine_rpm: number | null;
+  engine_hours: number | null; // h
+  odometer_km: number | null; // km (canbus_distance)
+  fuel_level_liters: number | null; // L
+  fuel_level_percent: number | null; // %
+  fuel_rate_lph: number | null; // L/h
+  fuel_used_total_liters: number | null; // L, lifetime counter
+  coolant_temp: number | null; // °C — null while the engine is off
+  power_supply_voltage: number | null; // V
+  device_battery_voltage: number | null; // V
+  pedal_position: number | null; // %
+  gsm_signal: number | null;
+  hdop: number | null;
+  driver_state: string | null;
+}
+
+export interface RuptelaVehicleTrack {
+  object_id: string;
+  /** Window actually requested upstream, ISO-8601. */
+  from: string;
+  to: string;
+  /** Oldest-first, exactly as fm-track returns them. */
+  points: RuptelaTrackPoint[];
+  /** Newest record in the window, or null when the device was silent. */
+  latest: RuptelaTrackPoint | null;
+  count: number;
+  /** The window held more records than `limit`; only the newest were kept. */
+  truncated: boolean;
+  fetched_at: string;
+  /** Upstream failure text. `points` is empty whenever this is set. */
+  error: string | null;
+}
+
 @Injectable()
 export class RuptelaApiService {
   private readonly logger = new Logger(RuptelaApiService.name);
@@ -105,6 +153,13 @@ export class RuptelaApiService {
   private isFetchingDrivers = false;
 
   private lastFleetError: string | null = null;
+
+  /**
+   * Live-track requests in flight, keyed by object + window. Several dispatchers
+   * watching the same truck poll on the same 5 s clock, and fm-track answers 429
+   * long before it answers slowly — identical requests share one upstream call.
+   */
+  private inflightTracks = new Map<string, Promise<RuptelaVehicleTrack>>();
 
   // Persistent trips store with real trip records
   constructor(private configService: ConfigService) {
@@ -538,4 +593,169 @@ export class RuptelaApiService {
     return [];
   }
 
+  // ── 3. Live track for one vehicle ───────────────────────────────────────────
+  /**
+   * GET /objects/{id}/coordinates?version=2 — the coordinate history endpoint.
+   *
+   * This deliberately does **not** go through the 30 s fleet snapshot: the fleet
+   * view trades freshness for one batched call across ~65 vehicles, while this is a
+   * single vehicle a dispatcher is actively watching, so each poll hits the API.
+   * Position and CAN values arrive in the same record here, so a point is internally
+   * consistent — unlike the fleet snapshot, which pairs a batched position with a
+   * separately fetched CAN record.
+   *
+   * Records come back **oldest-first** and the vendor pages them with a datetime
+   * `continuation_token`; when a window holds more than `limit` records the newest
+   * are kept, because this feeds a live view.
+   */
+  async getVehicleTrack(
+    objectId: string,
+    options: { from?: string; to?: string; minutes?: number; limit?: number } = {},
+  ): Promise<RuptelaVehicleTrack> {
+    const toMs = RuptelaApiService.parseDate(options.to) ?? Date.now();
+    // The window is only used when the caller does not pass `from`. Live polling
+    // passes the newest timestamp it already holds, so each tick transfers a handful
+    // of records instead of the whole window again.
+    const minutes = Math.min(Math.max(options.minutes ?? 30, 1), 24 * 60);
+    const fromMs =
+      RuptelaApiService.parseDate(options.from) ?? toMs - minutes * 60_000;
+    const limit = Math.min(Math.max(Math.trunc(options.limit ?? 300), 1), 1000);
+
+    const from = new Date(fromMs).toISOString();
+    const to = new Date(toMs).toISOString();
+
+    const empty = (error: string | null): RuptelaVehicleTrack => ({
+      object_id: objectId,
+      from,
+      to,
+      points: [],
+      latest: null,
+      count: 0,
+      truncated: false,
+      fetched_at: new Date().toISOString(),
+      error,
+    });
+
+    if (!this.apiKey) return empty('RUPTELA_API_KEY не налаштовано');
+    if (fromMs >= toMs) return empty('Некоректний діапазон: "from" не раніше за "to"');
+
+    const key = `${objectId}|${from}|${to}|${limit}`;
+    const inflight = this.inflightTracks.get(key);
+    if (inflight) return inflight;
+
+    const request = this.fetchVehicleTrack(objectId, from, to, limit)
+      .catch((error) => {
+        this.logger.warn(`Ruptela live track failed for ${objectId}: ${error.message}`);
+        return empty(error.message);
+      })
+      .finally(() => this.inflightTracks.delete(key));
+
+    this.inflightTracks.set(key, request);
+    return request;
+  }
+
+  private async fetchVehicleTrack(
+    objectId: string,
+    from: string,
+    to: string,
+    limit: number,
+  ): Promise<RuptelaVehicleTrack> {
+    const PAGE_SIZE = 1000; // vendor maximum
+    const MAX_PAGES = 5;
+
+    const collected: any[] = [];
+    let continuationToken: string | undefined;
+    let hitPageCap = false;
+
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const response = await this.getWithRetry(`/objects/${objectId}/coordinates`, {
+        version: '2',
+        from_datetime: from,
+        to_datetime: to,
+        limit: PAGE_SIZE,
+        api_key: this.apiKey,
+        ...(continuationToken ? { continuation_token: continuationToken } : {}),
+      });
+
+      const items = response.data?.items ?? [];
+      collected.push(...items);
+
+      continuationToken = response.data?.continuation_token;
+      if (!continuationToken || items.length < PAGE_SIZE) break;
+      if (page === MAX_PAGES - 1) hitPageCap = true;
+    }
+
+    this.isConnectedToLiveApi = true;
+    this.lastConnectionCheck = new Date().toISOString();
+
+    const mapped = collected
+      .map((item) => RuptelaApiService.mapTrackPoint(item))
+      .filter((p): p is RuptelaTrackPoint => p !== null);
+
+    const points = mapped.slice(-limit);
+
+    return {
+      object_id: objectId,
+      from,
+      to,
+      points,
+      latest: points.length > 0 ? points[points.length - 1] : null,
+      count: points.length,
+      truncated: hitPageCap || mapped.length > points.length,
+      fetched_at: new Date().toISOString(),
+      error: null,
+    };
+  }
+
+  /** ISO-8601 string → epoch ms, or null when absent/unparseable. */
+  private static parseDate(value?: string): number | null {
+    if (!value) return null;
+    const ms = new Date(value).getTime();
+    return Number.isFinite(ms) ? ms : null;
+  }
+
+  /**
+   * One `items[]` record of the v2 coordinate history. Note the shape differs from
+   * /objects-last-coordinate: position is nested under `position` here, flat there.
+   */
+  private static mapTrackPoint(item: any): RuptelaTrackPoint | null {
+    if (!item?.datetime) return null;
+
+    const position = item.position ?? {};
+    const device = item.inputs?.device_inputs ?? {};
+    const calculated = item.inputs?.calculated_inputs ?? {};
+
+    const ignition =
+      item.ignition_status === 'ON' ? true : item.ignition_status === 'OFF' ? false : null;
+
+    // Coolant reads 0 with the engine off — that is "no reading", not 0 °C.
+    const rawCoolant = RuptelaApiService.num(device.canbus_engine_coolant_temperature);
+    const coolant = ignition === true && rawCoolant !== null && rawCoolant > 0 ? rawCoolant : null;
+
+    return {
+      datetime: item.datetime,
+      latitude: RuptelaApiService.num(position.latitude),
+      longitude: RuptelaApiService.num(position.longitude),
+      speed: RuptelaApiService.num(position.speed),
+      heading: RuptelaApiService.num(position.direction),
+      altitude: RuptelaApiService.num(position.altitude),
+      satellites: RuptelaApiService.num(position.satellites_count),
+      ignition,
+      trip_type: item.trip_type ?? null,
+      engine_rpm: RuptelaApiService.num(device.engine_rpm),
+      engine_hours: RuptelaApiService.num(device.engine_hours),
+      odometer_km: RuptelaApiService.num(device.canbus_distance),
+      fuel_level_liters: RuptelaApiService.num(calculated.fuel_level),
+      fuel_level_percent: RuptelaApiService.num(device.fuel_level_can),
+      fuel_rate_lph: RuptelaApiService.num(device.canbus_fuel_rate),
+      fuel_used_total_liters: RuptelaApiService.num(device.fuel_used),
+      coolant_temp: coolant,
+      power_supply_voltage: RuptelaApiService.num(device.power_supply_voltage),
+      device_battery_voltage: RuptelaApiService.num(device.battery_voltage),
+      pedal_position: RuptelaApiService.num(device.pedal_pos),
+      gsm_signal: RuptelaApiService.num(device.gsm_signal_strength),
+      hdop: RuptelaApiService.num(device.hdop),
+      driver_state: device.driver_1_state || device.tco_first_driver_state || null,
+    };
+  }
 }

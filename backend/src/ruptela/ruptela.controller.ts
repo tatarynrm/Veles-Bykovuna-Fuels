@@ -51,6 +51,35 @@ export class RuptelaController {
     return this.ruptelaService.getVehicleTripHistory(objectId, from, to);
   }
 
+  /**
+   * Live coordinate history for one vehicle (fm-track `/objects/{id}/coordinates?version=2`).
+   *
+   * Bypasses the 30 s fleet snapshot on purpose — this backs the real-time watch
+   * screen, where a dispatcher polls a single vehicle every few seconds.
+   * `from` omitted → the last `minutes` (default 30). Live polling should pass the
+   * newest timestamp it already holds as `from`, so a tick returns only new records.
+   */
+  @Get('vehicles/:objectId/coordinates')
+  getVehicleCoordinates(
+    @Param('objectId') objectId: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('minutes') minutes?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const toNumber = (value?: string) => {
+      const n = Number(value);
+      return value !== undefined && value !== '' && Number.isFinite(n) ? n : undefined;
+    };
+
+    return this.ruptelaService.getVehicleTrack(objectId, {
+      from,
+      to,
+      minutes: toNumber(minutes),
+      limit: toNumber(limit),
+    });
+  }
+
   /* ── routing & tasking ──────────────────────────────────────────────── */
 
   @Get('routing/status')
