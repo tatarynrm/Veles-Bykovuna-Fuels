@@ -1,0 +1,2114 @@
+<!doctype html>
+<html>
+  <head>
+    <title>OKKO on-line External Systems API</title>
+    <style type="text/css">
+      body {
+      	font-family: Trebuchet MS, sans-serif;
+      	font-size: 15px;
+      	color: #444;
+      	margin-right: 24px;
+      }
+      
+      h1	{
+      	font-size: 25px;
+      }
+      h2	{
+      	font-size: 20px;
+      }
+      h3	{
+      	font-size: 16px;
+      	font-weight: bold;
+      }
+      hr	{
+      	height: 1px;
+      	border: 0;
+      	color: #ddd;
+      	background-color: #ddd;
+      }
+      
+      .app-desc {
+        clear: both;
+        margin-left: 20px;
+      }
+      .param-name {
+        width: 100%;
+      }
+      .license-info {
+        margin-left: 20px;
+      }
+      
+      .license-url {
+        margin-left: 20px;
+      }
+      
+      .model {
+        margin: 0 0 0px 20px;
+      }
+      
+      .method {
+        margin-left: 20px;
+      }
+      
+      .method-notes	{
+      	margin: 10px 0 20px 0;
+      	font-size: 90%;
+      	color: #555;
+      }
+      
+      pre {
+        padding: 10px;
+        margin-bottom: 2px;
+      }
+      
+      .http-method {
+       text-transform: uppercase;
+      }
+      
+      pre.get {
+        background-color: #0f6ab4;
+      }
+      
+      pre.post {
+        background-color: #10a54a;
+      }
+      
+      pre.put {
+        background-color: #c5862b;
+      }
+      
+      pre.delete {
+        background-color: #a41e22;
+      }
+      
+      .huge	{
+      	color: #fff;
+      }
+      
+      pre.example {
+        background-color: #f3f3f3;
+        padding: 10px;
+        border: 1px solid #ddd;
+      }
+      
+      code {
+        white-space: pre;
+      }
+      
+      .nickname {
+        font-weight: bold;
+      }
+      
+      .method-path {
+        font-size: 1.5em;
+        background-color: #0f6ab4;
+      }
+      
+      .up {
+        float:right;
+      }
+      
+      .parameter {
+        width: 500px;
+      }
+      
+      .param {
+        width: 500px;
+        padding: 10px 0 0 20px;
+        font-weight: bold;
+      }
+      
+      .param-desc {
+        width: 700px;
+        padding: 0 0 0 20px;
+        color: #777;
+      }
+      
+      .param-type {
+        font-style: italic;
+      }
+      
+      .param-enum-header {
+      width: 700px;
+      padding: 0 0 0 60px;
+      color: #777;
+      font-weight: bold;
+      }
+      
+      .param-enum {
+      width: 700px;
+      padding: 0 0 0 80px;
+      color: #777;
+      font-style: italic;
+      }
+      
+      .field-label {
+        padding: 0;
+        margin: 0;
+        clear: both;
+      }
+      
+      .field-items	{
+      	padding: 0 0 15px 0;
+      	margin-bottom: 15px;
+      }
+      
+      .return-type {
+        clear: both;
+        padding-bottom: 10px;
+      }
+      
+      .param-header {
+        font-weight: bold;
+      }
+      
+      .method-tags {
+        text-align: right;
+      }
+      
+      .method-tag {
+        background: none repeat scroll 0% 0% #24A600;
+        border-radius: 3px;
+        padding: 2px 10px;
+        margin: 2px;
+        color: #FFF;
+        display: inline-block;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+  <h1>OKKO on-line External Systems API</h1>
+    <div class="app-desc"><h1>General</h1>
+<h4>This is a API for connection clients ERPs to &quot;OKKO online&quot;. API not support any operations that make changes Client profile in OKKO on-line system. In this API client should send <code>HTTP</code> request with data in <code>JSON</code> format and receive response in <code>JSON</code> format using <code>UTF-8</code> encoding.</h4>
+<h2>Authentication</h2>
+<p>This API using API keys for authorization. An API key is a key (token) that a client provides when making API calls. In our case it is sent as a request header.</p>
+<hr />
+<h1>Version changes</h1>
+<p>Added v2 API methods which schemas are aligned with the SSP API schemas.</br>
+Changed security schemes of v2 methods to API key.</br>
+Old methods are marked as deprecated.</p>
+</div>
+    <div class="app-desc">More information: <a href="https://helloreverb.com">https://helloreverb.com</a></div>
+    <div class="app-desc">Contact Info: <a href="ishchehlov@gng.com.ua">ishchehlov@gng.com.ua</a></div>
+    <div class="app-desc">Version: 2.0.0-apikey</div>
+    <div class="app-desc">BasePath:/api/erp/</div>
+    <div class="license-info">All rights reserved</div>
+    <div class="license-url">http://apache.org/licenses/LICENSE-2.0.html</div>
+  <h2>Access</h2>
+    <ol>
+      <li>APIKey KeyParamName:Authorization KeyInQuery:false KeyInHeader:true</li>
+      <li>APIKey KeyParamName:X-API-KEY KeyInQuery:false KeyInHeader:true</li>
+      <li>APIKey KeyParamName:Authorization KeyInQuery:false KeyInHeader:true</li>
+    </ol>
+
+  <h2><a name="__Methods">Methods</a></h2>
+  [ Jump to <a href="#__Models">Models</a> ]
+
+  <h3>Table of Contents </h3>
+  <div class="method-summary"></div>
+  <h4><a href="#Accounts">Accounts</a></h4>
+  <ul>
+  <li><a href="#cardsGet"><code><span class="http-method">get</span> /cards</code></a></li>
+  <li><a href="#contractsGet"><code><span class="http-method">get</span> /contracts</code></a></li>
+  <li><a href="#v2CardsGet"><code><span class="http-method">get</span> /v2/cards</code></a></li>
+  <li><a href="#v2ContractsGet"><code><span class="http-method">get</span> /v2/contracts</code></a></li>
+  </ul>
+  <h4><a href="#Additional">Additional</a></h4>
+  <ul>
+  <li><a href="#merchantsGet"><code><span class="http-method">get</span> /merchants</code></a></li>
+  <li><a href="#metadataGet"><code><span class="http-method">get</span> /metadata</code></a></li>
+  <li><a href="#v2MerchantsGet"><code><span class="http-method">get</span> /v2/merchants</code></a></li>
+  <li><a href="#v2MetadataGet"><code><span class="http-method">get</span> /v2/metadata</code></a></li>
+  </ul>
+  <h4><a href="#Authentification">Authentification</a></h4>
+  <ul>
+  <li><a href="#loginPost"><code><span class="http-method">post</span> /login</code></a></li>
+  <li><a href="#logoutPost"><code><span class="http-method">post</span> /logout</code></a></li>
+  <li><a href="#refreshTokenPost"><code><span class="http-method">post</span> /refresh_token</code></a></li>
+  </ul>
+  <h4><a href="#Statements">Statements</a></h4>
+  <ul>
+  <li><a href="#ordersGet"><code><span class="http-method">get</span> /orders</code></a></li>
+  <li><a href="#v2OrdersGet"><code><span class="http-method">get</span> /v2/orders</code></a></li>
+  </ul>
+  <h4><a href="#Transactions">Transactions</a></h4>
+  <ul>
+  <li><a href="#busketContentGet"><code><span class="http-method">get</span> /busket_content</code></a></li>
+  <li><a href="#transactionsGet"><code><span class="http-method">get</span> /transactions</code></a></li>
+  <li><a href="#v2BasketGet"><code><span class="http-method">get</span> /v2/basket</code></a></li>
+  <li><a href="#v2TransactionsGet"><code><span class="http-method">get</span> /v2/transactions</code></a></li>
+  </ul>
+
+  <h1><a name="Accounts">Accounts</a></h1>
+  <div class="method"><a name="cardsGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /cards</code></pre></div>
+    <div class="method-summary">Receive Card or Coupon list by Contract Number (<span class="nickname">cardsGet</span>)</div>
+    <div class="method-notes">Method return full list of cards or coupons in same data structure, but many attributes applicable only to coupons, thats way that attributes can be empty for cards.</div>
+
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">contract_id (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; contract identifier </div>      <div class="param">number_of_records (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; number of records to be return </div>      <div class="param">offset (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; offset from head of selected dataset </div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#CardsData">CardsData</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>[ {
+  "period" : "period",
+  "list_id" : "list_id",
+  "card_owner_phone" : "card_owner_phone",
+  "coupon_type_desc" : "coupon_type_desc",
+  "date_to" : "2000-01-23",
+  "product_name" : "product_name",
+  "coupon_status" : "coupon_status",
+  "group_merch_desc" : "group_merch_desc",
+  "qr_string" : "qr_string",
+  "card_num" : "card_num",
+  "group_merch_id" : 1.4658129805029452,
+  "days_before_reissue" : 5.637376656633329,
+  "nominal" : 0.8008281904610115,
+  "product_id" : 6.027456183070403,
+  "card_owner_l_name" : "card_owner_l_name",
+  "exp_date" : "2000-01-23",
+  "card_owner_f_name" : "card_owner_f_name",
+  "coupon_status_desc" : "coupon_status_desc",
+  "order_id" : 2.3021358869347655,
+  "coupon_type" : "coupon_type",
+  "limits" : [ {
+    "limit_type" : 7.061401241503109,
+    "limit_remains" : 3.616076749251911,
+    "trans_param_group" : 1.4894159098541704,
+    "limit_desc" : "limit_desc",
+    "limit_end_date" : "2000-01-23",
+    "cycle_type_desc" : "cycle_type_desc",
+    "limit_start_date" : "2000-01-23",
+    "currency_desc" : "currency_desc",
+    "cycle_type" : 4.145608029883936,
+    "cycle_leng" : 7.386281948385884,
+    "cycle_date" : "2000-01-23",
+    "is_exception" : 1.0246457001441578,
+    "limit_id" : "limit_id",
+    "limit_value" : 9.301444243932576,
+    "currency" : "currency",
+    "cycle_flag" : true,
+    "limit_used" : 2.027123023002322,
+    "currency_exp" : 1.2315135367772556
+  }, {
+    "limit_type" : 7.061401241503109,
+    "limit_remains" : 3.616076749251911,
+    "trans_param_group" : 1.4894159098541704,
+    "limit_desc" : "limit_desc",
+    "limit_end_date" : "2000-01-23",
+    "cycle_type_desc" : "cycle_type_desc",
+    "limit_start_date" : "2000-01-23",
+    "currency_desc" : "currency_desc",
+    "cycle_type" : 4.145608029883936,
+    "cycle_leng" : 7.386281948385884,
+    "cycle_date" : "2000-01-23",
+    "is_exception" : 1.0246457001441578,
+    "limit_id" : "limit_id",
+    "limit_value" : 9.301444243932576,
+    "currency" : "currency",
+    "cycle_flag" : true,
+    "limit_used" : 2.027123023002322,
+    "currency_exp" : 1.2315135367772556
+  } ],
+  "status" : "status",
+  "date_from" : "2000-01-23",
+  "cnt_reissue" : 5.962133916683182
+}, {
+  "period" : "period",
+  "list_id" : "list_id",
+  "card_owner_phone" : "card_owner_phone",
+  "coupon_type_desc" : "coupon_type_desc",
+  "date_to" : "2000-01-23",
+  "product_name" : "product_name",
+  "coupon_status" : "coupon_status",
+  "group_merch_desc" : "group_merch_desc",
+  "qr_string" : "qr_string",
+  "card_num" : "card_num",
+  "group_merch_id" : 1.4658129805029452,
+  "days_before_reissue" : 5.637376656633329,
+  "nominal" : 0.8008281904610115,
+  "product_id" : 6.027456183070403,
+  "card_owner_l_name" : "card_owner_l_name",
+  "exp_date" : "2000-01-23",
+  "card_owner_f_name" : "card_owner_f_name",
+  "coupon_status_desc" : "coupon_status_desc",
+  "order_id" : 2.3021358869347655,
+  "coupon_type" : "coupon_type",
+  "limits" : [ {
+    "limit_type" : 7.061401241503109,
+    "limit_remains" : 3.616076749251911,
+    "trans_param_group" : 1.4894159098541704,
+    "limit_desc" : "limit_desc",
+    "limit_end_date" : "2000-01-23",
+    "cycle_type_desc" : "cycle_type_desc",
+    "limit_start_date" : "2000-01-23",
+    "currency_desc" : "currency_desc",
+    "cycle_type" : 4.145608029883936,
+    "cycle_leng" : 7.386281948385884,
+    "cycle_date" : "2000-01-23",
+    "is_exception" : 1.0246457001441578,
+    "limit_id" : "limit_id",
+    "limit_value" : 9.301444243932576,
+    "currency" : "currency",
+    "cycle_flag" : true,
+    "limit_used" : 2.027123023002322,
+    "currency_exp" : 1.2315135367772556
+  }, {
+    "limit_type" : 7.061401241503109,
+    "limit_remains" : 3.616076749251911,
+    "trans_param_group" : 1.4894159098541704,
+    "limit_desc" : "limit_desc",
+    "limit_end_date" : "2000-01-23",
+    "cycle_type_desc" : "cycle_type_desc",
+    "limit_start_date" : "2000-01-23",
+    "currency_desc" : "currency_desc",
+    "cycle_type" : 4.145608029883936,
+    "cycle_leng" : 7.386281948385884,
+    "cycle_date" : "2000-01-23",
+    "is_exception" : 1.0246457001441578,
+    "limit_id" : "limit_id",
+    "limit_value" : 9.301444243932576,
+    "currency" : "currency",
+    "cycle_flag" : true,
+    "limit_used" : 2.027123023002322,
+    "currency_exp" : 1.2315135367772556
+  } ],
+  "status" : "status",
+  "date_from" : "2000-01-23",
+  "cnt_reissue" : 5.962133916683182
+} ]</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#CardsData">CardsData</a>
+    <h4 class="field-label">400</h4>
+    Bad request
+        <a href="#ErrorObject">ErrorObject</a>
+    <h4 class="field-label">401</h4>
+    Unathorized
+        <a href="#Unauthorized">Unauthorized</a>
+    <h4 class="field-label">500</h4>
+    Internal server error
+        <a href="#ErrorObject">ErrorObject</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="contractsGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /contracts</code></pre></div>
+    <div class="method-summary">Receive Contarcts list by Client or Agent (<span class="nickname">contractsGet</span>)</div>
+    <div class="method-notes">This method return full hierarchy of objects, starts from Client level, but exclude list of coupons. If need load list of coupons, you must use method <code>&quot;GET /Cards&quot;</code> for each   <code>&quot;ContractID&quot;</code> separately.</div>
+
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">contract_status (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; staus of contracts to be selected </div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#ContractsData">ContractsData</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>[ "", "" ]</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#ContractsData">ContractsData</a>
+    <h4 class="field-label">400</h4>
+    Bad request
+        <a href="#ErrorObject">ErrorObject</a>
+    <h4 class="field-label">401</h4>
+    Unathorized
+        <a href="#Unauthorized">Unauthorized</a>
+    <h4 class="field-label">500</h4>
+    Internal server error
+        <a href="#ErrorObject">ErrorObject</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="v2CardsGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /v2/cards</code></pre></div>
+    <div class="method-summary">receives a list of all cards or coupons depending on contract type (<span class="nickname">v2CardsGet</span>)</div>
+    <div class="method-notes"><code>ATTENTION!</code> selector <strong>&quot;card_status&quot;</strong> can accepting value from <strong>&quot;CSHT&quot;</strong> dictionary - card status enum, or <strong>&quot;CPNS&quot;</strong> dictionary - coupon status enum, selector must contain value according to contract type.  Maximum return 1000 object per request</div>
+
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">contract_id (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; contract identifier </div>      <div class="param">card_status (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; card/coupon status according to metadata dictionary </div>      <div class="param">unassigned (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; if true - return only unassigned cards/coupons for any drivers </div>      <div class="param">card_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; card/coupon identifier </div>      <div class="param">nominal (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; nominal, applicable for coupons only </div>      <div class="param">coupon_type (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; type, applicable for coupons only, according to metadata dictionary </div>      <div class="param">date_from (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; start date of coupon activity, applicable for coupons only format: date</div>      <div class="param">date_to (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; end date of coupon activity, applicable for coupons only format: date</div>      <div class="param">size (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Quantity of rows to extract default: 20 format: int64</div>      <div class="param">offset (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Pagination offset (default 0) default: 0 format: int64</div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Cards">Cards</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "total" : 0,
+  "cards" : [ "", "" ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#Cards">Cards</a>
+    <h4 class="field-label">400</h4>
+    Bad request
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">500</h4>
+    Internal server error
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="v2ContractsGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /v2/contracts</code></pre></div>
+    <div class="method-summary">Receive Contarcts list by Client or Agent (<span class="nickname">v2ContractsGet</span>)</div>
+    <div class="method-notes">This method return full hierarchy of objects, starts from Client level, but exclude list of coupons. If need load list of coupons, you must use method <code>&quot;GET /Cards&quot;</code> for each   <code>&quot;ContractID&quot;</code> separately.</div>
+
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">contract_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; contract identifier </div>      <div class="param">contract_type (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; contract type </div>      <div class="param">contract_status (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; status of contracts to be selected </div>      <div class="param">date_from (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; from which to get contracts format: date</div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#ContractsData">ContractsData</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>[ "", "" ]</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#ContractsData">ContractsData</a>
+    <h4 class="field-label">400</h4>
+    Bad request
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">500</h4>
+    Internal server error
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="Additional">Additional</a></h1>
+  <div class="method"><a name="merchantsGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /merchants</code></pre></div>
+    <div class="method-summary">list of OKKO sites that can be providing OKKO on-line services, AKA Merchants (<span class="nickname">merchantsGet</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Merchants">Merchants</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>[ {
+  "merchant_sap_id" : "merchant_sap_id",
+  "merchant_name" : "merchant_name",
+  "merchant_id" : "merchant_id",
+  "merchant_address" : "merchant_address"
+}, {
+  "merchant_sap_id" : "merchant_sap_id",
+  "merchant_name" : "merchant_name",
+  "merchant_id" : "merchant_id",
+  "merchant_address" : "merchant_address"
+} ]</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#Merchants">Merchants</a>
+    <h4 class="field-label">400</h4>
+    Bad request
+        <a href="#ErrorObject">ErrorObject</a>
+    <h4 class="field-label">401</h4>
+    Unathorized
+        <a href="#Unauthorized">Unauthorized</a>
+    <h4 class="field-label">500</h4>
+    Internal server error
+        <a href="#ErrorObject">ErrorObject</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="metadataGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /metadata</code></pre></div>
+    <div class="method-summary">return metadata dictionary of OKKO on-line (<span class="nickname">metadataGet</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Metadata">Metadata</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>[ {
+  "KEY_DESC" : "KEY_DESC",
+  "VALUE" : "VALUE",
+  "LANG" : 0.8008281904610115,
+  "KEY" : "KEY",
+  "VALUE_DESC" : "VALUE_DESC"
+}, {
+  "KEY_DESC" : "KEY_DESC",
+  "VALUE" : "VALUE",
+  "LANG" : 0.8008281904610115,
+  "KEY" : "KEY",
+  "VALUE_DESC" : "VALUE_DESC"
+} ]</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#Metadata">Metadata</a>
+    <h4 class="field-label">400</h4>
+    Bad request
+        <a href="#ErrorObject">ErrorObject</a>
+    <h4 class="field-label">401</h4>
+    Unathorized
+        <a href="#Unauthorized">Unauthorized</a>
+    <h4 class="field-label">500</h4>
+    Internal server error
+        <a href="#ErrorObject">ErrorObject</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="v2MerchantsGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /v2/merchants</code></pre></div>
+    <div class="method-summary">list of OKKO sites that can be providing OKKO on-line services, AKA Merchants (<span class="nickname">v2MerchantsGet</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Merchants">Merchants</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>[ {
+  "merchant_sap_id" : "merchant_sap_id",
+  "merchant_name" : "merchant_name",
+  "merchant_id" : "merchant_id",
+  "merchant_address" : "merchant_address"
+}, {
+  "merchant_sap_id" : "merchant_sap_id",
+  "merchant_name" : "merchant_name",
+  "merchant_id" : "merchant_id",
+  "merchant_address" : "merchant_address"
+} ]</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#Merchants">Merchants</a>
+    <h4 class="field-label">400</h4>
+    Bad request
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">500</h4>
+    Internal server error
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="v2MetadataGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /v2/metadata</code></pre></div>
+    <div class="method-summary">return metadata dictionary of OKKO on-line (<span class="nickname">v2MetadataGet</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Metadata">Metadata</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>[ {
+  "KEY_DESC" : "KEY_DESC",
+  "VALUE" : "VALUE",
+  "LANG" : 0.8008281904610115,
+  "KEY" : "KEY",
+  "VALUE_DESC" : "VALUE_DESC"
+}, {
+  "KEY_DESC" : "KEY_DESC",
+  "VALUE" : "VALUE",
+  "LANG" : 0.8008281904610115,
+  "KEY" : "KEY",
+  "VALUE_DESC" : "VALUE_DESC"
+} ]</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#Metadata">Metadata</a>
+    <h4 class="field-label">400</h4>
+    Bad request
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">500</h4>
+    Internal server error
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="Authentification">Authentification</a></h1>
+  <div class="method"><a name="loginPost"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /login</code></pre></div>
+    <div class="method-summary">User authentification (<span class="nickname">loginPost</span>)</div>
+    <div class="method-notes"></div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">body <a href="#LoginRequestObject">LoginRequestObject</a> (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash; request body contain login and password </div>
+                </div>  <!-- field-items -->
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#LoginResponseObject">LoginResponseObject</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "access_token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+  "refresh_token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    authorization success
+        <a href="#LoginResponseObject">LoginResponseObject</a>
+    <h4 class="field-label">400</h4>
+    Bad request
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">500</h4>
+    Internal server error
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="logoutPost"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /logout</code></pre></div>
+    <div class="method-summary">Logout current user (<span class="nickname">logoutPost</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#"></a>
+    <h4 class="field-label">400</h4>
+    Bad request
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">500</h4>
+    Internal server error
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="refreshTokenPost"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /refresh_token</code></pre></div>
+    <div class="method-summary">Refresh access token (<span class="nickname">refreshTokenPost</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#RefreshTokenResponseObject">RefreshTokenResponseObject</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "access_token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+  "refresh_token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    token refreshed
+        <a href="#RefreshTokenResponseObject">RefreshTokenResponseObject</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">500</h4>
+    Internal server error
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="Statements">Statements</a></h1>
+  <div class="method"><a name="ordersGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /orders</code></pre></div>
+    <div class="method-summary">receive list of Orders (<span class="nickname">ordersGet</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">contract_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Client identifier selector </div>      <div class="param">order_status (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; staus of Orders to be selected </div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#OrdersData">OrdersData</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>[ {
+  "period" : "period",
+  "quantity" : 1.4658129805029452,
+  "disc_type1" : "disc_type1",
+  "disc_rate1" : 5.962133916683182,
+  "issued_volume" : 2.027123023002322,
+  "order_nominal" : 6.027456183070403,
+  "disc_type2" : "disc_type2",
+  "disc_rate2" : 2.3021358869347655,
+  "date_to" : "2000-01-23",
+  "disc_amnt1" : 5.637376656633329,
+  "disc_amnt2" : 7.061401241503109,
+  "volume" : 0.8008281904610115,
+  "order_status" : "order_status",
+  "amnt_number" : 3.616076749251911,
+  "price" : 9.301444243932576,
+  "product_order" : "product_order",
+  "order_id" : "order_id",
+  "date_from" : "2000-01-23"
+}, {
+  "period" : "period",
+  "quantity" : 1.4658129805029452,
+  "disc_type1" : "disc_type1",
+  "disc_rate1" : 5.962133916683182,
+  "issued_volume" : 2.027123023002322,
+  "order_nominal" : 6.027456183070403,
+  "disc_type2" : "disc_type2",
+  "disc_rate2" : 2.3021358869347655,
+  "date_to" : "2000-01-23",
+  "disc_amnt1" : 5.637376656633329,
+  "disc_amnt2" : 7.061401241503109,
+  "volume" : 0.8008281904610115,
+  "order_status" : "order_status",
+  "amnt_number" : 3.616076749251911,
+  "price" : 9.301444243932576,
+  "product_order" : "product_order",
+  "order_id" : "order_id",
+  "date_from" : "2000-01-23"
+} ]</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#OrdersData">OrdersData</a>
+    <h4 class="field-label">400</h4>
+    Bad request
+        <a href="#ErrorObject">ErrorObject</a>
+    <h4 class="field-label">401</h4>
+    Unathorized
+        <a href="#Unauthorized">Unauthorized</a>
+    <h4 class="field-label">500</h4>
+    Internal server error
+        <a href="#ErrorObject">ErrorObject</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="v2OrdersGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /v2/orders</code></pre></div>
+    <div class="method-summary">receive list of orders (<span class="nickname">v2OrdersGet</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">order_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; order id </div>      <div class="param">contract_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; client identifier selector </div>      <div class="param">order_status (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; status of Orders to be selected, accepts value from INVS &amp;amp; BTST dictionary </div>      <div class="param">date_from (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; timespan for returned collection, start format: date</div>      <div class="param">date_to (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; end date of coupon activity, applicable for coupons only format: date</div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Orders">Orders</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>[ {
+  "order_status" : "order_status",
+  "contract_id" : "contract_id",
+  "payments" : [ {
+    "date" : "2000-01-23T04:56:07.000+00:00",
+    "amount" : 6.027456183070403,
+    "equirer" : "equirer",
+    "pos" : "pos",
+    "payment_id" : "payment_id",
+    "currency_code" : "currency_code",
+    "rrn" : "rrn"
+  }, {
+    "date" : "2000-01-23T04:56:07.000+00:00",
+    "amount" : 6.027456183070403,
+    "equirer" : "equirer",
+    "pos" : "pos",
+    "payment_id" : "payment_id",
+    "currency_code" : "currency_code",
+    "rrn" : "rrn"
+  } ],
+  "created_at" : "2000-01-23T04:56:07.000+00:00",
+  "date_to" : "2000-01-23",
+  "order_id" : "order_id",
+  "order_type" : "order_type",
+  "ttl" : 0.8008281904610115,
+  "date_from" : "2000-01-23",
+  "order_items" : [ "", "" ]
+}, {
+  "order_status" : "order_status",
+  "contract_id" : "contract_id",
+  "payments" : [ {
+    "date" : "2000-01-23T04:56:07.000+00:00",
+    "amount" : 6.027456183070403,
+    "equirer" : "equirer",
+    "pos" : "pos",
+    "payment_id" : "payment_id",
+    "currency_code" : "currency_code",
+    "rrn" : "rrn"
+  }, {
+    "date" : "2000-01-23T04:56:07.000+00:00",
+    "amount" : 6.027456183070403,
+    "equirer" : "equirer",
+    "pos" : "pos",
+    "payment_id" : "payment_id",
+    "currency_code" : "currency_code",
+    "rrn" : "rrn"
+  } ],
+  "created_at" : "2000-01-23T04:56:07.000+00:00",
+  "date_to" : "2000-01-23",
+  "order_id" : "order_id",
+  "order_type" : "order_type",
+  "ttl" : 0.8008281904610115,
+  "date_from" : "2000-01-23",
+  "order_items" : [ "", "" ]
+} ]</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#Orders">Orders</a>
+    <h4 class="field-label">400</h4>
+    Bad request
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">500</h4>
+    Internal server error
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="Transactions">Transactions</a></h1>
+  <div class="method"><a name="busketContentGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /busket_content</code></pre></div>
+    <div class="method-summary">receive content of goods busket (<span class="nickname">busketContentGet</span>)</div>
+    <div class="method-notes">This method return content basket of goods thats purchasing at specified transaction. If transaction contain basket of goods - attribute <code>BusketOfGoods</code> is <code>true</code></div>
+
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">trans_id (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; transaction identifier </div>      <div class="param">reversal (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; reversal flag </div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#BusketData">BusketData</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>[ {
+  "product_desc" : "product_desc",
+  "quantitity" : 0.8008281904610115,
+  "price" : 6.027456183070403,
+  "product_id" : "product_id"
+}, {
+  "product_desc" : "product_desc",
+  "quantitity" : 0.8008281904610115,
+  "price" : 6.027456183070403,
+  "product_id" : "product_id"
+} ]</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#BusketData">BusketData</a>
+    <h4 class="field-label">400</h4>
+    Bad request
+        <a href="#ErrorObject">ErrorObject</a>
+    <h4 class="field-label">401</h4>
+    Unathorized
+        <a href="#Unauthorized">Unauthorized</a>
+    <h4 class="field-label">500</h4>
+    Internal server error
+        <a href="#ErrorObject">ErrorObject</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="transactionsGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /transactions</code></pre></div>
+    <div class="method-summary">receive transaction register (<span class="nickname">transactionsGet</span>)</div>
+    <div class="method-notes">maximum select transactions per 31 days</div>
+
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">date_from (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; from that date transactions to be selected (yyyy-mm-dd) format: date</div>      <div class="param">date_to (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; to that date transactions to be selected (yyyy-mm-dd) format: date</div>      <div class="param">transaction_type (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; transaction type selector </div>      <div class="param">contract_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; contract saelector </div>      <div class="param">processed_in_bo (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; &#x27;Selector specified what states of transaction to be included. true: transactions from SVBO false: transactions from SVBO and SVFE (processed online, but not processed in SVBO yet)&#x27; </div>      <div class="param">card_num (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Card selector if needed </div>      <div class="param">offset (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; offset from head of selected dataset (default 0) </div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Transactions">Transactions</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "total" : 0.8008281904610115,
+  "transactions" : [ {
+    "trans_date" : "2000-01-23T04:56:07.000+00:00",
+    "amount_discount" : 2,
+    "contract_id" : "contract_id",
+    "trans_id" : "trans_id",
+    "available_balance" : 7.061401241503109,
+    "client_id" : "client_id",
+    "card_num" : "card_num",
+    "addr_name" : "addr_name",
+    "product_desc" : "product_desc",
+    "acurr_acct" : "acurr_acct",
+    "org_device" : 1.4658129805029452,
+    "amnt_acct" : 5,
+    "price" : 2.027123023002322,
+    "product_id" : "product_id",
+    "client_name" : "client_name",
+    "trans_type" : 5.962133916683182,
+    "basket_of_goods" : true,
+    "amnt_trans" : 6.027456183070403,
+    "azs_name" : "azs_name",
+    "acurr_trans" : "acurr_trans",
+    "contract_name" : "contract_name",
+    "processed_in_bo" : 9.301444243932576,
+    "account_frame" : "account_frame",
+    "volume" : 3.616076749251911,
+    "reversal" : true
+  }, {
+    "trans_date" : "2000-01-23T04:56:07.000+00:00",
+    "amount_discount" : 2,
+    "contract_id" : "contract_id",
+    "trans_id" : "trans_id",
+    "available_balance" : 7.061401241503109,
+    "client_id" : "client_id",
+    "card_num" : "card_num",
+    "addr_name" : "addr_name",
+    "product_desc" : "product_desc",
+    "acurr_acct" : "acurr_acct",
+    "org_device" : 1.4658129805029452,
+    "amnt_acct" : 5,
+    "price" : 2.027123023002322,
+    "product_id" : "product_id",
+    "client_name" : "client_name",
+    "trans_type" : 5.962133916683182,
+    "basket_of_goods" : true,
+    "amnt_trans" : 6.027456183070403,
+    "azs_name" : "azs_name",
+    "acurr_trans" : "acurr_trans",
+    "contract_name" : "contract_name",
+    "processed_in_bo" : 9.301444243932576,
+    "account_frame" : "account_frame",
+    "volume" : 3.616076749251911,
+    "reversal" : true
+  } ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#Transactions">Transactions</a>
+    <h4 class="field-label">400</h4>
+    Bad request
+        <a href="#ErrorObject">ErrorObject</a>
+    <h4 class="field-label">401</h4>
+    Unathorized
+        <a href="#Unauthorized">Unauthorized</a>
+    <h4 class="field-label">500</h4>
+    Internal server error
+        <a href="#ErrorObject">ErrorObject</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="v2BasketGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /v2/basket</code></pre></div>
+    <div class="method-summary">receive content of goods basket (<span class="nickname">v2BasketGet</span>)</div>
+    <div class="method-notes">This method return content basket of goods thats purchasing at specified transaction. If transaction contain basket of goods - attribute <code>BusketOfGoods</code> is <code>true</code></div>
+
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">trans_id (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; transaction identifier </div>      <div class="param">reversal (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; reversal flag </div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Busket">Busket</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>[ {
+  "quantitity" : 0.8008281904610115,
+  "price" : 6.027456183070403,
+  "product_id" : "product_id",
+  "product_name" : "product_name"
+}, {
+  "quantitity" : 0.8008281904610115,
+  "price" : 6.027456183070403,
+  "product_id" : "product_id",
+  "product_name" : "product_name"
+} ]</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#Busket">Busket</a>
+    <h4 class="field-label">400</h4>
+    Bad request
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">500</h4>
+    Internal server error
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="v2TransactionsGet"></a>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /v2/transactions</code></pre></div>
+    <div class="method-summary">Receives a list of all transactions (<span class="nickname">v2TransactionsGet</span>)</div>
+    <div class="method-notes">maximum select transactions per 31 days</div>
+
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">product_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; id of product, SAP identifier of product, empty fo non-fuel goods </div>      <div class="param">date_from (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; from that date transactions to be selected format: date</div>      <div class="param">date_to (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; to that date transactions to be selected format: date</div>      <div class="param">transaction_type (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; transaction type selector </div>      <div class="param">contract_id (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; contract saelector </div>      <div class="param">processed_in_bo (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; &#x27;Selector specified what states of transaction to be included. true: transactions from SVBO false: transactions from SVBO and SVFE (processed online, but not processed in SVBO yet)&#x27; </div>      <div class="param">card_num (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Card selector if needed </div>      <div class="param">early_first (optional)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; sorting by date flag, if true - early transactions show first </div>      <div class="param">size (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Quantity of rows to extract (default 20) default: 20 format: int64</div>      <div class="param">offset (required)</div>
+      
+            <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Pagination offset (default 0) default: 0 format: int64</div>    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Transactions">Transactions</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "total" : 0.8008281904610115,
+  "transactions" : [ {
+    "trans_date" : "2000-01-23T04:56:07.000+00:00",
+    "amount_discount" : 2,
+    "contract_id" : "contract_id",
+    "trans_id" : "trans_id",
+    "available_balance" : 7.061401241503109,
+    "client_id" : "client_id",
+    "card_num" : "card_num",
+    "addr_name" : "addr_name",
+    "product_desc" : "product_desc",
+    "acurr_acct" : "acurr_acct",
+    "org_device" : 1.4658129805029452,
+    "amnt_acct" : 5,
+    "price" : 2.027123023002322,
+    "product_id" : "product_id",
+    "client_name" : "client_name",
+    "trans_type" : 5.962133916683182,
+    "basket_of_goods" : true,
+    "amnt_trans" : 6.027456183070403,
+    "azs_name" : "azs_name",
+    "acurr_trans" : "acurr_trans",
+    "contract_name" : "contract_name",
+    "processed_in_bo" : 9.301444243932576,
+    "account_frame" : "account_frame",
+    "volume" : 3.616076749251911,
+    "reversal" : true
+  }, {
+    "trans_date" : "2000-01-23T04:56:07.000+00:00",
+    "amount_discount" : 2,
+    "contract_id" : "contract_id",
+    "trans_id" : "trans_id",
+    "available_balance" : 7.061401241503109,
+    "client_id" : "client_id",
+    "card_num" : "card_num",
+    "addr_name" : "addr_name",
+    "product_desc" : "product_desc",
+    "acurr_acct" : "acurr_acct",
+    "org_device" : 1.4658129805029452,
+    "amnt_acct" : 5,
+    "price" : 2.027123023002322,
+    "product_id" : "product_id",
+    "client_name" : "client_name",
+    "trans_type" : 5.962133916683182,
+    "basket_of_goods" : true,
+    "amnt_trans" : 6.027456183070403,
+    "azs_name" : "azs_name",
+    "acurr_trans" : "acurr_trans",
+    "contract_name" : "contract_name",
+    "processed_in_bo" : 9.301444243932576,
+    "account_frame" : "account_frame",
+    "volume" : 3.616076749251911,
+    "reversal" : true
+  } ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#Transactions">Transactions</a>
+    <h4 class="field-label">400</h4>
+    Bad request
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">500</h4>
+    Internal server error
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+
+  <h2><a name="__Models">Models</a></h2>
+  [ Jump to <a href="#__Methods">Methods</a> ]
+
+  <h3>Table of Contents</h3>
+  <ol>
+    <li><a href="#AccessTokenObject"><code>AccessTokenObject</code></a></li>
+    <li><a href="#Busket"><code>Busket</code></a></li>
+    <li><a href="#BusketData"><code>BusketData</code></a></li>
+    <li><a href="#BusketData_inner"><code>BusketData_inner</code></a></li>
+    <li><a href="#Busket_inner"><code>Busket_inner</code></a></li>
+    <li><a href="#Card"><code>Card</code></a></li>
+    <li><a href="#Cards"><code>Cards</code></a></li>
+    <li><a href="#CardsData"><code>CardsData</code></a></li>
+    <li><a href="#CardsData_inner"><code>CardsData_inner</code></a></li>
+    <li><a href="#ContractAdditional"><code>ContractAdditional</code></a></li>
+    <li><a href="#ContractDetails"><code>ContractDetails</code></a></li>
+    <li><a href="#ContractDiscount"><code>ContractDiscount</code></a></li>
+    <li><a href="#ContractDiscount_discount_details"><code>ContractDiscount_discount_details</code></a></li>
+    <li><a href="#ContractDiscounts"><code>ContractDiscounts</code></a></li>
+    <li><a href="#ContractGeneric"><code>ContractGeneric</code></a></li>
+    <li><a href="#ContractsData"><code>ContractsData</code></a></li>
+    <li><a href="#Discount"><code>Discount</code></a></li>
+    <li><a href="#Discounts"><code>Discounts</code></a></li>
+    <li><a href="#Error"><code>Error</code></a></li>
+    <li><a href="#ErrorObject"><code>ErrorObject</code></a></li>
+    <li><a href="#Limits"><code>Limits</code></a></li>
+    <li><a href="#Limits_inner"><code>Limits_inner</code></a></li>
+    <li><a href="#LoginRequestObject"><code>LoginRequestObject</code></a></li>
+    <li><a href="#LoginResponseObject"><code>LoginResponseObject</code></a></li>
+    <li><a href="#Merchants"><code>Merchants</code></a></li>
+    <li><a href="#Merchants_inner"><code>Merchants_inner</code></a></li>
+    <li><a href="#Metadata"><code>Metadata</code></a></li>
+    <li><a href="#Metadata_inner"><code>Metadata_inner</code></a></li>
+    <li><a href="#Order"><code>Order</code></a></li>
+    <li><a href="#Orders"><code>Orders</code></a></li>
+    <li><a href="#OrdersData"><code>OrdersData</code></a></li>
+    <li><a href="#OrdersData_inner"><code>OrdersData_inner</code></a></li>
+    <li><a href="#Payment"><code>Payment</code></a></li>
+    <li><a href="#Preorder"><code>Preorder</code></a></li>
+    <li><a href="#RefreshTokenObject"><code>RefreshTokenObject</code></a></li>
+    <li><a href="#RefreshTokenResponseObject"><code>RefreshTokenResponseObject</code></a></li>
+    <li><a href="#Transaction"><code>Transaction</code></a></li>
+    <li><a href="#Transactions"><code>Transactions</code></a></li>
+    <li><a href="#TransactionsData"><code>TransactionsData</code></a></li>
+    <li><a href="#TransactionsData_inner"><code>TransactionsData_inner</code></a></li>
+    <li><a href="#Unauthorized"><code>Unauthorized</code></a></li>
+    <li><a href="#cardId"><code>cardId</code></a></li>
+    <li><a href="#cardOwner"><code>cardOwner</code></a></li>
+  </ol>
+
+  <div class="model">
+    <h3><a name="AccessTokenObject"><code>AccessTokenObject</code></a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Acess JSON Web Token. Represent as base64 encoded and signed string.</div>
+    <div class="field-items">
+          </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Busket"><code>Busket</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+          </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="BusketData"><code>BusketData</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+          </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="BusketData_inner"><code>BusketData_inner</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">quantitity (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> Quantitity of goods format: int32</div>
+<div class="param">price (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> Price in minor currency unit format: int64</div>
+<div class="param">product_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> SAP identifier of product </div>
+<div class="param">product_desc (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Name of good (e.g. «Кава») </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Busket_inner"><code>Busket_inner</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">quantitity (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> Quantitity of goods format: int32</div>
+<div class="param">price (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> Price in minor currency unit format: int64</div>
+<div class="param">product_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> SAP identifier of product </div>
+<div class="param">product_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Name of good (e.g. «Кава») </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Card"><code>Card</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">card_status (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> card status in SVFE </div>
+<div class="param">exp_date (optional)</div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span> Expiry date format: date</div>
+<div class="param">coupon_type (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> coupon type, applicable to coupons </div>
+<div class="param">nominal (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> nominal value, applicable to coupons </div>
+<div class="param">product_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> fuel type identifier, applicable to coupons </div>
+<div class="param">product_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> fuel name, applicable to coupons </div>
+<div class="param">period (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> period of coupon validity, applicable to coupons, described as string by template /[DM][1-3][0-9]/ , where D- days, M-month, and one or two digits as period length </div>
+          <div class="param-desc"><span class="param-type">example: D30</span></div>
+<div class="param">group_merch_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> identifier of Fuel Stations group, where coupon can be used, applicable to coupons </div>
+<div class="param">group_merch_desc (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> description of Fuel Stations group </div>
+<div class="param">date_from (optional)</div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span> issuing date of coupon, applicable to coupons format: date</div>
+<div class="param">date_to (optional)</div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span> coupon valid to, applicable to coupons format: date</div>
+<div class="param">cnt_reissue (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> number of reiisuing coupon, applicable to coupons </div>
+<div class="param">days_before_reissue (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> number of days, where coupon can be reissued after expary, applicable to coupons </div>
+<div class="param">qr_string (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> QR code applicable for coupons </div>
+<div class="param">order_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> oreder identifier, applicable to coupons </div>
+<div class="param">limits (optional)</div><div class="param-desc"><span class="param-type"><a href="#Limits">Limits</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Cards"><code>Cards</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">total (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span>  </div>
+<div class="param">cards (optional)</div><div class="param-desc"><span class="param-type"><a href="#">array[null]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="CardsData"><code>CardsData</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+          </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="CardsData_inner"><code>CardsData_inner</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">card_num </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Primary Account Number, AKA Card number </div>
+<div class="param">status </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> card status </div>
+<div class="param">exp_date (optional)</div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span> Expiry date format: date</div>
+<div class="param">card_owner_f_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> card owner first name </div>
+<div class="param">card_owner_l_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> card owner last name </div>
+<div class="param">card_owner_phone (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> card owner phone number </div>
+<div class="param">coupon_type (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> coupon type, applicable to coupons </div>
+<div class="param">coupon_status (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> coupon status, applicable to coupons </div>
+<div class="param">coupon_type_desc (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> coupon type description, applicable to coupons </div>
+<div class="param">coupon_status_desc (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> coupon status description, applicable to coupons </div>
+<div class="param">nominal (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> nominal value, applicable to coupons </div>
+<div class="param">product_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> fuel type identifier, applicable to coupons </div>
+<div class="param">product_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> fuel name, applicable to coupons </div>
+<div class="param">list_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> tipografic sheet identifier, applicable to coupons </div>
+<div class="param">period (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> period of coupon validity, applicable to coupons </div>
+<div class="param">group_merch_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> identifier of Fuel Stations group, where coupon can be used, applicable to coupons </div>
+<div class="param">group_merch_desc (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> description of Fuel Stations group </div>
+<div class="param">date_from (optional)</div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span> issuing date of coupon, applicable to coupons format: date</div>
+<div class="param">date_to (optional)</div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span> coupon valid to, applicable to coupons format: date</div>
+<div class="param">cnt_reissue (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> number of reiisuing coupon, applicable to coupons </div>
+<div class="param">days_before_reissue (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> number of days, where coupon can be reissued after expary, applicable to coupons </div>
+<div class="param">order_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> oreder identifier, applicable to coupons </div>
+<div class="param">qr_string (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> string for generate QR code of that coupon, aplicable for coupons only </div>
+<div class="param">limits (optional)</div><div class="param-desc"><span class="param-type"><a href="#Limits">Limits</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ContractAdditional"><code>ContractAdditional</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">overdraft_limit (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> overdraft limit format: int64</div>
+<div class="param">overdraft (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> overdraft remains format: int64</div>
+<div class="param">discounts (optional)</div><div class="param-desc"><span class="param-type"><a href="#ContractDiscounts">ContractDiscounts</a></span>  </div>
+<div class="param">issues_suspended_objects </div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> shows in which status are issued objects. </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ContractDetails"><code>ContractDetails</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">contract_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Contract identifier </div>
+          <div class="param-desc"><span class="param-type">example: 1234000056</span></div>
+<div class="param">frame_contract_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Parent contract identifier </div>
+          <div class="param-desc"><span class="param-type">example: 1234000056</span></div>
+<div class="param">contract_name </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> legal identifier of contract </div>
+<div class="param">client_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> client identifier, AKA debitor number </div>
+          <div class="param-desc"><span class="param-type">example: 1200055485</span></div>
+<div class="param">contract_type </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> type of contract </div>
+          <div class="param-desc"><span class="param-type">example: ZW19</span></div>
+<div class="param">contract_type_description (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> type of contract description </div>
+          <div class="param-desc"><span class="param-type">example: Договір на голограмні талони</span></div>
+<div class="param">contract_status </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: ACST1</span></div>
+<div class="param">wallet_enable (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> flag that enable using contract entities within e-commerce transaction </div>
+<div class="param">date_from </div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span> signing date format: date</div>
+<div class="param">date_to (optional)</div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span> contract valid to format: date</div>
+<div class="param">contract_currency </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> currency of account (contract) </div>
+<div class="param">balance </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> current balance of contract format: int64</div>
+<div class="param">fuel (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> fuel product id according dictionary </div>
+<div class="param">fuel_balance (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> available fuel volume by contract&amp;quot; </div>
+<div class="param">limits (optional)</div><div class="param-desc"><span class="param-type"><a href="#Limits">Limits</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ContractDiscount"><code>ContractDiscount</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">discount_schema_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">discount_schema_description (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">discount_details (optional)</div><div class="param-desc"><span class="param-type"><a href="#ContractDiscount_discount_details">array[ContractDiscount_discount_details]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ContractDiscount_discount_details"><code>ContractDiscount_discount_details</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">discount_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">discount_description (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ContractDiscounts"><code>ContractDiscounts</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+          </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ContractGeneric"><code>ContractGeneric</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">contract_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Contract identifier </div>
+          <div class="param-desc"><span class="param-type">example: 1234000056</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ContractsData"><code>ContractsData</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+          </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Discount"><code>Discount</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">discount_type (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> discount type identifier accordig metadata dictionary </div>
+<div class="param">type_description (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> title for discount type </div>
+<div class="param">rate (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> discount rate </div>
+<div class="param">amount (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> discount amount </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Discounts"><code>Discounts</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+          </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Error"><code>Error</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">code </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> code of the error </div>
+<div class="param">message </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> short status message </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ErrorObject"><code>ErrorObject</code></a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Bad request</div>
+    <div class="field-items">
+      <div class="param">error_code </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 7777</span></div>
+<div class="param">error_message </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: Something going wrong</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Limits"><code>Limits</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+          </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Limits_inner"><code>Limits_inner</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">limit_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> limit identifier </div>
+<div class="param">limit_type </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> type of limit </div>
+<div class="param">limit_desc (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> description of limit </div>
+<div class="param">limit_value </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> value of limit </div>
+<div class="param">limit_remains </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> remains of Limit can be used </div>
+<div class="param">limit_used </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> used volume of limit </div>
+<div class="param">cycle_type (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> type of limit cycle </div>
+<div class="param">cycle_type_desc (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> description of limit cycle </div>
+<div class="param">cycle_leng (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> cycle length </div>
+<div class="param">cycle_date (optional)</div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span> cycle end date format: date</div>
+<div class="param">limit_start_date (optional)</div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span> date of beginning limit validity format: date</div>
+<div class="param">limit_end_date (optional)</div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span> date of ending limit validity format: date</div>
+<div class="param">currency (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> limit currency </div>
+<div class="param">currency_desc (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> limit currency description </div>
+<div class="param">currency_exp (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> Currency exponent </div>
+<div class="param">is_exception (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> limit exeption </div>
+<div class="param">trans_param_group </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> transaction parameters group identifier </div>
+<div class="param">cycle_flag (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> flag indicates the Limit is cyclic </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="LoginRequestObject"><code>LoginRequestObject</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">login </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: bigboss</span></div>
+<div class="param">password </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          <div class="param-desc"><span class="param-type">example: 999</span></div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="LoginResponseObject"><code>LoginResponseObject</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">refresh_token (optional)</div><div class="param-desc"><span class="param-type"><a href="#RefreshTokenObject">RefreshTokenObject</a></span>  </div>
+<div class="param">access_token (optional)</div><div class="param-desc"><span class="param-type"><a href="#AccessTokenObject">AccessTokenObject</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Merchants"><code>Merchants</code></a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>list of OKKO sites that can be providing OKKO on-line services, AKA Merchants</div>
+    <div class="field-items">
+          </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Merchants_inner"><code>Merchants_inner</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">merchant_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">merchant_sap_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">merchant_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">merchant_address (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Metadata"><code>Metadata</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+          </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Metadata_inner"><code>Metadata_inner</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">KEY (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> name of key </div>
+<div class="param">KEY_DESC (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> system key description </div>
+<div class="param">VALUE (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> value of key </div>
+<div class="param">VALUE_DESC (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> localised description </div>
+<div class="param">LANG (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> description locale </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Order"><code>Order</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">order_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> order identifier </div>
+<div class="param">contract_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> contract identifier </div>
+<div class="param">order_type </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> kind of order type - liters or coupons </div>
+<div class="param">created_at (optional)</div><div class="param-desc"><span class="param-type"><a href="#DateTime">Date</a></span> creation date and time format: date-time</div>
+<div class="param">ttl (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> order expiration in milliseconds format: int64</div>
+<div class="param">date_from (optional)</div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span> Order valid for payment from date format: date</div>
+<div class="param">date_to (optional)</div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span> Order valid for payment to that date format: date</div>
+<div class="param">order_status (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> bill status </div>
+<div class="param">order_items (optional)</div><div class="param-desc"><span class="param-type"><a href="#">array[null]</a></span>  </div>
+<div class="param">payments (optional)</div><div class="param-desc"><span class="param-type"><a href="#Payment">array[Payment]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Orders"><code>Orders</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+          </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="OrdersData"><code>OrdersData</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+          </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="OrdersData_inner"><code>OrdersData_inner</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">order_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> order identifier </div>
+<div class="param">date_from (optional)</div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span> Order valid for payment from date format: date</div>
+<div class="param">date_to (optional)</div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span> Order valid for payment to that date format: date</div>
+<div class="param">order_status </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> bill status </div>
+<div class="param">product_order (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> fuel product identifier </div>
+<div class="param">volume (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> Quantity of goods - liters in minimal units format: int64</div>
+<div class="param">order_nominal (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> nominal of coupons ordered format: int64</div>
+<div class="param">quantity (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> quantity of coupons ordered format: int64</div>
+<div class="param">disc_type1 (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Discount type 1 - DATP </div>
+<div class="param">disc_rate1 (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> Discount rate 1 format: integer</div>
+<div class="param">disc_amnt1 (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> Discount amount 1 format: integer</div>
+<div class="param">disc_type2 (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Discount type 2 - DATP </div>
+<div class="param">disc_rate2 (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> Discount rate 2 format: integer</div>
+<div class="param">disc_amnt2 (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> Discount amount 2 format: integer</div>
+<div class="param">price (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> fuel price in that bill format: int64</div>
+<div class="param">amnt_number (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> Amount without discount format: int64</div>
+<div class="param">period (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> period identifier of ordered coupons </div>
+<div class="param">issued_volume (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> total fuel volume of coupons issued format: int64</div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Payment"><code>Payment</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">payment_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> internal payment identifier </div>
+<div class="param">currency_code (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> currencey identifier </div>
+<div class="param">rrn (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">amount (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> general sum of payment format: int64</div>
+<div class="param">date (optional)</div><div class="param-desc"><span class="param-type"><a href="#DateTime">Date</a></span> date of payment format: date-time</div>
+<div class="param">equirer (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> equirer of payment </div>
+<div class="param">pos (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> pos terminal code </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Preorder"><code>Preorder</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">product_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> fuel product identifier </div>
+<div class="param">volume </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> Quantity of goods - liters in minimal units format: int64</div>
+<div class="param">nominal (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> nominal of coupons ordered format: int64</div>
+<div class="param">quantity (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> quantity of coupons ordered format: int64</div>
+<div class="param">price </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> fuel price in that bill format: int64</div>
+<div class="param">amnt_number </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> Amount without discount format: int64</div>
+<div class="param">period </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> period identifier of ordered coupons, described as string by template /[DM][1-3][0-9]/ , where D- days, M-month, and one or two digits as period length </div>
+<div class="param">issued_volume (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> total fuel volume of coupons issued format: int64</div>
+<div class="param">discounts (optional)</div><div class="param-desc"><span class="param-type"><a href="#Discounts">Discounts</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="RefreshTokenObject"><code>RefreshTokenObject</code></a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Refresh JSON Web Token. Represent as base64 encoded and signed string.</div>
+    <div class="field-items">
+          </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="RefreshTokenResponseObject"><code>RefreshTokenResponseObject</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">refresh_token </div><div class="param-desc"><span class="param-type"><a href="#RefreshTokenObject">RefreshTokenObject</a></span>  </div>
+<div class="param">access_token </div><div class="param-desc"><span class="param-type"><a href="#AccessTokenObject">AccessTokenObject</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Transaction"><code>Transaction</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">trans_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> transaction identifier, AKA &amp;quot;Utrnno&amp;quot; </div>
+<div class="param">amnt_trans </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> amount in transaction currency </div>
+<div class="param">card_num </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> card identifier </div>
+<div class="param">trans_date </div><div class="param-desc"><span class="param-type"><a href="#DateTime">Date</a></span> trn date and time format: date-time</div>
+<div class="param">contract_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> account (contract) identifier </div>
+<div class="param">contract_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> legal contract name </div>
+<div class="param">account_frame (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> identifier of master Agreeement </div>
+<div class="param">acurr_acct </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> identifier of account currency </div>
+<div class="param">acurr_trans </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> identifier of trn currency </div>
+<div class="param">org_device (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> identifier of originator device </div>
+<div class="param">trans_type </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> trn type </div>
+<div class="param">client_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Identifier of client (up to 32 bytes) </div>
+<div class="param">client_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">reversal </div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> flag indicates the trn is Reversal </div>
+<div class="param">amnt_acct </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> amount in acount (contract) currency </div>
+<div class="param">amount_discount </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> amount of discount at trn </div>
+<div class="param">azs_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Gas Sation identifier </div>
+<div class="param">addr_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Gas Station address </div>
+<div class="param">available_balance (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> avialable balance before trn format: int64</div>
+<div class="param">processed_in_bo </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> flag, indicates state of transaction. true: transaction from SVBO, false: transactions from  SVFE (processed online, but not processed in SVBO yet) </div>
+<div class="param">volume </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> Volume of fuel in minor units(milliliters) *this field will be empty non-fuel operation format: int64</div>
+<div class="param">price (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> Price per litter in minimal currency units(kopiyky), *this field will be empty non-fuel operation format: int32</div>
+<div class="param">product_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> SAP identifier of product, *this field will be empty non-fuel operation </div>
+<div class="param">product_desc (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Description of fuel (e.g. Рђ-98),*this field will be empty non-fuel operation </div>
+<div class="param">basket_of_goods (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> indicates transaction contains non-fuel goods </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Transactions"><code>Transactions</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">total (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span>  </div>
+<div class="param">transactions (optional)</div><div class="param-desc"><span class="param-type"><a href="#Transaction">array[Transaction]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="TransactionsData"><code>TransactionsData</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+          </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="TransactionsData_inner"><code>TransactionsData_inner</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">trans_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> transaction identifier, AKA &amp;quot;Utrnno&amp;quot; </div>
+<div class="param">amnt_trans </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> amount in transaction currency </div>
+<div class="param">card_num </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> card identifier </div>
+<div class="param">trans_date </div><div class="param-desc"><span class="param-type"><a href="#DateTime">Date</a></span> trn date and time format: date-time</div>
+<div class="param">contract_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> account (contract) identifier </div>
+<div class="param">contract_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> legal contract name </div>
+<div class="param">account_frame (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> identifier of master Agreeement </div>
+<div class="param">acurr_acct </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> identifier of account currency </div>
+<div class="param">acurr_trans </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> identifier of trn currency </div>
+<div class="param">org_device (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> identifier of originator device </div>
+<div class="param">trans_type </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> trn type </div>
+<div class="param">client_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Identifier of client (up to 32 bytes) </div>
+<div class="param">client_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">reversal </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> flag indicates the trn is Reversal </div>
+<div class="param">amnt_acct </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> amount in acount (contract) currency </div>
+<div class="param">amount_discount </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> amount of discount at trn </div>
+<div class="param">azs_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Gas Sation identifier </div>
+<div class="param">addr_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Gas Station address </div>
+<div class="param">available_balance (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> avialable balance before trn format: int64</div>
+<div class="param">processed_in_bo </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> flag, indicates state of transaction. true: transaction from SVBO, false: transactions from  SVFE (processed online, but not processed in SVBO yet) </div>
+<div class="param">volume </div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> Volume of fuel in minor units(milliliters) *this field will be empty non-fuel operation format: int64</div>
+<div class="param">price (optional)</div><div class="param-desc"><span class="param-type"><a href="#BigDecimal">BigDecimal</a></span> Price per litter in minimal currency units(kopiyky), *this field will be empty non-fuel operation format: int32</div>
+<div class="param">product_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> SAP identifier of product, *this field will be empty non-fuel operation </div>
+<div class="param">product_desc (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Description of fuel (e.g. А-98),*this field will be empty non-fuel operation </div>
+<div class="param">busket_of_goods </div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> flag, indicates the transaction contain non fuel goods </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Unauthorized"><code>Unauthorized</code></a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Security token is missing or invalid</div>
+    <div class="field-items">
+          </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="cardId"><code>cardId</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">card_num (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Primary Account Number, AKA Card number </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="cardOwner"><code>cardOwner</code></a> <a class="up" href="#__Models">Up</a></h3>
+    
+    <div class="field-items">
+      <div class="param">c_owner_f_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> card owner first name </div>
+<div class="param">c_owner_l_name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> card owner last name </div>
+<div class="param">c_owner_phone (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> card owner phone number </div>
+<div class="param">c_owner_birthday (optional)</div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span> date of Birthday format: date</div>
+<div class="param">c_owner_fishka_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> id in Sparta ERP, applcable for cards only </div>
+<div class="param">c_owner_fishka_use_from (optional)</div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span> after that date fishka_id apply to card format: date</div>
+<div class="param">c_owner_secret_word (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> secret word for voice authoorization </div>
+<div class="param">c_owner_vin (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> VIN number of car </div>
+<div class="param">c_owner_driver_license (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> driver license identifier </div>
+    </div>  <!-- field-items -->
+  </div>
+  </body>
+</html>

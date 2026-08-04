@@ -1,0 +1,29 @@
+# Секрети — ніколи не комітити
+.env
+.env.*
+!.env.example
+# Лист від Shell із ключами доступу
+common/Shell-Api-Documentation/Instruction.txt
+
+# Залежності
+node_modules/
+
+# Збірки
+dist/
+.next/
+out/
+build/
+
+# Логи та тимчасові файли
+logs/
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Локальні налаштування Claude Code
+.claude/settings.local.json

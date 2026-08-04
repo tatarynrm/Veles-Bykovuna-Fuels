@@ -1,0 +1,12 @@
+# Нормалізація закінчень рядків: у репозиторії завжди LF.
+* text=auto
+
+# Скрипти для Linux-сервера мають бути з LF, інакше bash впаде на \r
+*.sh text eol=lf
+
+# Бінарні файли
+*.ttf binary
+*.pdf binary
+*.png binary
+*.jpg binary
+*.ico binary
