@@ -7,12 +7,14 @@ import Capabilities from './ui/Capabilities';
 import FleetDayScrubber from './ui/FleetDayScrubber';
 import IntegrationFlow from './ui/IntegrationFlow';
 import HowItWorks from './ui/HowItWorks';
+import Testimonials from './ui/Testimonials';
 import Cta from './ui/Cta';
 
 /**
  * Порядок секцій — це і є сценарій сторінки: обіцянка (Hero) → масштаб
  * (StatsBand) → що вміє (Capabilities) → як це виглядає в роботі
- * (FleetDayScrubber) → чому це працює (IntegrationFlow, HowItWorks) → дія.
+ * (FleetDayScrubber) → чому це працює (IntegrationFlow, HowItWorks) →
+ * хто це вже підтвердив (Testimonials) → дія.
  */
 export default function LandingScreen() {
   return (
@@ -23,6 +25,7 @@ export default function LandingScreen() {
       <FleetDayScrubber />
       <IntegrationFlow />
       <HowItWorks />
+      <Testimonials />
       <Cta />
     </>
   );

@@ -27,17 +27,22 @@ import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from '
 import { join, relative, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { EXCLUDE, clean, parse } from './ast.mjs';
+import { EXCLUDE, clean, parse, ignoredProps, isIgnoredByPragma } from './ast.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SRC = join(ROOT, 'src');
 const LOCALES_DIR = join(SRC, 'locales');
 
-/** Мова оригіналу + мови перекладу. */
+/** Мова оригіналу + мови перекладу. Порядок той самий, що в LOCALES у lib/i18n.ts. */
 export const SOURCE = 'uk';
-export const TARGETS = ['en', 'pl', 'de'];
+export const TARGETS = ['en', 'pl', 'de', 'ro', 'cs', 'sk', 'hu', 'fr', 'es'];
 
-const KEY_RE = /^[a-z][a-zA-Z0-9]*\.[a-zA-Z0-9]+$/;
+/*
+  Ключ може мати більше двох сегментів: `landing.cap.fuelCards.title`,
+  `landing.int.okko.what`. Поки регуляр приймав рівно два, усі глибші ключі,
+  що лежать у конфігах, вважалися невикористаними — і --prune зніс би їх.
+*/
+const KEY_RE = /^[a-z][a-zA-Z0-9]*(?:\.[a-zA-Z0-9]+)+$/;
 const CYRILLIC = /[Ѐ-ӿ]/;
 
 function walk(dir, out = []) {
@@ -102,6 +107,13 @@ function inspect(fileName, code, known) {
     return false;
   };
 
+  /*
+    Друга прагма, точніша за іменну: `i18n-ignore-props: name` глушить лише
+    вказану властивість, а не весь масив. Так власні назви вендорів мовчать,
+    але наступний неперекладений підпис поруч із ними — ні.
+  */
+  const ignoredPropNames = ignoredProps(code);
+
   const lineOf = (node) => source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
 
   const visit = (node) => {
@@ -120,7 +132,11 @@ function inspect(fileName, code, known) {
       // Ключ у константі модуля: { label: 'nav.dashboard' }
       if (KEY_RE.test(text) && known.has(text)) keys.add(text);
       // Кирилиця поза словником — текст, для якого ще немає ключа
-      else if (CYRILLIC.test(text) && !insideIgnoredVar(node)) raw.push({ line: lineOf(node), text });
+      else if (
+        CYRILLIC.test(text)
+        && !insideIgnoredVar(node)
+        && !isIgnoredByPragma(node, ignoredPropNames)
+      ) raw.push({ line: lineOf(node), text });
     }
 
     if (ts.isJsxText(node)) {

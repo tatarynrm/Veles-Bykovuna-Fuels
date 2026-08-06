@@ -92,8 +92,14 @@ export default function MarketingNav() {
             })}
           </div>
 
+          {/*
+            На 320 px чотири контроли по 44 px плюс перемикач мов (76 px) не
+            влазять поруч із логотипом: рядок вилазив на 42 px, і кнопку меню
+            зрізало навпіл. Ховаємо лише звук і лише на найвужчих екранах —
+            мова й тема потрібніші, а з 360 px усе вміщається як було.
+          */}
           <div className="flex items-center gap-1.5">
-            <SoundControl />
+            <SoundControl className="max-[359px]:hidden" />
             <ThemeToggleButton />
             <LanguageSwitcher />
             <Link

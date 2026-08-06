@@ -166,7 +166,8 @@ export default function Capabilities() {
                     trackRef.current.scrollTo({ left: i * slideWidth, behavior: 'smooth' });
                   }
                 }}
-                className="h-1 flex-1 rounded-full transition-colors duration-300"
+                data-tab-hit
+                className="relative h-1 flex-1 rounded-full transition-colors duration-300"
                 style={{
                   background: i <= index ? TONE_VAR[cap.tone] : 'var(--surface-hover)',
                 }}

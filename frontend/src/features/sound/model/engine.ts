@@ -36,9 +36,25 @@ export type SoundName =
 /** Базові частоти ударів для послідовних секцій — донизу сторінки глухіше. */
 const THUD_TONES = [150, 138, 128, 120, 112, 104];
 
+/*
+  Тракт гучності.
+
+  Одиночні звуки будуються з піками 0.02…0.24, тож «повзунок на 100 %»
+  давав ~-12 dBFS — на ноутбучних динаміках це майже тиша. Тому гучність
+  повзунка множиться на OUTPUT_BOOST ще ДО компресора, компресор працює
+  як лімітер на піках, а MAKEUP додає рівень уже після нього. Разом це
+  ~+13 dB проти попереднього тракту, і при цьому нічого не кліпує:
+  за все, що вилізло над порогом, відповідає компресор.
+*/
+const OUTPUT_BOOST = 3;
+const MAKEUP = 1.4;
+/** Рівень фонового гулу до бусту — його чіпати не можна, це підклад. */
+const ENGINE_LEVEL = 0.05;
+
 export class SoundEngine {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
+  private makeup: GainNode | null = null;
   private engineBus: GainNode | null = null;
   private engineNodes: { stop: () => void } | null = null;
   private noiseBuffer: AudioBuffer | null = null;
@@ -65,17 +81,24 @@ export class SoundEngine {
     this.ctx = ctx;
 
     // Компресор тримає пікові звуки в межах: без нього 'rev' поверх гулу
-    // двигуна кліпував на повній гучності.
+    // двигуна кліпував на повній гучності. Поріг вище, ніж бере фоновий
+    // гул, — інакше двигун постійно душив би одиночні звуки.
     const comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -18;
-    comp.ratio.value = 6;
-    comp.attack.value = 0.004;
-    comp.release.value = 0.18;
+    comp.threshold.value = -10;
+    comp.knee.value = 8;
+    comp.ratio.value = 8;
+    comp.attack.value = 0.003;
+    comp.release.value = 0.15;
+
+    const makeup = ctx.createGain();
+    makeup.gain.value = MAKEUP;
+    this.makeup = makeup;
 
     const master = ctx.createGain();
-    master.gain.value = this.muted ? 0 : this.volume;
+    master.gain.value = this.masterTarget();
     master.connect(comp);
-    comp.connect(ctx.destination);
+    comp.connect(makeup);
+    makeup.connect(ctx.destination);
     this.master = master;
 
     const engineBus = ctx.createGain();
@@ -120,12 +143,15 @@ export class SoundEngine {
     this.applyMaster();
   }
 
+  private masterTarget(): number {
+    return this.muted ? 0 : this.volume * OUTPUT_BOOST;
+  }
+
   private applyMaster() {
     if (!this.ctx || !this.master) return;
-    const target = this.muted ? 0 : this.volume;
     // Рампа, а не стрибок: миттєва зміна gain дає чутний клац.
     this.master.gain.cancelScheduledValues(this.ctx.currentTime);
-    this.master.gain.setTargetAtTime(target, this.ctx.currentTime, 0.05);
+    this.master.gain.setTargetAtTime(this.masterTarget(), this.ctx.currentTime, 0.05);
   }
 
   // ── Шумовий буфер ────────────────────────────────────────────────────────
@@ -217,7 +243,7 @@ export class SoundEngine {
     // Довгий фейд-ін: різкий старт гулу лякає.
     this.engineBus.gain.cancelScheduledValues(now);
     this.engineBus.gain.setValueAtTime(0.0001, now);
-    this.engineBus.gain.exponentialRampToValueAtTime(0.16, now + 2.6);
+    this.engineBus.gain.exponentialRampToValueAtTime(ENGINE_LEVEL, now + 2.6);
 
     this.engineNodes = {
       stop: () => {
@@ -416,6 +442,7 @@ export class SoundEngine {
     try { void this.ctx?.close(); } catch {}
     this.ctx = null;
     this.master = null;
+    this.makeup = null;
     this.engineBus = null;
   }
 }

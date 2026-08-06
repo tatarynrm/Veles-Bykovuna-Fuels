@@ -10,13 +10,14 @@ import {
   CATEGORY_LABEL, STATUS_LABEL, STATUS_TONE,
 } from '@/shared/config/integrations';
 import { useSectionSound, useSound } from '@/features/sound';
-import { t } from '@/lib/i18n';
+import { t, localizedMap } from '@/lib/i18n';
 import { useIntegrationFilter } from './model/useIntegrationFilter';
 
-const API_LABEL: Record<string, string> = {
-  REST: 'REST', GraphQL: 'GraphQL', webhook: 'Webhook',
-  'file-exchange': 'Файловий обмін', CAN: 'CAN-шина', none: 'Без API',
-};
+// REST/GraphQL/Webhook — назви протоколів, вони однакові в усіх мовах.
+const API_LABEL: Record<string, string> = localizedMap({
+  REST: 'landing.int.api.rest', GraphQL: 'landing.int.api.graphql', webhook: 'landing.int.api.webhook',
+  'file-exchange': 'landing.int.api.fileExchange', CAN: 'landing.int.api.can', none: 'landing.int.api.none',
+});
 
 export default function IntegrationsScreen() {
   const { category, setCategory, categories, items, liveCount, total } = useIntegrationFilter();
@@ -136,13 +137,13 @@ export default function IntegrationsScreen() {
                   </div>
 
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    {item.what}
+                    {t(item.what)}
                   </p>
                   <p
                     className="border-l-2 pl-3 text-xs leading-relaxed"
                     style={{ borderColor: 'var(--border-accent)', color: 'var(--text-muted)' }}
                   >
-                    {item.why}
+                    {t(item.why)}
                   </p>
 
                   <div className="mt-auto flex flex-wrap gap-2 pt-1">

@@ -249,6 +249,7 @@ export default function LanguageSwitcher({
         aria-expanded={open}
         aria-label={t('nav.interfaceLanguage')}
         title={t('nav.interfaceLanguage')}
+        data-lang-trigger
         className="btn btn-ghost h-9 gap-1.5 px-2.5"
       >
         <Flag region={activeMeta.region} size={18} />

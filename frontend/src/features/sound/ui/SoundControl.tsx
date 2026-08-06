@@ -80,23 +80,30 @@ export default function SoundControl({ className = '' }: { className?: string })
             role="dialog"
             aria-label={t('landing.soundSettings')}
           >
-            <div className="mb-3 flex items-center justify-between">
-              <span className="micro-label" style={{ color: 'var(--text-muted)' }}>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <span className="micro-label truncate" style={{ color: 'var(--text-muted)' }}>
                 {t('landing.sound')}
               </span>
+              {/*
+                Повзунок вирівняний явно: `left-0.5` + центрування через
+                `top-1/2` замість статичної позиції та `top-0.5`. Без цього
+                горизонтальний старт залежав від інлайнового контексту кнопки,
+                а `shrink-0` не давав флексу стиснути доріжку під довшим
+                перекладом — від того ручка й «з'їжджала» з доріжки.
+              */}
               <button
                 type="button"
                 role="switch"
                 aria-checked={enabled}
                 onClick={() => { setEnabled(!enabled); if (!enabled) play('confirm'); }}
-                className="relative h-5 w-9 rounded-full transition-colors duration-200"
+                className="relative block h-5 w-9 shrink-0 rounded-full p-0 transition-colors duration-200"
                 style={{ background: enabled ? 'var(--accent)' : 'var(--surface-hover)' }}
               >
                 <span
-                  className="absolute top-0.5 h-4 w-4 rounded-full transition-transform duration-200"
+                  className="absolute left-0.5 top-1/2 h-4 w-4 rounded-full transition-transform duration-200"
                   style={{
                     background: enabled ? 'var(--accent-contrast)' : 'var(--text-muted)',
-                    transform: enabled ? 'translateX(18px)' : 'translateX(2px)',
+                    transform: enabled ? 'translate(16px, -50%)' : 'translate(0, -50%)',
                   }}
                 />
               </button>

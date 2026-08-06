@@ -11,7 +11,10 @@ export const MARKETING_NAV = [
   { href: '/future-plans', label: 'landing.navRoadmap' },
 ] as const;
 
-/** Назва компанії не перекладається — це юридичне найменування. */
+/**
+ * Назва компанії не перекладається — це юридичне найменування.
+ * i18n-ignore-raw: BRAND
+ */
 export const BRAND = {
   name: 'VELES',
   legal: 'ТОВ «Велес Буковина»',

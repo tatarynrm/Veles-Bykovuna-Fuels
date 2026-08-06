@@ -18,7 +18,7 @@ interface SoundPrefs {
  * тож «увімкнено» тут означає «дозволено, щойно користувач торкнеться
  * сторінки», а не «грає з першого кадру».
  */
-const DEFAULTS: SoundPrefs = { enabled: true, volume: 0.45 };
+const DEFAULTS: SoundPrefs = { enabled: true, volume: 0.6 };
 
 interface SoundContextValue extends SoundPrefs {
   /** Контекст запущено і звук справді чутно. */

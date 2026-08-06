@@ -99,11 +99,11 @@ export default function FuturePlansScreen() {
 
                 <article className="glass-panel p-6">
                   <p className="micro-label mb-2" style={{ color: TONE_VAR[h.tone] }}>
-                    {h.phase}
+                    {t(h.phase)}
                   </p>
-                  <h3 className="font-display mb-3 text-lg leading-snug">{h.title}</h3>
+                  <h3 className="font-display mb-3 text-lg leading-snug">{t(h.title)}</h3>
                   <p className="mb-5 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    {h.rationale}
+                    {t(h.rationale)}
                   </p>
 
                   <ul className="flex flex-wrap gap-2">
@@ -117,7 +117,7 @@ export default function FuturePlansScreen() {
                           border: '1px solid var(--border-subtle)',
                         }}
                       >
-                        {item}
+                        {t(item)}
                       </li>
                     ))}
                   </ul>
@@ -170,10 +170,10 @@ export default function FuturePlansScreen() {
                     >
                       {r.date}
                     </span>
-                    <h3 className="text-sm font-semibold">{r.title}</h3>
+                    <h3 className="text-sm font-semibold">{t(r.title)}</h3>
                   </div>
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    {r.detail}
+                    {t(r.detail)}
                   </p>
                 </div>
               </motion.div>

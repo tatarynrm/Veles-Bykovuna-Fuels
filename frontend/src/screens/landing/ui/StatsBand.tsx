@@ -9,16 +9,18 @@ import { t } from '@/lib/i18n';
 
 /**
  * Кожна цифра тут перевіряється по коду, а не «приблизно з голови»:
- * три вендорські сервіси, чотири словники локалізації, десять провайдерів
+ * три вендорські сервіси, десять словників локалізації, десять провайдерів
  * підкладок у налаштуваннях карти й мінімальний інтервал опитування
  * живого треку. Маркетинг, який не збігається з застосунком, ламається
  * на першому ж демо.
+ *
+ * `suffixKey` — ключ одиниці; t() ставиться в місці рендеру.
  */
 const STATS = [
-  { to: 3,  suffix: '',   label: 'landing.statApis',      tone: 'var(--accent)' },
-  { to: 10, suffix: '',   label: 'landing.statLanguages', tone: 'var(--info)' },
-  { to: 10, suffix: '',   label: 'landing.statBasemaps',  tone: 'var(--warn)' },
-  { to: 3,  suffix: ' с', label: 'landing.statInterval',  tone: 'var(--accent)' },
+  { to: 3,  suffixKey: '',                   label: 'landing.statApis',      tone: 'var(--accent)' },
+  { to: 10, suffixKey: '',                   label: 'landing.statLanguages', tone: 'var(--info)' },
+  { to: 10, suffixKey: '',                   label: 'landing.statBasemaps',  tone: 'var(--warn)' },
+  { to: 3,  suffixKey: 'unit.secondsShort',  label: 'landing.statInterval',  tone: 'var(--accent)' },
 ];
 
 export default function StatsBand() {
@@ -52,7 +54,7 @@ export default function StatsBand() {
           >
             <AnimatedCounter
               to={s.to}
-              suffix={s.suffix}
+              suffix={s.suffixKey ? ` ${t(s.suffixKey)}` : ''}
               className="font-display text-4xl sm:text-5xl"
               style={{ color: s.tone }}
             />

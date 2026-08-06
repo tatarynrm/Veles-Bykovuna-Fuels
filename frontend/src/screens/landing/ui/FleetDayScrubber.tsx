@@ -5,6 +5,7 @@ import { motion, useMotionValue, useTransform, cubicBezier, type MotionValue } f
 import { Fuel, Navigation, CreditCard, Truck } from 'lucide-react';
 import { useScrollProgress } from '@/shared/lib/useScrollProgress';
 import { useTween } from '@/shared/lib/useTween';
+import { useMediaQuery } from '@/shared/lib/useMediaQuery';
 import { usePrefersReducedMotion } from '@/shared/lib/usePrefersReducedMotion';
 import { seededRandom } from '@/shared/lib/seededRandom';
 import { EASE_ENTER } from '@/shared/lib/motion';
@@ -52,8 +53,15 @@ const progressAtHour = (h: number) => clamp01((h - 0.5) / HOUR_STEPS);
 
 const TRIGGER_PROGRESS = progressAtHour(TRIGGER_HOUR);
 
-/** На скільки пікселів графік відходить донизу, звільняючи смужкам місце. */
+/**
+ * На скільки пікселів графік відходить донизу, звільняючи смужкам місце.
+ *
+ * На телефоні вся секція мусить уміститися у висоту екрана (див. коментар до
+ * `min-h-svh` нижче), тож там зсув удвічі менший — інакше він з'їдає рівно ту
+ * висоту, якої під підпис і бракує.
+ */
 const CHART_SHIFT_PX = 28;
+const CHART_SHIFT_PX_SM = 14;
 /** За який шматок прогресу скролу цей зсув відпрацьовує повністю. */
 const CHART_SHIFT_SPAN = 0.08;
 
@@ -61,9 +69,19 @@ const CHART_SHIFT_SPAN = 0.08;
  * Висота смуги, в якій живуть смужки: проміжок між картками й графіком
  * (`mb-10` = 40px) плюс зсув графіка, плюс запас, який заходить під картки —
  * там смужки вже вигасають і їх зрізає `overflow: hidden`.
+ *
+ * На телефоні проміжок менший (`mb-6`), тож і смуга нижча: інакше смужки
+ * стартують з-під карток, а не з-над графіка.
  */
 const DRIVER_LANE_PX = 88;
+const DRIVER_LANE_PX_SM = 60;
+/**
+ * Ширина смужки. Слотів завжди `MAX_HOUR_ACTIVE` (57) на всю ширину графіка,
+ * тож на телефоні крок між ними падає до ~5px — при десктопній ширині смужки
+ * злипалися б у суцільну стіну.
+ */
 const DRIVER_STRIP_WIDTH_PX = 9;
+const DRIVER_STRIP_WIDTH_PX_SM = 5;
 const DRIVER_STRIP_MIN_H_PX = 26;
 const DRIVER_STRIP_H_SPREAD_PX = 16;
 /** Розкид стартових затримок у прогресі скролу — саме він ламає «марш». */
@@ -144,7 +162,17 @@ export default function FleetDayScrubber() {
   const hourRef = useRef(0);
   const [hour, setHour] = useState(0);
   const reduced = usePrefersReducedMotion();
+  /*
+    Мобільна розкладка — типова, десктопна вмикається після монтування: хук
+    на сервері віддає false, і будь-яке інше припущення дало б розбіжність із
+    першим клієнтським кадром. Тут це ще й безпечніший бік помилки — компактна
+    версія вміщається в широкий екран, широка у вузький не вміщається.
+  */
+  const wide = useMediaQuery('(min-width: 640px)');
   const { play } = useSound();
+
+  const lanePx = wide ? DRIVER_LANE_PX : DRIVER_LANE_PX_SM;
+  const stripWidthPx = wide ? DRIVER_STRIP_WIDTH_PX : DRIVER_STRIP_WIDTH_PX_SM;
 
   /** Безперервний прогрес секції — джерело для смужок і зсуву графіка. */
   const scrollProgress = useMotionValue(0);
@@ -221,7 +249,7 @@ export default function FleetDayScrubber() {
   const chartShift = useTransform(
     scrollProgress,
     [TRIGGER_PROGRESS, TRIGGER_PROGRESS + CHART_SHIFT_SPAN],
-    [0, CHART_SHIFT_PX],
+    [0, wide ? CHART_SHIFT_PX : CHART_SHIFT_PX_SM],
     { ease: EASE_RISE },
   );
 
@@ -234,32 +262,52 @@ export default function FleetDayScrubber() {
       300vh дає 200vh ходу на 24 години, приблизно 8vh на годину: зміну видно,
       і секція не здається пасткою.
     */
-    <section id="fleet-day" ref={sectionRef} className="relative" style={{ height: '300vh' }}>
-      <div className="sticky top-0 flex min-h-screen items-center px-5 py-20 sm:px-8">
+    <section id="fleet-day" ref={sectionRef} className="relative" style={{ height: '300svh' }}>
+      {/*
+        `min-h-svh`, а не `min-h-screen`. На телефоні `100vh` — це висота вікна
+        зі схованим адресним рядком, тобто більша за те, що видно насправді.
+        Закріплена панель такої висоти не влазить у видиму частину, а прокрутити
+        її не можна — вона ж закріплена: підпис під графіком просто лишався за
+        нижньою межею екрана. `svh` бере меншу з двох висот, і секція гарантовано
+        поміщається цілком.
+      */}
+      <div className="sticky top-0 flex min-h-svh items-center px-4 py-10 sm:px-8 sm:py-20">
         <div className="mx-auto w-full max-w-5xl">
-          <p className="micro-label mb-3" style={{ color: 'var(--warn)' }}>
+          <p className="micro-label mb-2 sm:mb-3" style={{ color: 'var(--warn)' }}>
             {t('landing.fleetDayEyebrow')}
           </p>
-          <h2 className="font-display mb-2 text-[28px] leading-[1.15] sm:text-[34px]">
+          <h2 className="font-display mb-2 text-[22px] leading-[1.15] sm:text-[34px]">
             {t('landing.fleetDayTitle')}
           </h2>
-          <p className="mb-10 max-w-lg text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+          <p
+            className="mb-6 max-w-lg text-[12px] leading-relaxed sm:mb-10 sm:text-sm"
+            style={{ color: 'var(--text-secondary)' }}
+          >
             {t('landing.fleetDayLead')}
           </p>
 
-          {/* Годинник */}
-          <div className="mb-8 flex items-baseline gap-4">
+          {/*
+            Годинник. «наростаючим підсумком від 00:00» — рядок на 30 символів;
+            притиснутий `ml-auto` до 64-піксельної цифри, він на телефоні
+            ламався на три-чотири рядки й розганяв висоту. Тому там він
+            переходить під годинник власним рядком (`basis-full`), а
+            вирівнювання по правому краю вмикається лише з `sm`.
+          */}
+          <div className="mb-5 flex flex-wrap items-baseline gap-x-3 gap-y-1 sm:mb-8 sm:gap-x-4">
             <span
-              className="font-display text-[64px] leading-none sm:text-[88px]"
+              className="font-display text-[46px] leading-none sm:text-[88px]"
               data-numeric
               style={{ color: 'var(--text-primary)' }}
             >
               {pad(shownHour)}
             </span>
-            <span className="font-display text-[28px] leading-none" style={{ color: 'var(--text-muted)' }}>
+            <span className="font-display text-[22px] leading-none sm:text-[28px]" style={{ color: 'var(--text-muted)' }}>
               :00
             </span>
-            <span className="ml-auto text-xs" style={{ color: 'var(--text-muted)' }}>
+            <span
+              className="basis-full text-[11px] sm:ml-auto sm:basis-auto sm:text-xs"
+              style={{ color: 'var(--text-muted)' }}
+            >
               {t('landing.cumulativeFrom')}
             </span>
           </div>
@@ -269,18 +317,23 @@ export default function FleetDayScrubber() {
             `z-0`: смужки живуть усередині графіка, тож проходять під картками
             й не можуть із-під них вилізти, хай який z-index їм дати.
           */}
-          <div className="relative z-10 mb-10 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="relative z-10 mb-6 grid grid-cols-2 gap-2 sm:mb-10 sm:gap-3 lg:grid-cols-4">
             {metrics.map(m => {
               const Icon = m.icon;
               return (
-                <div key={m.label} className="glass-panel p-4">
-                  <div className="mb-2.5 flex items-center gap-2">
-                    <Icon size={14} style={{ color: m.tone }} />
-                    <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                <div key={m.label} className="glass-panel p-3 sm:p-4">
+                  <div className="mb-1.5 flex items-center gap-1.5 sm:mb-2.5 sm:gap-2">
+                    <Icon size={13} className="shrink-0" style={{ color: m.tone }} />
+                    {/*
+                      Підпис у картку не переноситься: «У русі зараз» другим
+                      рядком підняв би тільки одну з чотирьох карток, і сітка
+                      поїхала б сходинкою.
+                    */}
+                    <span className="truncate text-[10px] sm:text-[11px]" style={{ color: 'var(--text-muted)' }}>
                       {t(m.label)}
                     </span>
                   </div>
-                  <p className="text-2xl font-semibold" data-numeric>{m.value}</p>
+                  <p className="text-xl font-semibold sm:text-2xl" data-numeric>{m.value}</p>
                 </div>
               );
             })}
@@ -299,24 +352,35 @@ export default function FleetDayScrubber() {
             {stripCount > 0 && (
               <div
                 aria-hidden
-                className="pointer-events-none absolute inset-x-5 bottom-full overflow-hidden"
+                className="pointer-events-none absolute inset-x-4 bottom-full overflow-hidden sm:inset-x-5"
                 style={{
-                  height: DRIVER_LANE_PX,
+                  height: lanePx,
                   maskImage: 'linear-gradient(to bottom, transparent 0%, rgb(0 0 0 / 0.4) 34%, #000 72%)',
                   WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgb(0 0 0 / 0.4) 34%, #000 72%)',
                 }}
               >
                 {strips.slice(0, stripCount).map(strip =>
                   reduced
-                    ? <StaticDriverStrip key={strip.id} strip={strip} />
-                    : <DriverStrip key={strip.id} strip={strip} progress={scrollProgress} />,
+                    ? <StaticDriverStrip key={strip.id} strip={strip} width={stripWidthPx} />
+                    : <DriverStrip
+                        key={strip.id}
+                        strip={strip}
+                        progress={scrollProgress}
+                        lanePx={lanePx}
+                        width={stripWidthPx}
+                      />,
                 )}
               </div>
             )}
 
             {/* Погодинна витрата */}
-            <div className="glass-panel p-5">
-              <div className="mb-4 flex items-center justify-between">
+            <div className="glass-panel p-4 sm:p-5">
+              {/*
+                Заголовок і пік — у стовпчик на телефоні: «ВИТРАТА ПО ГОДИНАХ, Л»
+                та «пік 257 л · 10:00» в один рядок на 320px не вміщаються, а
+                `justify-between` розтягував їх у два обрізані стовпці.
+              */}
+              <div className="mb-3 flex flex-col gap-0.5 sm:mb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
                 <span className="micro-label" style={{ color: 'var(--text-muted)' }}>
                   {t('landing.hourlyFuel')}
                 </span>
@@ -328,7 +392,12 @@ export default function FleetDayScrubber() {
                 </span>
               </div>
 
-              <div className="flex h-32 items-end gap-[3px]" role="img"
+              {/*
+                Проміжок між стовпчиками — 2px на телефоні: 24 стовпчики по 3px
+                з'їдали чверть і без того вузького графіка, і від самих стовпчиків
+                лишалися волосини.
+              */}
+              <div className="flex h-24 items-end gap-[2px] sm:h-32 sm:gap-[3px]" role="img"
                 aria-label={t('landing.fleetDayChartAria', { v0: pad(shownHour) })}>
                 {FLEET_DAY.map(r => {
                   const passed = r.hour <= shownHour;
@@ -358,7 +427,7 @@ export default function FleetDayScrubber() {
             </div>
           </motion.div>
 
-          <GlowCaption progress={scrollProgress} reduced={reduced} />
+          <GlowCaption progress={scrollProgress} reduced={reduced} wide={wide} />
         </div>
       </div>
     </section>
@@ -375,8 +444,18 @@ export default function FleetDayScrubber() {
  * Розмір змінює `scale`, а не `font-size`: другий переверстує абзац на
  * кожному кадрі скролу. Через це в підпису з'явилася й максимальна ширина —
  * рядок на всю колонку, розтягнутий у 1.28 раза, вилазив би за неї.
+ *
+ * ▸ На телефоні всієї цієї механіки немає. `max-w-xl` там ширший за екран,
+ * тобто абзац займає всю колонку, і `scale: 1.28` від лівого верхнього кута
+ * виносив останні 28% ширини за правий край. Видимого горизонтального
+ * скролу не було лише тому, що `body` має `overflow-x: hidden` — текст
+ * просто обрізало. Плюс на 320px цей підпис — це п'ять рядків, які разом із
+ * рештою секції вже не вміщалися у закріплений екран. Тож у вузькій версії
+ * він лишається тим, чим і є за змістом: коротким службовим рядком.
  */
-function GlowCaption({ progress, reduced }: { progress: MotionValue<number>; reduced: boolean }) {
+function GlowCaption(
+  { progress, reduced, wide }: { progress: MotionValue<number>; reduced: boolean; wide: boolean },
+) {
   // Довжина підпису різна в кожній мові, тож розбір іде від перекладеного
   // тексту, а не від константи рівня модуля.
   const captionText = t('landing.fleetDayDisclaimer', { v0: FLEET_SIZE });
@@ -411,9 +490,10 @@ function GlowCaption({ progress, reduced }: { progress: MotionValue<number>; red
     [0, letterCount + CAPTION_GLOW_LETTERS],
   );
 
-  if (reduced) {
+  if (reduced || !wide) {
     return (
-      <p className="mt-4 max-w-xl text-[11px]" style={{ color: 'var(--text-muted)' }}>
+      <p className="mt-3 max-w-xl text-[10px] leading-snug sm:mt-4 sm:text-[11px]"
+        style={{ color: 'var(--text-muted)' }}>
         {captionText}
       </p>
     );
@@ -485,10 +565,13 @@ function GlowLetter(
  * Рухаються тільки `transform` і `opacity` — жодного `top`, щоб десяток
  * смужок не тягнув за собою перерахунок розкладки на кожному кадрі.
  */
-function DriverStrip({ strip, progress }: { strip: DriverStripParams; progress: MotionValue<number> }) {
+function DriverStrip(
+  { strip, progress, lanePx, width }:
+  { strip: DriverStripParams; progress: MotionValue<number>; lanePx: number; width: number },
+) {
   const local = useTransform(progress, [strip.start, strip.end], [0, 1], { ease: EASE_RISE });
   // 0 — смужка цілком під нижньою межею смуги, 1 — цілком над верхньою.
-  const y = useTransform(local, v => strip.height - v * (DRIVER_LANE_PX + strip.height));
+  const y = useTransform(local, v => strip.height - v * (lanePx + strip.height));
   const x = useTransform(local, v => Math.sin(v * Math.PI * strip.wobble + strip.phase) * strip.jitter);
   const opacity = useTransform(local, [0, 0.08, 0.62, 1], [0, 1, 1, 0]);
 
@@ -497,9 +580,9 @@ function DriverStrip({ strip, progress }: { strip: DriverStripParams; progress: 
       className="absolute bottom-0 block rounded-full"
       style={{
         left: `${strip.left}%`,
-        width: DRIVER_STRIP_WIDTH_PX,
+        width,
         height: strip.height,
-        marginLeft: -DRIVER_STRIP_WIDTH_PX / 2,
+        marginLeft: -width / 2,
         background: `linear-gradient(to bottom, rgb(var(${strip.tone}) / 0.92), rgb(var(${strip.tone}) / 0.22))`,
         boxShadow: `0 0 10px rgb(var(${strip.tone}) / 0.35)`,
         willChange: 'transform, opacity',
@@ -519,7 +602,7 @@ function DriverStrip({ strip, progress }: { strip: DriverStripParams; progress: 
  * правило в globals.css обрізає CSS-анімації до 0.01ms, тож там від згасання
  * лишилося б миттєве вмикання.
  */
-function StaticDriverStrip({ strip }: { strip: DriverStripParams }) {
+function StaticDriverStrip({ strip, width }: { strip: DriverStripParams; width: number }) {
   return (
     <motion.span
       className="absolute bottom-0 block rounded-full"
@@ -528,9 +611,9 @@ function StaticDriverStrip({ strip }: { strip: DriverStripParams }) {
       transition={{ duration: 0.4, delay: Math.min(strip.id * 0.02, 0.5), ease: EASE_ENTER }}
       style={{
         left: `${strip.left}%`,
-        width: DRIVER_STRIP_WIDTH_PX,
+        width,
         height: strip.height,
-        marginLeft: -DRIVER_STRIP_WIDTH_PX / 2,
+        marginLeft: -width / 2,
         background: `linear-gradient(to bottom, rgb(var(${strip.tone}) / 0.92), rgb(var(${strip.tone}) / 0.22))`,
       }}
     />

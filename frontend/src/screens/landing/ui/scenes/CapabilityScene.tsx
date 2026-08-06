@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion, type Variants } from 'framer-motion';
 import { usePrefersReducedMotion } from '@/shared/lib/usePrefersReducedMotion';
+import { t } from '@/lib/i18n';
 import type { CapabilityId } from '@/shared/config/capabilities';
 
 /*
@@ -85,9 +86,9 @@ const breathe = (delay = 0): Variants => ({
 /* ── 1. Паливні картки ─────────────────────────────────────────────── */
 function FuelCards({ active, reduced }: SceneProps) {
   const rows = [
-    { site: 'OKKO · Чернівці', litres: '420 л', sum: '₴23 940' },
-    { site: 'Shell · Rzeszów', litres: '310 л', sum: '₴21 700' },
-    { site: 'OKKO · Львів', litres: '380 л', sum: '₴21 660' },
+    { site: t('landing.scene.fc.site0'), litres: t('landing.scene.fc.litres0'), sum: '₴23 940' },
+    { site: t('landing.scene.fc.site1'), litres: t('landing.scene.fc.litres1'), sum: '₴21 700' },
+    { site: t('landing.scene.fc.site2'), litres: t('landing.scene.fc.litres2'), sum: '₴21 660' },
   ];
   return (
     <>
@@ -101,7 +102,7 @@ function FuelCards({ active, reduced }: SceneProps) {
             style={MUTED} variants={pop(0.25 + i * 0.08)}
           />
         ))}
-        <text x="42" y="122" fontSize="9" fontFamily={FONT} style={MUTED}>VELES · ПАЛИВНА КАРТКА</text>
+        <text x="42" y="122" fontSize="9" fontFamily={FONT} style={MUTED}>{t('landing.scene.fc.cardLabel')}</text>
       </motion.g>
 
       {rows.map((r, i) => (
@@ -121,9 +122,9 @@ function FuelCards({ active, reduced }: SceneProps) {
       />
 
       <motion.g variants={rise(1.2, 0.5)}>
-        <text x="24" y="176" fontSize="10" fontFamily={FONT} style={MUTED}>ЗА МІСЯЦЬ</text>
+        <text x="24" y="176" fontSize="10" fontFamily={FONT} style={MUTED}>{t('landing.scene.fc.perMonth')}</text>
         <text x="24" y="208" fontSize="30" fontFamily={FONT} fontWeight="600" style={TEXT}>₴2 841 300</text>
-        <text x="24" y="232" fontSize="9" fontFamily={FONT} fill="currentColor">3 291 транзакція · дві мережі</text>
+        <text x="24" y="232" fontSize="9" fontFamily={FONT} fill="currentColor">{t('landing.scene.fc.txSummary')}</text>
       </motion.g>
 
       <motion.g variants={rise(1.45, 0.5)}>
@@ -148,7 +149,7 @@ function Analytics({ active, reduced }: SceneProps) {
   return (
     <>
       <motion.g variants={rise(0)}>
-        <text x="24" y="34" fontSize="10" fontFamily={FONT} style={MUTED}>ВИТРАТИ ПО ТИЖНЯХ</text>
+        <text x="24" y="34" fontSize="10" fontFamily={FONT} style={MUTED}>{t('landing.scene.an.title')}</text>
       </motion.g>
 
       {[0, 1, 2, 3].map(i => (
@@ -190,8 +191,8 @@ function Analytics({ active, reduced }: SceneProps) {
 
       <motion.g variants={rise(1.7, 0.45)}>
         <line x1="24" x2="396" y1="272" y2="272" {...LINE} />
-        <text x="24" y="292" fontSize="9" fontFamily={FONT} style={MUTED}>Тиж. 1</text>
-        <text x="396" y="292" fontSize="9" fontFamily={FONT} textAnchor="end" fill="currentColor">Тиж. 8</text>
+        <text x="24" y="292" fontSize="9" fontFamily={FONT} style={MUTED}>{t('landing.scene.an.week1')}</text>
+        <text x="396" y="292" fontSize="9" fontFamily={FONT} textAnchor="end" fill="currentColor">{t('landing.scene.an.week8')}</text>
       </motion.g>
     </>
   );
@@ -200,9 +201,9 @@ function Analytics({ active, reduced }: SceneProps) {
 /* ── 3. Телематика ─────────────────────────────────────────────────── */
 function Telematics({ active, reduced }: SceneProps) {
   const gauges = [
-    { label: 'ПАЛЬНЕ', value: '68%', frac: 0.68, cx: 90 },
-    { label: 'ОБЕРТИ', value: '1 450', frac: 0.42, cx: 210 },
-    { label: 'ОХОЛОДЖ.', value: '84°', frac: 0.72, cx: 330 },
+    { label: t('landing.scene.tel.fuel'), value: '68%', frac: 0.68, cx: 90 },
+    { label: t('landing.scene.tel.rpm'), value: '1 450', frac: 0.42, cx: 210 },
+    { label: t('landing.scene.tel.coolant'), value: '84°', frac: 0.72, cx: 330 },
   ];
   const R = 34;
   const CIRC = Math.PI * R; //半 arc
@@ -253,10 +254,10 @@ function Telematics({ active, reduced }: SceneProps) {
 
       <motion.g variants={rise(1.5, 0.45)}>
         <rect x="24" y="258" width="372" height="40" rx="10" style={INSET} />
-        <text x="40" y="274" fontSize="8" fontFamily={FONT} style={MUTED}>МОТОГОДИНИ</text>
-        <text x="40" y="290" fontSize="12" fontFamily={FONT} style={TEXT}>18 402 год</text>
-        <text x="240" y="274" fontSize="8" fontFamily={FONT} style={MUTED}>ЗАПАЛЮВАННЯ</text>
-        <text x="240" y="290" fontSize="12" fontFamily={FONT} fill="currentColor">увімкнено</text>
+        <text x="40" y="274" fontSize="8" fontFamily={FONT} style={MUTED}>{t('landing.scene.tel.engineHours')}</text>
+        <text x="40" y="290" fontSize="12" fontFamily={FONT} style={TEXT}>{t('landing.scene.tel.engineHoursValue')}</text>
+        <text x="240" y="274" fontSize="8" fontFamily={FONT} style={MUTED}>{t('landing.scene.tel.ignition')}</text>
+        <text x="240" y="290" fontSize="12" fontFamily={FONT} fill="currentColor">{t('landing.scene.tel.ignitionOn')}</text>
       </motion.g>
     </>
   );
@@ -297,11 +298,11 @@ function LiveTrack({ active, reduced }: SceneProps) {
 
       <motion.g variants={rise(1.7, 0.45)}>
         <rect x="24" y="256" width="150" height="42" rx="10" style={INSET} />
-        <text x="40" y="272" fontSize="8" fontFamily={FONT} style={MUTED}>ІНТЕРВАЛ</text>
-        <text x="40" y="289" fontSize="13" fontFamily={FONT} fill="currentColor">3 с</text>
+        <text x="40" y="272" fontSize="8" fontFamily={FONT} style={MUTED}>{t('landing.scene.live.interval')}</text>
+        <text x="40" y="289" fontSize="13" fontFamily={FONT} fill="currentColor">{t('landing.scene.live.intervalValue')}</text>
         <rect x="186" y="256" width="210" height="42" rx="10" style={INSET} />
-        <text x="202" y="272" fontSize="8" fontFamily={FONT} style={MUTED}>ШВИДКІСТЬ · НАПРЯМОК</text>
-        <text x="202" y="289" fontSize="13" fontFamily={FONT} style={TEXT}>74 км/год · Пд-Зх</text>
+        <text x="202" y="272" fontSize="8" fontFamily={FONT} style={MUTED}>{t('landing.scene.live.speedDir')}</text>
+        <text x="202" y="289" fontSize="13" fontFamily={FONT} style={TEXT}>{t('landing.scene.live.speedDirValue')}</text>
       </motion.g>
     </>
   );
@@ -310,9 +311,9 @@ function LiveTrack({ active, reduced }: SceneProps) {
 /* ── 5. Рейси ──────────────────────────────────────────────────────── */
 function Trips({ active, reduced }: SceneProps) {
   const stops = [
-    { x: 60, y: 86, label: 'Чернівці', tag: 'Завантаження' },
-    { x: 210, y: 156, label: 'Львів', tag: 'Проміжна' },
-    { x: 356, y: 106, label: 'Rzeszów', tag: 'Розвантаження' },
+    { x: 60, y: 86, label: t('landing.scene.trip.stop0'), tag: t('landing.scene.trip.tag0') },
+    { x: 210, y: 156, label: t('landing.scene.trip.stop1'), tag: t('landing.scene.trip.tag1') },
+    { x: 356, y: 106, label: t('landing.scene.trip.stop2'), tag: t('landing.scene.trip.tag2') },
   ];
   return (
     <>
@@ -332,11 +333,11 @@ function Trips({ active, reduced }: SceneProps) {
 
       <motion.g variants={rise(1.4, 0.5)}>
         <rect x="24" y="228" width="372" height="70" rx="12" style={INSET} />
-        <text x="42" y="252" fontSize="9" fontFamily={FONT} style={MUTED}>РЕЙС</text>
-        <text x="42" y="270" fontSize="12" fontFamily={FONT} style={TEXT}>UA-1183 · 22 т</text>
-        <text x="42" y="288" fontSize="9" fontFamily={FONT} fill="currentColor">Водій призначений</text>
+        <text x="42" y="252" fontSize="9" fontFamily={FONT} style={MUTED}>{t('landing.scene.trip.label')}</text>
+        <text x="42" y="270" fontSize="12" fontFamily={FONT} style={TEXT}>{t('landing.scene.trip.cargo')}</text>
+        <text x="42" y="288" fontSize="9" fontFamily={FONT} fill="currentColor">{t('landing.scene.trip.driverAssigned')}</text>
         <rect x="250" y="246" width="128" height="34" rx="8" fill="currentColor" fillOpacity="0.14" />
-        <text x="314" y="267" fontSize="10" fontFamily={FONT} textAnchor="middle" fill="currentColor">У ДОРОЗІ</text>
+        <text x="314" y="267" fontSize="10" fontFamily={FONT} textAnchor="middle" fill="currentColor">{t('landing.scene.trip.enRoute')}</text>
       </motion.g>
     </>
   );
@@ -345,9 +346,9 @@ function Trips({ active, reduced }: SceneProps) {
 /* ── 6. Єдина модель даних ─────────────────────────────────────────── */
 function DataModel({ active, reduced }: SceneProps) {
   const inputs = [
-    { y: 44, label: 'OKKO', note: 'копійки · мл' },
-    { y: 122, label: 'Shell', note: 'YYYYMMDD' },
-    { y: 200, label: 'Ruptela', note: 'CAN-поля' },
+    { y: 44, label: 'OKKO', note: t('landing.scene.dm.note0') },
+    { y: 122, label: 'Shell', note: t('landing.scene.dm.note1') },
+    { y: 200, label: 'Ruptela', note: t('landing.scene.dm.note2') },
   ];
   return (
     <>
@@ -383,7 +384,7 @@ function DataModel({ active, reduced }: SceneProps) {
       ))}
 
       <motion.text x="332" y="82" fontSize="9" fontFamily={FONT} textAnchor="middle" style={MUTED} variants={rise(1.2, 0.4)}>
-        ОДНА СХЕМА
+        {t('landing.scene.dm.oneSchema')}
       </motion.text>
     </>
   );
@@ -395,7 +396,7 @@ function Export({ active, reduced }: SceneProps) {
     <>
       <motion.g variants={rise(0)}>
         <rect x="24" y="30" width="176" height="150" rx="12" style={INSET} stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" />
-        <text x="42" y="52" fontSize="9" fontFamily={FONT} style={MUTED}>ТАБЛИЦЯ НА ЕКРАНІ</text>
+        <text x="42" y="52" fontSize="9" fontFamily={FONT} style={MUTED}>{t('landing.scene.exp.tableOnScreen')}</text>
         {[0, 1, 2, 3, 4].map(i => (
           <motion.g key={i} variants={rise(0.2 + i * 0.08, 0.35)}>
             <line x1="42" x2="182" y1={70 + i * 22} y2={70 + i * 22} {...LINE} />
@@ -430,11 +431,11 @@ function Export({ active, reduced }: SceneProps) {
 
       <motion.g variants={rise(1.5, 0.45)}>
         <rect x="24" y="238" width="372" height="58" rx="12" style={INSET} />
-        {['Валюта', 'Обʼєм', 'Дата'].map((label, i) => (
-          <g key={label}>
-            <text x={48 + i * 124} y="262" fontSize="8" fontFamily={FONT} style={MUTED}>{label.toUpperCase()}</text>
+        {['landing.scene.exp.currency', 'landing.scene.exp.volume', 'landing.scene.exp.date'].map((key, i) => (
+          <g key={key}>
+            <text x={48 + i * 124} y="262" fontSize="8" fontFamily={FONT} style={MUTED}>{t(key).toUpperCase()}</text>
             <text x={48 + i * 124} y="280" fontSize="11" fontFamily={FONT} fill="currentColor">
-              {['₴ 0,00', '0,0 л', '01.03.26'][i]}
+              {t(['landing.scene.exp.currencyValue', 'landing.scene.exp.volumeValue', 'landing.scene.exp.dateValue'][i])}
             </text>
           </g>
         ))}
@@ -465,14 +466,14 @@ function Roles({ active, reduced }: SceneProps) {
         />
       </motion.g>
       <motion.text x="84" y="196" fontSize="10" fontFamily={FONT} textAnchor="middle" fill="currentColor" variants={rise(0.6, 0.4)}>
-        ГІСТЬ
+        {t('landing.scene.roles.guest')}
       </motion.text>
       <motion.text x="84" y="212" fontSize="8" fontFamily={FONT} textAnchor="middle" style={MUTED} variants={rise(0.65, 0.4)}>
-        лише читання
+        {t('landing.scene.roles.readOnly')}
       </motion.text>
 
       {rows.map((r, i) => (
-        <motion.g key={r.path} variants={rise(0.5 + i * 0.18, 0.42)}>
+        <motion.g key={`${r.method} ${r.path}`} variants={rise(0.5 + i * 0.18, 0.42)}>
           <rect x="170" y={34 + i * 46} width="228" height="36" rx="9" style={INSET} {...LINE} />
           <text x="186" y={51 + i * 46} fontSize="9" fontFamily={FONT} style={r.ok ? { fill: 'var(--accent)' } : { fill: 'var(--danger)' }}>
             {r.method}
@@ -488,7 +489,7 @@ function Roles({ active, reduced }: SceneProps) {
       ))}
 
       <motion.text x="284" y="246" fontSize="9" fontFamily={FONT} textAnchor="middle" style={MUTED} variants={rise(1.3, 0.4)}>
-        заборона стоїть на сервері, не в інтерфейсі
+        {t('landing.scene.roles.note')}
       </motion.text>
     </>
   );
@@ -499,7 +500,7 @@ function Cache({ active, reduced }: SceneProps) {
   return (
     <>
       <motion.g variants={rise(0)}>
-        <text x="24" y="34" fontSize="9" fontFamily={FONT} style={MUTED}>ПЕРШИЙ КАДР</text>
+        <text x="24" y="34" fontSize="9" fontFamily={FONT} style={MUTED}>{t('landing.scene.cache.firstFrame')}</text>
         <rect x="24" y="46" width="176" height="120" rx="12" style={INSET} {...LINE} />
         {[0, 1, 2, 3].map(i => (
           <motion.rect
@@ -514,31 +515,37 @@ function Cache({ active, reduced }: SceneProps) {
             }}
           />
         ))}
-        <text x="112" y="186" fontSize="9" fontFamily={FONT} textAnchor="middle" style={MUTED}>без кешу — скелетон</text>
+        <text x="112" y="186" fontSize="9" fontFamily={FONT} textAnchor="middle" style={MUTED}>{t('landing.scene.cache.noCache')}</text>
       </motion.g>
 
       <motion.g variants={rise(0.5, 0.5)}>
-        <text x="220" y="34" fontSize="9" fontFamily={FONT} style={MUTED}>З КЕШЕМ</text>
+        <text x="220" y="34" fontSize="9" fontFamily={FONT} style={MUTED}>{t('landing.scene.cache.withCache')}</text>
         <rect x="220" y="46" width="176" height="120" rx="12" style={INSET} stroke="currentColor" strokeOpacity="0.45" strokeWidth="1.5" />
-        <text x="238" y="76" fontSize="8" fontFamily={FONT} style={MUTED}>ВИТРАТИ</text>
+        <text x="238" y="76" fontSize="8" fontFamily={FONT} style={MUTED}>{t('landing.scene.cache.spend')}</text>
         <text x="238" y="98" fontSize="19" fontFamily={FONT} fontWeight="600" style={TEXT}>₴2.84M</text>
         {[0, 1].map(i => (
           <rect key={i} x="238" y={114 + i * 18} width={128 - i * 40} height="7" rx="3.5" fill="currentColor" fillOpacity={0.5 - i * 0.2} />
         ))}
-        <text x="308" y="186" fontSize="9" fontFamily={FONT} textAnchor="middle" fill="currentColor">намальовано одразу</text>
+        <text x="308" y="186" fontSize="9" fontFamily={FONT} textAnchor="middle" fill="currentColor">{t('landing.scene.cache.instant')}</text>
       </motion.g>
 
       <motion.g variants={rise(1, 0.5)}>
         <rect x="24" y="212" width="372" height="84" rx="12" style={INSET} />
+        {/* Ключі перелічені явно, а не зібрані з шаблона: інакше сканер їх
+            не бачить і --prune вважає мертвими. */}
         {[
-          { t: '< 30 с', d: 'мережі немає взагалі' },
-          { t: '< 12 год', d: 'кеш зараз, свіже у фоні' },
-          { t: '> 12 год', d: 'звичайний запит' },
+          { t: 'landing.scene.cache.t0', d: 'landing.scene.cache.d0' },
+          { t: 'landing.scene.cache.t1', d: 'landing.scene.cache.d1' },
+          { t: 'landing.scene.cache.t2', d: 'landing.scene.cache.d2' },
         ].map((s, i) => (
           <g key={s.t}>
             <circle cx={62 + i * 124} cy="240" r="4" fill="currentColor" fillOpacity={1 - i * 0.3} />
-            <text x={62 + i * 124} y="266" fontSize="11" fontFamily={FONT} textAnchor="middle" style={TEXT}>{s.t}</text>
-            <text x={62 + i * 124} y="282" fontSize="7.5" fontFamily={FONT} textAnchor="middle" style={MUTED}>{s.d}</text>
+            <text x={62 + i * 124} y="266" fontSize="11" fontFamily={FONT} textAnchor="middle" style={TEXT}>
+              {t(s.t)}
+            </text>
+            <text x={62 + i * 124} y="282" fontSize="7.5" fontFamily={FONT} textAnchor="middle" style={MUTED}>
+              {t(s.d)}
+            </text>
           </g>
         ))}
       </motion.g>
@@ -549,10 +556,10 @@ function Cache({ active, reduced }: SceneProps) {
 /* ── 10. Карти ─────────────────────────────────────────────────────── */
 function Maps({ active, reduced }: SceneProps) {
   const layers = [
-    { y: 176, label: 'Супутник', op: 0.18 },
-    { y: 138, label: 'Топографія', op: 0.3 },
-    { y: 100, label: 'Вулиці', op: 0.55 },
-    { y: 62, label: 'Підписи', op: 0.85 },
+    { y: 176, label: t('landing.scene.maps.satellite'), op: 0.18 },
+    { y: 138, label: t('landing.scene.maps.topo'), op: 0.3 },
+    { y: 100, label: t('landing.scene.maps.streets'), op: 0.55 },
+    { y: 62, label: t('landing.scene.maps.labels'), op: 0.85 },
   ];
   return (
     <>
@@ -580,9 +587,9 @@ function Maps({ active, reduced }: SceneProps) {
 
       <motion.g variants={rise(0.9, 0.5)}>
         <rect x="24" y="236" width="372" height="62" rx="12" style={INSET} />
-        {['Прозорість', 'Сірість', 'Яскравість'].map((label, i) => (
-          <g key={label}>
-            <text x={44 + i * 124} y="258" fontSize="8" fontFamily={FONT} style={MUTED}>{label.toUpperCase()}</text>
+        {['landing.scene.maps.opacity', 'landing.scene.maps.grayscale', 'landing.scene.maps.brightness'].map((key, i) => (
+          <g key={key}>
+            <text x={44 + i * 124} y="258" fontSize="8" fontFamily={FONT} style={MUTED}>{t(key).toUpperCase()}</text>
             <rect x={44 + i * 124} y="270" width="92" height="5" rx="2.5" fill="var(--surface-hover)" />
             <motion.rect
               x={44 + i * 124} y="270" height="5" rx="2.5" fill="currentColor"
@@ -602,6 +609,11 @@ function Maps({ active, reduced }: SceneProps) {
 }
 
 /* ── 11. Мови ──────────────────────────────────────────────────────── */
+/**
+ * Зразок того самого ключа в різних словниках. Ці рядки НЕ перекладаються:
+ * вони і є демонстрацією перекладу, тож мають лишатися такими в будь-якій мові.
+ * i18n-ignore-raw: I18N_WORDS
+ */
 const I18N_WORDS = [
   { code: 'UA', word: 'Паливні картки' },
   { code: 'EN', word: 'Fuel cards' },
@@ -613,7 +625,7 @@ function I18nScene({ active, reduced }: SceneProps) {
   return (
     <>
       <motion.text x="24" y="40" fontSize="9" fontFamily={FONT} style={MUTED} variants={rise(0)}>
-        ОДИН КЛЮЧ · ЧОТИРИ СЛОВНИКИ
+        {t('landing.scene.i18n.eyebrow')}
       </motion.text>
       <motion.text x="24" y="66" fontSize="11" fontFamily={FONT} fill="currentColor" variants={rise(0.1)}>
         common.fuelCards
@@ -631,7 +643,7 @@ function I18nScene({ active, reduced }: SceneProps) {
       <motion.g variants={rise(1.1, 0.45)}>
         <rect x="24" y="278" width="372" height="1" style={{ fill: 'var(--border-subtle)' }} />
         <text x="24" y="302" fontSize="8.5" fontFamily={FONT} style={MUTED}>
-          пропущений переклад показує українську, а не назву ключа
+          {t('landing.scene.i18n.note')}
         </text>
       </motion.g>
     </>
@@ -639,7 +651,13 @@ function I18nScene({ active, reduced }: SceneProps) {
 }
 
 /* ── 12. Командна палітра ──────────────────────────────────────────── */
-const PALETTE_ROWS = ['Транзакції', 'Телематика · флот', 'Тема: темна', 'Тепловий звіт'];
+/** Тут КЛЮЧІ: масив рівня модуля, t() ставиться в місці рендеру. */
+const PALETTE_ROWS = [
+  'landing.scene.pal.row0',
+  'landing.scene.pal.row1',
+  'landing.scene.pal.row2',
+  'landing.scene.pal.row3',
+];
 
 function Palette({ active, reduced }: SceneProps) {
   return (
@@ -647,7 +665,7 @@ function Palette({ active, reduced }: SceneProps) {
       <motion.g variants={rise(0)}>
         <rect x="34" y="42" width="352" height="232" rx="16" style={INSET} stroke="currentColor" strokeOpacity="0.35" strokeWidth="1.5" />
         <line x1="34" x2="386" y1="94" y2="94" {...LINE} />
-        <text x="58" y="76" fontSize="13" fontFamily={FONT} style={TEXT}>те</text>
+        <text x="58" y="76" fontSize="13" fontFamily={FONT} style={TEXT}>{t('landing.scene.pal.query')}</text>
         <motion.rect
           x="82" y="62" width="2" height="18" fill="currentColor"
           variants={{
@@ -673,13 +691,13 @@ function Palette({ active, reduced }: SceneProps) {
           {i === 0 && <rect x="46" y={106 + i * 40} width="328" height="34" rx="9" fill="currentColor" fillOpacity="0.12" />}
           <circle cx="68" cy={123 + i * 40} r="3.5" fill="currentColor" fillOpacity={i === 0 ? 1 : 0.45} />
           <text x="84" y={127 + i * 40} fontSize="11" fontFamily={FONT} style={i === 0 ? { fill: 'var(--text-primary)' } : MUTED}>
-            {row}
+            {t(row)}
           </text>
         </motion.g>
       ))}
 
       <motion.text x="210" y="300" fontSize="8.5" fontFamily={FONT} textAnchor="middle" style={MUTED} variants={rise(1.2, 0.4)}>
-        до відкриття не малює нічого
+        {t('landing.scene.pal.note')}
       </motion.text>
     </>
   );

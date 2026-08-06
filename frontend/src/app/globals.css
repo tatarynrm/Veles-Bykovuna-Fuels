@@ -484,6 +484,27 @@ h1, h2, h3, h4 {
       width: 44px;
       height: 44px;
     }
+
+    /*
+      Перемикач мов — не .btn-icon (у нього прапорець, код мови й шеврон),
+      тож 44px йому треба задати окремо. `min-height` б'є `h-9` з утиліт,
+      бо обмеження сильніше за саму height.
+    */
+    [data-lang-trigger] {
+      min-height: 44px;
+    }
+
+    /*
+      Смужки-перемикачі слайдів мають висоту 1 (4px) — це навмисно, вони й
+      індикатор прогресу. Пальцем у таке не влучити, тож зону натискання
+      розширює псевдоелемент: сама смужка лишається тонкою, а тапати можна
+      по 44px. inset по вертикалі, щоб сусідні смужки не перекривались.
+    */
+    [data-tab-hit]::before {
+      content: '';
+      position: absolute;
+      inset: -20px 0;
+    }
   }
 
   /* Legacy alias used across older markup */
@@ -818,6 +839,27 @@ h1, h2, h3, h4 {
   .marquee-pause:hover .marquee-track {
     animation-play-state: paused;
   }
+
+  /*
+    Вертикальна стрічка — для 3D-стіни відгуків.
+
+    Приймач інший, ніж у горизонтальної, і навмисно: тут ОДИН трек, у якому
+    список лежить двічі, і зсув на -50% його власної висоти. Так стик
+    гарантовано непомітний. Проміжок між картками задає padding самої картки,
+    а не flex-gap: gap додав би зайву висоту рівно на один проміжок, і петля
+    смикалася б щоразу на стику.
+  */
+  .marquee-v {
+    overflow: hidden;
+  }
+  .marquee-v-track {
+    animation: marquee-vertical var(--marquee-duration, 44s) linear infinite;
+    animation-direction: var(--marquee-direction, normal);
+    will-change: transform;
+  }
+  .marquee-v-pause:hover .marquee-v-track {
+    animation-play-state: paused;
+  }
 }
 
 /* ==========================================================================
@@ -939,6 +981,15 @@ h1, h2, h3, h4 {
   }
   to {
     transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-vertical {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
   }
 }
 
@@ -1107,6 +1158,20 @@ h1, h2, h3, h4 {
   }
   .marquee-track:last-child {
     display: none;
+  }
+
+  /*
+    Глобальне правило вище обриває анімацію на останньому кадрі, а для стрічки
+    останній кадр — це translateY(-50%): половина карток поїхала б за верхній
+    край. Тому тут анімація знімається повністю, а колонка стає звичайним
+    скролером.
+  */
+  .marquee-v {
+    overflow-y: auto;
+  }
+  .marquee-v-track {
+    animation: none !important;
+    transform: none !important;
   }
   .shimmer::after {
     display: none;

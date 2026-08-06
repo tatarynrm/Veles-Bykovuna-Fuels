@@ -1,9 +1,17 @@
+/**
+ * Текстові поля тут — це КЛЮЧІ i18n, а не готовий текст: t() ставиться в
+ * місці рендеру (`{t(h.title)}`). На рівні модуля переклад застряг би тією
+ * мовою, яка була активна на момент імпорту.
+ */
 export interface Horizon {
   id: string;
+  /** Ключ i18n. */
   phase: string;
+  /** Ключ i18n. */
   title: string;
-  /** Чому саме ці інтеграції йдуть разом і саме в цій черзі. */
+  /** Ключ i18n: чому саме ці інтеграції йдуть разом і саме в цій черзі. */
   rationale: string;
+  /** Ключі i18n. Назви вендорів у перекладах лишаються як є. */
   items: string[];
   tone: 'accent' | 'warn' | 'info' | 'muted';
 }
@@ -16,78 +24,77 @@ export interface Horizon {
 export const HORIZONS: Horizon[] = [
   {
     id: 'h1',
-    phase: 'Горизонт 1',
-    title: 'Уся заправна мережа в одному звіті',
-    rationale:
-      'Шаблон адаптера вже відпрацьований на OKKO і Shell, тому кожна наступна мережа — це дні, а не тижні. Найшвидша віддача для бухгалтерії й найпомітніша зміна для клієнта.',
+    phase: 'landing.rm.h1.phase',
+    title: 'landing.rm.h1.title',
+    rationale: 'landing.rm.h1.rationale',
     items: [
-      'SOCAR sCard',
-      'Агрегатор паливних карток',
-      'WOG',
-      'Укрнафта',
-      'UPG',
-      'Telegram Bot API',
-      'Opendatabot',
+      'landing.rm.h1.i0',
+      'landing.rm.h1.i1',
+      'landing.rm.h1.i2',
+      'landing.rm.h1.i3',
+      'landing.rm.h1.i4',
+      'landing.rm.h1.i5',
+      'landing.rm.h1.i6',
     ],
     tone: 'accent',
   },
   {
     id: 'h2',
-    phase: 'Горизонт 2',
-    title: 'Гроші й документи замикають коло',
-    rationale:
-      'Транзакція по картці має автоматично зустрічатися з банківською випискою та податковою накладною. Без цього ERP лишається звітом, а не обліком.',
+    phase: 'landing.rm.h2.phase',
+    title: 'landing.rm.h2.title',
+    rationale: 'landing.rm.h2.rationale',
     items: [
-      'ПриватБанк «Автоклієнт»',
-      'monobank Corporate',
-      'Вчасно (ЕДО)',
-      'Paperless',
-      'BAS ERP / 1С OData',
-      'M.E.Doc «Інтеграція»',
+      'landing.rm.h2.i0',
+      'landing.rm.h2.i1',
+      'landing.rm.h2.i2',
+      'landing.rm.h2.i3',
+      'landing.rm.h2.i4',
+      'landing.rm.h2.i5',
     ],
     tone: 'info',
   },
   {
     id: 'h3',
-    phase: 'Горизонт 3',
-    title: 'Дорога, техніка й водії',
-    rationale:
-      'Те, що напряму економить пальне й робочий час: реальна витрата з датчиків, маршрут із урахуванням габаритів фури і тахограф, який зчитується сам.',
+    phase: 'landing.rm.h3.phase',
+    title: 'landing.rm.h3.title',
+    rationale: 'landing.rm.h3.rationale',
     items: [
-      'Віддалене зчитування тахографа (DDD)',
-      'Technoton DUT-E / Omnicomm LLS',
-      'HERE Truck Routing',
-      'Visicom',
-      'OpenRouteService (HGV)',
-      'OpenWeather Road Risk',
-      'flespi',
-      'Wialon',
+      'landing.rm.h3.i0',
+      'landing.rm.h3.i1',
+      'landing.rm.h3.i2',
+      'landing.rm.h3.i3',
+      'landing.rm.h3.i4',
+      'landing.rm.h3.i5',
+      'landing.rm.h3.i6',
+      'landing.rm.h3.i7',
     ],
     tone: 'warn',
   },
   {
     id: 'h4',
-    phase: 'Горизонт 4',
-    title: 'Регуляторика та аналітика',
-    rationale:
-      'Дати відомі наперед, тож готуватися треба заздалегідь, а не за місяць до дедлайну. Паралельно — вивантаження в BI, яким уже користується фінансовий блок.',
+    phase: 'landing.rm.h4.phase',
+    title: 'landing.rm.h4.title',
+    rationale: 'landing.rm.h4.rationale',
     items: [
-      'е-ТТН через акредитованого провайдера',
-      'e-CMR / eFTI',
-      'SAF-T UA',
-      'КЕП / Дія.Підпис',
-      'Power BI',
-      'Metabase',
-      'e-TOLL (Польща) / EETS',
-      'Відкритий банкінг України',
+      'landing.rm.h4.i0',
+      'landing.rm.h4.i1',
+      'landing.rm.h4.i2',
+      'landing.rm.h4.i3',
+      'landing.rm.h4.i4',
+      'landing.rm.h4.i5',
+      'landing.rm.h4.i6',
+      'landing.rm.h4.i7',
     ],
     tone: 'muted',
   },
 ];
 
 export interface RegulatoryDate {
+  /** Дата подається як є — вона однакова в усіх мовах. */
   date: string;
+  /** Ключ i18n. */
   title: string;
+  /** Ключ i18n. */
   detail: string;
   /** Чи дедлайн уже настав. */
   active: boolean;
@@ -96,30 +103,33 @@ export interface RegulatoryDate {
 /**
  * Регуляторні віхи — єдиний блок на сторінці з конкретними датами, тому вони
  * мають бути перевірюваними. Джерело: чинні акти ЄС та оприлюднені плани ДПС.
+ *
+ * `date` подається як є — цифри однакові в усіх мовах.
+ * i18n-ignore-props: date
  */
 export const REGULATORY: RegulatoryDate[] = [
   {
     date: 'з 2025',
-    title: 'SAF-T UA та е-аудит',
-    detail: 'Великі платники подають стандартний аудиторський файл; дані по пальному — часта зона запитань.',
+    title: 'landing.rm.reg0.title',
+    detail: 'landing.rm.reg0.detail',
     active: true,
   },
   {
     date: 'з 08.2025',
-    title: 'Відкритий банкінг України',
-    detail: 'Постанова НБУ №80 діє, перехідний період для банків завершився на початку 2026 року.',
+    title: 'landing.rm.reg1.title',
+    detail: 'landing.rm.reg1.detail',
     active: true,
   },
   {
     date: '01.2027',
-    title: 'е-ТТН стає обовʼязковою',
-    detail: 'Електронна товарно-транспортна накладна для внутрішніх перевезень, зі спецформами для пального.',
+    title: 'landing.rm.reg2.title',
+    detail: 'landing.rm.reg2.detail',
     active: false,
   },
   {
     date: '07.2027',
-    title: 'eFTI: органи ЄС приймають цифрові дані',
-    detail: 'Регламент 2020/1056 зобовʼязує компетентні органи приймати e-CMR — актуально для рейсів у Польщу й Румунію.',
+    title: 'landing.rm.reg3.title',
+    detail: 'landing.rm.reg3.detail',
     active: false,
   },
 ];
