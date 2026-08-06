@@ -11,9 +11,12 @@ import React, {
 import {
   applyLocale,
   detectLocale,
+  getLocale,
   isLocale,
   LOCALE_STORAGE_KEY,
   DEFAULT_LOCALE,
+  readLocaleCookie,
+  writeLocaleCookie,
   t,
   type Locale,
 } from '@/lib/i18n';
@@ -37,30 +40,79 @@ const I18nContext = createContext<I18nContextValue | undefined>(undefined);
 const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
-export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
+export function I18nProvider({
+  children,
+  /**
+   * Мова з cookie, прочитана в layout на сервері. Саме завдяки їй SSR-розмітка
+   * приходить уже потрібною мовою — без цього кожне завантаження показувало
+   * кадр українською, а потім усе дерево перемонтовувалось.
+   */
+  initialLocale = DEFAULT_LOCALE,
+}: {
+  children: React.ReactNode;
+  initialLocale?: Locale;
+}) {
+  const [locale, setLocaleState] = useState<Locale>(initialLocale);
   const [ready, setReady] = useState(false);
+
+  /*
+    Синхронно, ще до рендеру дітей: t() читає мову з модуля, а не з контексту,
+    тож на першому ж проході — і на сервері, і на клієнті — вона має бути
+    правильною. Інакше діти встигнуть намалюватись мовою за замовчуванням.
+
+    Звіряємось саме зі СТАНОМ, а не з initialLocale. Раніше тут стояв
+    initialLocale — і мова не перемикалась без перезавантаження: цей проп
+    приходить із cookie на момент серверного рендера й після вибору мови
+    лишається старим. setLocale записував cookie, застосовував нову мову й
+    оновлював стан, після чого провайдер перерендерювався, бачив
+    `getLocale() !== initialLocale` і відкочував мову назад. Помагав лише
+    перезавантаження, бо тоді сервер віддавав уже нову cookie.
+
+    На першому рендері locale === initialLocale, тож для SSR поведінка та сама.
+
+    На сервері це загальнопроцесна змінна. Для внутрішнього ERP із кількома
+    диспетчерами цього досить, але якщо застосунок колись обслуговуватиме
+    багатьох користувачів з різними мовами одночасно — цю змінну доведеться
+    зробити запитоскопною (AsyncLocalStorage).
+  */
+  if (getLocale() !== locale) applyLocale(locale);
 
   useIsomorphicLayoutEffect(() => {
     /*
-      Пріоритет: вибір користувача → мова браузера → англійська.
-      Вибір зберігається лише тоді, коли його зробили свідомо (setLocale), —
-      автовизначення нічого не пише, тож користувач, який змінив мову системи,
-      отримає нову мову, а не назавжди «залиплу» першу.
+      Пріоритет: вибір користувача (cookie) → застарілий localStorage →
+      мова браузера → англійська.
+
+      Коли cookie вже є, initialLocale із сервера з нею збігається, стан не
+      змінюється — і дерево не перемонтовується. Тіло ефекту працює лише на
+      першому візиті або після міграції зі старого localStorage.
     */
-    let initial: Locale = detectLocale();
-    try {
-      const saved = localStorage.getItem(LOCALE_STORAGE_KEY);
-      if (isLocale(saved)) initial = saved;
-    } catch {
-      /* приватний режим — лишається автовизначення */
+    let initial: Locale | null = readLocaleCookie();
+
+    if (!initial) {
+      try {
+        const saved = localStorage.getItem(LOCALE_STORAGE_KEY);
+        if (isLocale(saved)) initial = saved;
+      } catch {
+        /* приватний режим — лишається автовизначення */
+      }
+      // Мова браузера нічого не зберігає: якщо користувач змінить мову системи,
+      // він отримає нову, а не назавжди «залиплу» першу.
+      if (initial) writeLocaleCookie(initial);
     }
-    applyLocale(initial);
-    setLocaleState(initial);
+
+    const resolved = initial ?? detectLocale();
+    if (resolved !== locale) {
+      applyLocale(resolved);
+      setLocaleState(resolved);
+    }
     setReady(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const setLocale = useCallback((next: Locale) => {
+    // Cookie — головне сховище: саме її читає сервер. localStorage лишається
+    // дублем для інлайн-скрипта в layout, який виставляє <html lang> ще до React.
+    writeLocaleCookie(next);
     try {
       localStorage.setItem(LOCALE_STORAGE_KEY, next);
     } catch {

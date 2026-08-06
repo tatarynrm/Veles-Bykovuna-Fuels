@@ -372,7 +372,7 @@ export default function FleetPage() {
 
   const handleLogout = () => {
     signOut();
-    router.push('/login');
+    router.push('/');
   };
 
   const handlePartClick = (partKey: string) => {

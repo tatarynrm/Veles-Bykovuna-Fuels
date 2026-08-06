@@ -13,7 +13,6 @@ import { t } from '@/lib/i18n';
 
 export default function OverviewPage() {
   const { authenticated } = useAuthGuard();
-  /** true, поки в фоні їде свіжа відповідь поверх показаного кешу. */
   const revalidating = useApiRefreshing();
 
   const [activeBrand, setActiveBrand] = useState('ALL');
@@ -32,25 +31,18 @@ export default function OverviewPage() {
   const [spendingTrends, setSpendingTrends] = useState<any[]>([]);
   const [apiStatus, setApiStatus] = useState<any>(null);
 
-  /** Один обробник для summary: він же джерело статусу шлюзу в топбарі. */
   const applySummary = useCallback((sum: any) => {
     if (!sum) return;
     setSummary(sum);
     setApiStatus(sum.apiStatus);
   }, []);
 
-  /*
-    `force` вмикає кнопка «Оновити»: там користувач свідомо просить свіже,
-    тож кеш пропускаємо. Звичайний вхід на сторінку малює кеш миттєво, а
-    onFresh-колбеки допишуть новіші дані, коли вендор відповість.
-  */
   const loadData = useCallback(
     async (brand: string, range: DateRange, force = false) => {
       setIsRefreshing(true);
       const params = { date_from: range.dateFrom, date_to: range.dateTo, brand };
       const opts = { force };
 
-      // Скелетон показуємо лише коли показати нічого: інакше кеш зробить це краще.
       if (!hasFreshEnough('/api/analytics/summary', params)) setLoading(true);
 
       const [sum, tx, breakdown, trends] = await Promise.all([

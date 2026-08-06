@@ -2,8 +2,9 @@
 
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, Globe, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 import { useI18n } from '@/context/I18nContext';
+import Flag from './Flag';
 import { LOCALES, LOCALE_META, type Locale } from '@/lib/i18n';
 
 interface LanguageSwitcherProps {
@@ -21,7 +22,13 @@ interface LanguageSwitcherProps {
 }
 
 const MENU_WIDTH = 224; // w-56
-const MENU_HEIGHT = 220; // приблизна: заголовок + чотири рядки
+/*
+  Приблизна висота меню — потрібна лише для вибору боку розкриття.
+  Десять мов у список уже не вміщаються на невисоких екранах, тому саме меню
+  обмежене по висоті й прокручується; тут же тримаємо ту саму стелю, щоб
+  вибір «вгору чи вниз» рахувався від реального розміру.
+*/
+const MENU_HEIGHT = 420;
 const GAP = 8; // відступ між кнопкою і меню
 const VIEWPORT_PAD = 8; // щоб меню не притискалось до краю екрана
 
@@ -139,11 +146,16 @@ export default function LanguageSwitcher({
     if (next !== locale) setLocale(next);
   };
 
-  /* ── чотири коди в ряд ── */
+  /*
+    ── сітка мов ──
+    Десять кодів у один ряд не поміщаються навіть на розгорнутій бічній
+    панелі, тому це сітка 5×2, а не смуга. Прапорець тут несе основне
+    навантаження, код лишається підписом під ним.
+  */
   if (variant === 'segmented') {
     return (
       <div
-        className={`segmented w-full ${className}`}
+        className={`grid grid-cols-5 gap-1 ${className}`}
         role="group"
         aria-label={t('nav.interfaceLanguage')}
         data-tour="language"
@@ -159,9 +171,14 @@ export default function LanguageSwitcher({
               title={meta.native}
               aria-label={meta.native}
               aria-pressed={active}
-              className={`segmented-item flex-1 ${active ? 'segmented-item-active' : ''}`}
+              className={`flex flex-col items-center gap-1 rounded-control py-1.5 transition-colors ${
+                active
+                  ? 'bg-accent-soft text-txt-primary'
+                  : 'text-txt-muted hover:bg-surface-hover hover:text-txt-primary'
+              }`}
             >
-              <span className="block text-center font-mono text-micro font-semibold tracking-wider">
+              <Flag region={meta.region} size={20} />
+              <span className="font-mono text-micro font-semibold tracking-wider">
                 {meta.short}
               </span>
             </button>
@@ -179,10 +196,10 @@ export default function LanguageSwitcher({
       ref={menuRef}
       role="listbox"
       aria-label={t('nav.interfaceLanguage')}
-      style={menuStyle ?? undefined}
       /* Вище мобільної шухляди (z-50) і шарів Leaflet (400), нижче
          навчального оверлея (900). */
-      className="glass-float animate-pop z-[600] overflow-hidden rounded-card p-1.5"
+      className="glass-float animate-pop z-[600] overflow-y-auto rounded-card p-1.5"
+      style={{ ...(menuStyle ?? {}), maxHeight: 'min(70vh, 420px)' }}
     >
       <p className="micro-label px-2.5 pb-1.5 pt-1">{t('nav.interfaceLanguage')}</p>
 
@@ -202,10 +219,11 @@ export default function LanguageSwitcher({
                 : 'text-txt-secondary hover:bg-surface-hover hover:text-txt-primary'
             }`}
           >
+            <Flag region={meta.region} size={22} />
             <span
               aria-hidden
-              className={`flex h-6 w-8 shrink-0 items-center justify-center rounded-control font-mono text-micro font-semibold tracking-wider ${
-                active ? 'bg-accent text-white' : 'bg-surface-inset text-txt-muted'
+              className={`shrink-0 font-mono text-micro font-semibold tracking-wider ${
+                active ? 'text-accent' : 'text-txt-muted'
               }`}
             >
               {meta.short}
@@ -233,7 +251,7 @@ export default function LanguageSwitcher({
         title={t('nav.interfaceLanguage')}
         className="btn btn-ghost h-9 gap-1.5 px-2.5"
       >
-        <Globe className="h-3.5 w-3.5 text-accent" />
+        <Flag region={activeMeta.region} size={18} />
         <span className="font-mono text-micro font-semibold tracking-wider">
           {activeMeta.short}
         </span>

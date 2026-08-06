@@ -240,7 +240,7 @@ export default function Sidebar({ apiStatus }: SidebarProps) {
           >
             {/* Той самий VelesLogo, що на вході й на заставці, — бренд усюди один. */}
             <Link
-              href="/"
+              href="/dashboard"
               data-tour="brand"
               title="VELES ERP · VELES BUKOVYNA FUELS"
               className="group flex min-w-0 items-center transition-transform duration-200 group-hover:scale-105"

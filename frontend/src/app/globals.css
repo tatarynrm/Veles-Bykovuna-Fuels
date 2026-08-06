@@ -83,6 +83,22 @@
   --overlay: rgba(3, 5, 9, 0.62);
   --sheen: rgba(255, 255, 255, 0.22);
 
+  /*
+    Маркетингові сторінки: заголовок лежить поверх відео, тож затемнення мусить
+    залежати від теми. У темній це темна пелена й світлий текст — усе як було.
+    Світла тема читає ті самі змінні, але з протилежним боком (див. нижче):
+    без цього --text-primary #10151F опинявся на темному відео й зникав.
+  */
+  --hero-scrim: linear-gradient(
+    135deg,
+    rgba(7, 10, 16, 0.94) 0%,
+    rgba(7, 10, 16, 0.66) 55%,
+    rgba(7, 10, 16, 0.9) 100%
+  );
+  --hero-fade: linear-gradient(to bottom, transparent, var(--bg-page));
+  --hero-video-filter: none;
+  --nav-scrim: rgba(7, 10, 16, 0.78);
+
   /* Motion */
   --ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-state: cubic-bezier(0.4, 0, 0.2, 1);
@@ -152,6 +168,48 @@ body.light-theme,
 
   --overlay: rgba(15, 23, 42, 0.34);
   --sheen: rgba(255, 255, 255, 0.55);
+
+  /*
+    Пелена НАПРАВЛЕНА, а не суцільна: щільна ліворуч, під колонкою тексту, і
+    майже прозора праворуч, де відео має лишатись видимим.
+
+    Суцільну довелося б тримати щонайменше на 0.55 — нижче цього майже чорний
+    --text-primary на темному кадрі падає під 4.5:1. Але рівна пелена такої
+    щільності разом із brightness/saturate перетворювала відео на сірий фон.
+    Градієнт розводить ці дві вимоги в різні частини кадру: текст читається
+    зліва, відео лишається собою справа.
+
+    Фільтра немає навмисно — кадр іде в оригінальних кольорах і різкості.
+  */
+  --hero-scrim: linear-gradient(
+    100deg,
+    rgba(244, 246, 250, 0.96) 0%,
+    rgba(244, 246, 250, 0.92) 28%,
+    rgba(244, 246, 250, 0.55) 52%,
+    rgba(244, 246, 250, 0.16) 72%,
+    rgba(244, 246, 250, 0.04) 100%
+  );
+  --hero-video-filter: none;
+  --nav-scrim: rgba(244, 246, 250, 0.82);
+}
+
+/*
+  На вузькому екрані колонки немає — текст іде на всю ширину, тож розводити
+  його з відео по горизонталі нічим. Тому градієнт стає вертикальним:
+  верхня смуга кадру лишається чистою, а нижче починається пелена під текст.
+*/
+@media (max-width: 1023px) {
+  html.light-theme,
+  body.light-theme,
+  .light-theme {
+    --hero-scrim: linear-gradient(
+      180deg,
+      rgba(244, 246, 250, 0.28) 0%,
+      rgba(244, 246, 250, 0.6) 17%,
+      rgba(244, 246, 250, 0.92) 32%,
+      rgba(244, 246, 250, 0.95) 100%
+    );
+  }
 }
 
 /* ==========================================================================
@@ -170,8 +228,7 @@ body {
 body {
   background-color: var(--bg-page);
   color: var(--text-primary);
-  font-family: 'Inter var', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  font-feature-settings: 'cv11', 'ss01';
+  font-family: var(--font-body), 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 13px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -219,6 +276,41 @@ h1, h2, h3, h4 {
   letter-spacing: -0.018em;
   font-weight: 600;
   color: var(--text-primary);
+}
+
+/* Цифри в таблицях і KPI не мають «стрибати» при оновленні даних. */
+.data-table td,
+.stat,
+[data-numeric] {
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+  Акцидентна гарнітура — лише маркетингові заголовки. Unbounded помітно ширша
+  за Manrope, тож трекінг тут тісніший, ніж загальний для h1–h4: інакше довгий
+  український заголовок розповзається на зайвий рядок.
+*/
+/*
+  Пакет даних, що біжить по звʼязку на схемі інтеграцій. Пауза між проходами
+  зроблена всередині самих кейфреймів (прозорість на краях), бо CSS-анімація
+  не має аналога repeatDelay.
+*/
+@keyframes flow-dot {
+  0%   { offset-distance: 0%;   opacity: 0; }
+  8%   { opacity: 0.9; }
+  50%  { offset-distance: 100%; opacity: 0.9; }
+  58%  { offset-distance: 100%; opacity: 0; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [style*='flow-dot'] { animation: none !important; opacity: 0.5; }
+}
+
+.font-display {
+  font-family: var(--font-display), var(--font-body), system-ui, sans-serif;
+  letter-spacing: -0.035em;
+  font-weight: 600;
 }
 
 ::selection {
@@ -380,6 +472,18 @@ h1, h2, h3, h4 {
   }
   .btn-icon:active {
     transform: scale(0.94);
+  }
+
+  /*
+    Пальцем у 36 px влучити важко — дизайн-система вимагає щонайменше 44.
+    Умова саме на тип вказівника, а не на ширину: на вузькому вікні десктопа
+    миша лишається точною, а на планшеті з широким екраном палець — ні.
+  */
+  @media (pointer: coarse) {
+    .btn-icon {
+      width: 44px;
+      height: 44px;
+    }
   }
 
   /* Legacy alias used across older markup */

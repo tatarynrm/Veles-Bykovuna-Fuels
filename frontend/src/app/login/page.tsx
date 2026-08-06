@@ -2,11 +2,13 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, User, ArrowRight, AlertCircle, Loader2, Eye } from 'lucide-react';
+import Link from 'next/link';
+import { Lock, User, ArrowRight, ArrowLeft, AlertCircle, Loader2, Eye } from 'lucide-react';
 import VelesLogo from '@/components/VelesLogo';
 import { API_BASE } from '@/lib/api';
 import { t } from '@/lib/i18n';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import ThemeToggleButton from '@/components/ThemeToggleButton';
 import { markSplashPending } from '@/lib/splashFlag';
 
 const QUICK_LOGINS = [
@@ -41,7 +43,7 @@ export default function LoginPage() {
         localStorage.setItem('veles_token', data.token);
         localStorage.setItem('veles_user', JSON.stringify(data.user));
         markSplashPending();
-        router.push('/');
+        router.push('/dashboard');
       } else {
         setError(data.message || t('auth.incorrectUsernamePassword'));
       }
@@ -59,10 +61,21 @@ export default function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden p-4">
-      {/* Мову треба вибрати ще до входу — інакше екран авторизації лишається українським */}
-      <div className="absolute right-4 top-4 z-10">
+      {/* Мову і тему треба мати ще до входу: екран авторизації — це перше, що
+          бачить користувач, і він не має бути ані чужою мовою, ані чужою темою. */}
+      <div className="absolute right-4 top-4 z-10 flex items-center gap-1.5">
+        <ThemeToggleButton />
         <LanguageSwitcher />
       </div>
+
+      {/* Вихід із форми входу без «назад» у браузері — на публічну головну. */}
+      <Link
+        href="/"
+        className="btn btn-ghost absolute left-4 top-4 z-10 gap-1.5 px-3 py-2 text-xs"
+      >
+        <ArrowLeft size={13} />
+        <span className="hidden sm:inline">{t('auth.backToHome')}</span>
+      </Link>
 
       <div className="glass-panel rise w-full max-w-[400px] p-8">
         {/* Brand */}

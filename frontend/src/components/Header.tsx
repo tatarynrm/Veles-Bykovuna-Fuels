@@ -48,7 +48,9 @@ export default function Header({
 
   const handleLogout = () => {
     signOut();
-    router.push('/login');
+    // На головну, а не на /login: після виходу користувач частіше хоче
+    // просто піти, ніж одразу ввійти знову. Форма входу за один клік звідти.
+    router.push('/');
   };
 
   const initials = (user?.name || user?.username || 'V')

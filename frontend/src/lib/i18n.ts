@@ -29,8 +29,22 @@ import uk from '@/locales/uk.json';
 import en from '@/locales/en.json';
 import pl from '@/locales/pl.json';
 import de from '@/locales/de.json';
+import ro from '@/locales/ro.json';
+import cs from '@/locales/cs.json';
+import sk from '@/locales/sk.json';
+import hu from '@/locales/hu.json';
+import fr from '@/locales/fr.json';
+import es from '@/locales/es.json';
 
-export const LOCALES = ['uk', 'en', 'pl', 'de'] as const;
+/*
+  Порядок визначає вигляд перемикача: спершу мова компанії, далі англійська
+  як спільна для міжнародних перевезень, потім країни за напрямками рейсів —
+  Польща, Німеччина, Румунія, Чехія, Словаччина, Угорщина, і наостанок
+  Франція та Іспанія.
+*/
+export const LOCALES = [
+  'uk', 'en', 'pl', 'de', 'ro', 'cs', 'sk', 'hu', 'fr', 'es',
+] as const;
 export type Locale = (typeof LOCALES)[number];
 
 /**
@@ -46,7 +60,35 @@ export const DEFAULT_LOCALE: Locale = 'uk';
  */
 export const FALLBACK_LOCALE: Locale = 'en';
 
+/**
+ * Вибір мови живе у cookie, а не лише в localStorage.
+ *
+ * Причина суто практична: сервер має намалювати розмітку одразу потрібною
+ * мовою. localStorage він не бачить, тому SSR завжди віддавав українську, а
+ * клієнт після гідратації перемикав мову й перемонтовував усе дерево — на
+ * кожному завантаженні сторінки було видно спалах чужої мови.
+ *
+ * Ключ той самий, `veles_locale`, тож джерело правди лишається одне.
+ */
 export const LOCALE_STORAGE_KEY = 'veles_locale';
+export const LOCALE_COOKIE = 'veles_locale';
+/** Рік: вибір мови не має злітати сам собою. */
+const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+/** Читає мову з cookie документа (клієнт). На сервері їх читає layout. */
+export function readLocaleCookie(): Locale | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(
+    new RegExp(`(?:^|; )${LOCALE_COOKIE}=([^;]*)`),
+  );
+  const value = match ? decodeURIComponent(match[1]) : null;
+  return isLocale(value) ? value : null;
+}
+
+export function writeLocaleCookie(locale: Locale): void {
+  if (typeof document === 'undefined') return;
+  document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE}; samesite=lax`;
+}
 
 export interface LocaleMeta {
   /** Код у перемикачі. */
@@ -54,20 +96,31 @@ export interface LocaleMeta {
   /** Назва мови її ж мовою. */
   native: string;
   /**
-   * Двобуквений ярлик для перемикача. Емодзі-прапорів тут навмисно немає:
-   * Windows не має для них гліфів і показує замість прапора літери «UA», через
-   * що кнопка виглядала як «UA UA».
+   * Двобуквений ярлик для перемикача.
+   *
+   * Прапор поруч малює компонент <Flag> інлайновим SVG, а НЕ емодзі:
+   * Windows не має гліфів для регіональних індикаторів і замість 🇺🇦 показує
+   * літери «UA», через що кнопка колись виглядала як «UA UA». SVG однаковий
+   * у всіх системах.
    */
   short: string;
+  /** Код країни для прапорця — не завжди збігається з кодом мови. */
+  region: string;
   /** BCP-47 для Intl: числа, валюта, дати. */
   intl: string;
 }
 
 export const LOCALE_META: Record<Locale, LocaleMeta> = {
-  uk: { code: 'uk', native: 'Українська', short: 'UA', intl: 'uk-UA' },
-  en: { code: 'en', native: 'English', short: 'EN', intl: 'en-GB' },
-  pl: { code: 'pl', native: 'Polski', short: 'PL', intl: 'pl-PL' },
-  de: { code: 'de', native: 'Deutsch', short: 'DE', intl: 'de-DE' },
+  uk: { code: 'uk', native: 'Українська', short: 'UA', region: 'UA', intl: 'uk-UA' },
+  en: { code: 'en', native: 'English',    short: 'EN', region: 'GB', intl: 'en-GB' },
+  pl: { code: 'pl', native: 'Polski',     short: 'PL', region: 'PL', intl: 'pl-PL' },
+  de: { code: 'de', native: 'Deutsch',    short: 'DE', region: 'DE', intl: 'de-DE' },
+  ro: { code: 'ro', native: 'Română',     short: 'RO', region: 'RO', intl: 'ro-RO' },
+  cs: { code: 'cs', native: 'Čeština',    short: 'CS', region: 'CZ', intl: 'cs-CZ' },
+  sk: { code: 'sk', native: 'Slovenčina', short: 'SK', region: 'SK', intl: 'sk-SK' },
+  hu: { code: 'hu', native: 'Magyar',     short: 'HU', region: 'HU', intl: 'hu-HU' },
+  fr: { code: 'fr', native: 'Français',   short: 'FR', region: 'FR', intl: 'fr-FR' },
+  es: { code: 'es', native: 'Español',    short: 'ES', region: 'ES', intl: 'es-ES' },
 };
 
 type Dictionary = Record<string, string>;
@@ -77,6 +130,12 @@ const DICTIONARIES: Record<Locale, Dictionary> = {
   en: en as Dictionary,
   pl: pl as Dictionary,
   de: de as Dictionary,
+  ro: ro as Dictionary,
+  cs: cs as Dictionary,
+  sk: sk as Dictionary,
+  hu: hu as Dictionary,
+  fr: fr as Dictionary,
+  es: es as Dictionary,
 };
 
 export const isLocale = (value: unknown): value is Locale =>

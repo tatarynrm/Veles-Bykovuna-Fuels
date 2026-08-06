@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from 'next';
+import { cookies } from 'next/headers';
+import { Unbounded, Manrope } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { I18nProvider } from '@/context/I18nContext';
 import { TourProvider } from '@/context/TourContext';
-import { t } from '@/lib/i18n';
+import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale, t } from '@/lib/i18n';
 import CommandPalette from '@/components/ui/CommandPalette';
 import OnboardingTour from '@/components/OnboardingTour';
 import SplashScreen from '@/components/SplashScreen';
@@ -14,6 +16,31 @@ import SplashScreen from '@/components/SplashScreen';
  * Перекласти опис під кожну мову можна лише окремими маршрутами /en, /pl,
  * від яких ця збірка навмисно відмовилась.
  */
+/*
+  Дві гарнітури, обидві з кирилицею — це головний критерій: більшість «сучасних»
+  гротесків (Space Grotesk, Geist, Outfit) кирилиці не мають узагалі, і
+  український заголовок мовчки падав би на системний фallback.
+
+  cyrillic-ext обов'язковий: ґ (U+0491) та частина української діакритики лежать
+  саме там, а не в базовому cyrillic.
+
+  Manrope — гарнітура інтерфейсу, замість Inter: тепліша, з характером, але так
+  само спокійна у щільних таблицях.
+  Unbounded — акцидентна, лише для заголовків маркетингових сторінок. Вона
+  широка, тож у застосунку її немає: дашборд лишається на Manrope.
+*/
+const fontBody = Manrope({
+  subsets: ['latin', 'latin-ext', 'cyrillic', 'cyrillic-ext'],
+  variable: '--font-body',
+  display: 'swap',
+});
+
+const fontDisplay = Unbounded({
+  subsets: ['latin', 'latin-ext', 'cyrillic', 'cyrillic-ext'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: 'VELES ERP | VELES BUKOVYNA FUELS',
   description: t('common.fuelAccountingAnalyticsPlatform'),
@@ -40,11 +67,10 @@ export const viewport: Viewport = {
  * body.light-theme у globals.css — лише дубль для випадків, коли клас ставить
  * контекст.
  *
- * Цей самий скрипт виставляє <html lang>: збережений вибір, інакше перша
- * підтримувана мова браузера, інакше 'en'. Той самий порядок, що і в
- * I18nProvider/detectLocale — розійтись вони не мають, бо lang читають
- * зчитувачі екрана й вбудований перекладач браузера ще до запуску React
- * (і саме він вирішує, чи запропонувати «перекласти цю сторінку»).
+ * Мову зазвичай уже виставив сервер із cookie. Скрипт потрібен лише першому
+ * візиту, коли cookie ще немає: він визначає мову з браузера, ставить <html lang>
+ * і ЗАПИСУЄ cookie — щоб наступне завантаження прийшло з сервера вже правильним
+ * і спалах чужої мови трапився щонайбільше один раз на браузер.
  */
 const themeBootstrap = `
 (function(){try{
@@ -57,29 +83,50 @@ const themeBootstrap = `
   if(t==='light'){d.classList.add('light-theme');}
   d.dataset.theme=t;
 
-  var S=['uk','en','pl','de'];
-  var l=localStorage.getItem('veles_locale');
+  var S=['uk','en','pl','de','ro','cs','sk','hu','fr','es'];
+  var m=document.cookie.match(/(?:^|; )veles_locale=([^;]*)/);
+  var l=m?decodeURIComponent(m[1]):null;
   if(S.indexOf(l)===-1){
-    l='en';
-    var langs=navigator.languages&&navigator.languages.length?navigator.languages:[navigator.language];
-    for(var i=0;i<langs.length;i++){
-      var c=String(langs[i]||'').split('-')[0].toLowerCase();
-      if(S.indexOf(c)!==-1){l=c;break;}
+    l=localStorage.getItem('veles_locale');
+    if(S.indexOf(l)===-1){
+      l='en';
+      var langs=navigator.languages&&navigator.languages.length?navigator.languages:[navigator.language];
+      for(var i=0;i<langs.length;i++){
+        var c=String(langs[i]||'').split('-')[0].toLowerCase();
+        if(S.indexOf(c)!==-1){l=c;break;}
+      }
     }
+    document.cookie='veles_locale='+l+'; path=/; max-age=31536000; samesite=lax';
   }
   d.lang=l;
 }catch(e){}})();
 `;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  /*
+    Мову беремо з cookie ще на сервері — тоді SSR-розмітка приходить одразу
+    потрібною. Раніше сервер завжди віддавав українську, клієнт після
+    гідратації перемикав мову й перемонтовував усе дерево: на кожному
+    завантаженні сторінки блимав кадр чужою мовою.
+
+    cookies() робить маршрут динамічним. Для цього застосунку це нічого не
+    коштує: усі сторінки й так клієнтські та тягнуть дані запитами.
+  */
+  const saved = cookies().get(LOCALE_COOKIE)?.value;
+  const locale = isLocale(saved) ? saved : DEFAULT_LOCALE;
+
   return (
-    <html lang="uk" suppressHydrationWarning>
+    <html
+      lang={locale}
+      className={`${fontBody.variable} ${fontDisplay.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
       </head>
       <body className="bg-page text-txt-primary antialiased" suppressHydrationWarning>
         <ThemeProvider>
-          <I18nProvider>
+          <I18nProvider initialLocale={locale}>
             <TourProvider>
               {children}
               {/* Global ⌘K — renders nothing until opened, and never on /login. */}

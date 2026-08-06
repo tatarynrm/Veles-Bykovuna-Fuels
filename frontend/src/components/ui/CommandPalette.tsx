@@ -186,7 +186,7 @@ export default function CommandPalette() {
         keywords: 'logout vyity exit session',
         run: () => {
           signOut();
-          router.replace('/login');
+          router.replace('/');
         },
       },
 

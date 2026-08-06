@@ -247,16 +247,25 @@ a bare key. A key missing everywhere logs `[i18n] немає ключа: …` in
 
 - `src/lib/i18n.ts` — `t()`, `plural()`, `intlLocale()`, `localizedMap()`. `t()` is
   deliberately **not** a hook: `utils/exportManager.ts` and the Leaflet popups call it too.
-- `src/context/I18nContext.tsx` — resolves the language in a layout effect (before first paint,
-  so no flash of the wrong language): saved `veles_locale` → `detectLocale()` over
-  `navigator.languages` → **`en`**. Note the two different fallbacks: `FALLBACK_LOCALE = 'en'`
-  is what a visitor whose language we don't support sees, while `DEFAULT_LOCALE = 'uk'` is the
-  source language a *missing key* falls back to — do not collapse them into one constant.
-  Autodetection deliberately does **not** write to storage; only an explicit `setLocale` does,
-  so a user who changes their system language isn't stuck on the first language ever detected.
-  The same priority order is duplicated in the inline bootstrap script in `app/layout.tsx`
-  (it sets `<html lang>` before React runs) — change one, change the other. It also
-  **remounts the subtree on change** via
+- The chosen language lives in the **`veles_locale` cookie**, not just localStorage, because
+  the *server* has to know it: `app/layout.tsx` reads it with `cookies()` and passes
+  `initialLocale` to the provider, so the SSR markup already arrives in the right language and
+  `<html lang>` is correct. Without that, SSR always rendered Ukrainian and the client swapped
+  the language after hydration — a visible flash of the wrong language on **every page load**
+  (it looked like constant blinking under dev Fast Refresh, which reloads often).
+  `I18nProvider` seeds the module-level locale synchronously in its render body, before the
+  children render, because `t()` reads the module and not the context. On the server that
+  variable is process-global; fine for a handful of dispatchers, but it would need
+  `AsyncLocalStorage` if this ever served many users with different languages at once.
+- `src/context/I18nContext.tsx` — priority: cookie → legacy `localStorage` (migrated on read)
+  → `detectLocale()` over `navigator.languages` → **`en`**. Note the two different fallbacks:
+  `FALLBACK_LOCALE = 'en'` is what a visitor whose language we don't support sees, while
+  `DEFAULT_LOCALE = 'uk'` is the source language a *missing key* falls back to — do not
+  collapse them into one constant. Autodetection deliberately does **not** persist a language
+  the user never chose; the inline bootstrap script does write the detected one to the cookie,
+  so the *next* load is server-rendered correctly and the first-visit flash happens at most
+  once per browser. That script duplicates the same priority order — change one, change the
+  other. The provider also **remounts the subtree on change** via
   `<Fragment key={locale}>`. That is what makes non-subscribed call sites (module-level
   helpers, chart formatters) follow the language. Switching resets page-local state; it is a
   rare action, so that is the trade.
