@@ -29,6 +29,7 @@ import {
 import { t } from '@/lib/i18n';
 import LanguageSwitcher from './LanguageSwitcher';
 import ThemeSwitcher from './ThemeSwitcher';
+import VelesLogo from './VelesLogo';
 
 interface SidebarProps {
   apiStatus?: any;
@@ -237,25 +238,18 @@ export default function Sidebar({ apiStatus }: SidebarProps) {
               isCollapsed ? 'flex-col justify-center' : 'justify-between px-1'
             }`}
           >
+            {/* Той самий VelesLogo, що на вході й на заставці, — бренд усюди один. */}
             <Link
               href="/"
               data-tour="brand"
-              title={isCollapsed ? 'VELES ERP' : undefined}
-              className="group flex min-w-0 items-center gap-2.5"
+              title="VELES ERP · VELES BUKOVYNA FUELS"
+              className="group flex min-w-0 items-center transition-transform duration-200 group-hover:scale-105"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-field bg-accent-sheen shadow-accent-glow transition-transform duration-200 group-hover:scale-105">
-                <Fuel className="h-4 w-4 text-white" />
-              </div>
-              {!isCollapsed && (
-                <div className="leading-tight">
-                  <p className="text-sm font-semibold tracking-tight text-txt-primary">
-                    VELES <span className="text-accent">ERP</span>
-                  </p>
-                  <p className="text-micro font-medium uppercase text-txt-muted">
-                    BUKOVYNA FUELS
-                  </p>
-                </div>
-              )}
+              <VelesLogo
+                size={isCollapsed ? 40 : 38}
+                layout="inline"
+                markOnly={isCollapsed}
+              />
             </Link>
 
             {/* Згортання — лише на десктопі, у шухляді натомість «закрити» */}

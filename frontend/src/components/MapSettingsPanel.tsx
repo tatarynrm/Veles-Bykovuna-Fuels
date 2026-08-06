@@ -71,6 +71,15 @@ function Switch({
   onChange: (next: boolean) => void;
   label: string;
 }) {
+  /*
+    Повзунок — звичайний елемент потоку у flex-рядку, а не `absolute`.
+    З `absolute` без `left` відлік ішов від статичної позиції, а кнопка центрує
+    свій вміст — тому у вимкненому стані повзунок стояв майже біля правого краю.
+
+    Рамка є в обох станах (у ввімкненому — прозора): якби вона з'являлась лише
+    у вимкненому, внутрішня коробка зсувалась би на 1px і повзунок сіпався б
+    при кожному перемиканні.
+  */
   return (
     <button
       type="button"
@@ -78,13 +87,17 @@ function Switch({
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ${
-        checked ? 'bg-accent' : 'bg-surface-inset border border-bdr-subtle'
+      className={`inline-flex h-5 w-9 shrink-0 items-center rounded-full border p-0.5 transition-colors duration-200 ${
+        checked ? 'border-transparent bg-accent' : 'border-bdr-subtle bg-surface-inset'
       }`}
     >
       <span
-        className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-          checked ? 'translate-x-[18px]' : 'translate-x-0.5'
+        aria-hidden
+        className={`h-4 w-4 rounded-full shadow-sm transition-transform duration-200 ${
+          // Хід = ширина доріжки − рамки − відступи − повзунок = 36−2−4−16 = 14px,
+          // тобто рівно translate-x-3.5 — звичайний крок шкали, без довільного
+          // значення (їхні правила JIT тут уже зникали після перезбірок).
+          checked ? 'translate-x-3.5 bg-white' : 'translate-x-0 bg-txt-muted'
         }`}
       />
     </button>
