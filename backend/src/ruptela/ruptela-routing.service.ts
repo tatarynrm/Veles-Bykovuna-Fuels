@@ -889,6 +889,7 @@ export class RuptelaRoutingService implements OnModuleInit {
 
     const waypoints = RuptelaRoutingService.buildWaypointInputs(input.waypoints);
 
+ 
     // TripCreateParameters.id is mandatory and must be a UUID — the client
     // generates it. The previous `trip-rup-<timestamp>` ids were rejected.
     const id = randomUUID();
@@ -925,7 +926,8 @@ export class RuptelaRoutingService implements OnModuleInit {
         notifyDrivers: Boolean(input.notifyDrivers),
       };
     }
-
+console.log('Creating trip with parameters:', parameters);
+console.log('Creating trip with createTrip:', CREATE_TRIP);
     const data = await this.graphql<{ createTrip: any }>(CREATE_TRIP, { parameters });
     const trip = this.mapTrip(data.createTrip);
 
@@ -984,6 +986,12 @@ export class RuptelaRoutingService implements OnModuleInit {
     }
 
     const data = await this.graphql<{ updateTrip: any }>(UPDATE_TRIP, { parameters });
+
+console.log(parameters,'UPDATE TRIP PARAMETRS');
+console.log(data,'data from TRIP PARAMETRS');
+
+
+    console.log('Updating trip with data:', data);
     const trip = this.mapTrip(data.updateTrip);
 
     this.upsertCached(trip);
