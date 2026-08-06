@@ -96,11 +96,11 @@ export default function LoginPage() {
           <div className="flex flex-col items-center justify-center py-6 text-center animate-fadeIn">
             <CheckCircle2 className="mb-4 h-12 w-12 text-green-500 animate-bounce" />
             <h2 className="mb-2 text-lg font-medium text-txt-primary">
-              {t('auth.loginSuccess') || 'Успішний вхід!'}
+              {t('auth.loginSuccess')}
             </h2>
             <p className="text-xs text-txt-muted flex items-center gap-2">
               <Loader2 className="h-3.5 w-3.5 animate-spin inline" />
-              {t('auth.redirecting') || 'Перенаправлення на панель керування...'}
+              {t('auth.redirecting')}
             </p>
           </div>
         ) : (

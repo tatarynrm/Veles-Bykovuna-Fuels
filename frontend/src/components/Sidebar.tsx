@@ -41,6 +41,7 @@ const primaryNav = [
   { href: '/cards', label: 'common.fuelCards', icon: CreditCard, tour: 'nav-cards' },
   { href: '/transactions', label: 'common.transactionLog', icon: History, tour: 'nav-transactions' },
   { href: '/analytics', label: 'common.fuelAnalytics', icon: BarChart3, tour: 'nav-analytics' },
+  { href: '/calculator', label: 'calc.title', icon: Route, tour: 'nav-calculator' },
   { href: '/merchants', label: 'common.stationNetwork', icon: MapPin, tour: 'nav-merchants' },
 ];
 

@@ -11,6 +11,7 @@ import {
 } from '@/shared/config/integrations';
 import { useSectionSound, useSound } from '@/features/sound';
 import { t, localizedMap } from '@/lib/i18n';
+import VendorLogo from '@/components/VendorLogos';
 import { useIntegrationFilter } from './model/useIntegrationFilter';
 
 // REST/GraphQL/Webhook — назви протоколів, вони однакові в усіх мовах.
@@ -120,7 +121,12 @@ export default function IntegrationsScreen() {
                   className="glass-panel flex flex-col gap-3 p-5"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-sm font-semibold leading-snug">{item.name}</h3>
+                    <div className="flex items-center gap-2.5">
+                      <div className="shrink-0 rounded-lg overflow-hidden shadow-sm">
+                        <VendorLogo name={item.name} size={28} />
+                      </div>
+                      <h3 className="text-sm font-semibold leading-snug">{item.name}</h3>
+                    </div>
                     <span
                       className="flex flex-none items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium"
                       style={{

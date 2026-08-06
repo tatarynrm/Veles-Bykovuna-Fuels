@@ -13,6 +13,9 @@ import {
 } from '@/shared/config/integrations';
 import { EASE_ENTER } from '@/shared/lib/motion';
 import { plural, t } from '@/lib/i18n';
+import VendorLogo from '@/components/VendorLogos';
+import IntegrationGraph3D from './IntegrationGraph3D';
+import { Box, Layers } from 'lucide-react';
 
 /**
  * Граф інтеграцій — «сховище звʼязків» у дусі graph view з Obsidian.
@@ -101,6 +104,7 @@ interface GraphLayout {
 }
 
 /** Панорамна розкладка (від `sm`): ядро в центрі, хмара навколо. */
+/* i18n-ignore-raw: WIDE_LAYOUT, NARROW_LAYOUT */
 const WIDE_LAYOUT: GraphLayout = {
   viewBox: '0 0 760 480',
   core: { x: 380, y: 240, r: 34 },
@@ -195,6 +199,7 @@ export default function IntegrationGraph() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-15%' });
   const [active, setActive] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'3d' | '2d'>('3d');
 
   const orbit = useMemo<OrbitNode[]>(
     () =>
@@ -266,34 +271,13 @@ export default function IntegrationGraph() {
 
   return (
     <div ref={ref}>
-      {/*
-        Дві розкладки замість горизонтального скролу: панорамний viewBox 760
-        на ширині телефона зменшував підписи до ~4px, а прокрутка вбік ховала
-        дві третини графа. Обидві версії в DOM, перемикає їх CSS-брейкпоінт —
-        без вимірювання вікна, отже без стрибка розкладки після гідрації;
-        схована (`display: none`) не фокусується і не озвучується читалками.
-      */}
-      <div
-        className="glass-inset relative overflow-hidden rounded-2xl px-2 py-4 sm:px-6"
-        data-integration-graph
-      >
-        {/* Віньєтка: у graph view вузли на краях мають танути, а не обриватись. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(circle at 50% 48%, transparent 45%, rgb(var(--accent-rgb) / 0.05) 62%, transparent 78%)',
-          }}
-        />
-
-        <div className="relative sm:hidden">
-          <GraphSvg layout={NARROW_LAYOUT} {...graphProps} />
-        </div>
-        <div className="relative hidden sm:block">
-          <GraphSvg layout={WIDE_LAYOUT} {...graphProps} />
-        </div>
-      </div>
+      <IntegrationGraph3D
+        orbit={orbit}
+        active={active}
+        setActive={setActive}
+        dim={dim}
+        linkDim={linkDim}
+      />
 
       {/*
         Рядок опису має фіксовану висоту: без неї сторінка сіпається щоразу,
@@ -301,16 +285,21 @@ export default function IntegrationGraph() {
       */}
       <div className="mt-4 flex min-h-[64px] items-start justify-between gap-4 px-1">
         {detail ? (
-          <div>
-            <p className="text-sm font-semibold" style={{ color: detail.tone }}>
-              {detail.title}
-            </p>
-            <p className="micro-label mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {detail.meta}
-            </p>
-            <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              {detail.note}
-            </p>
+          <div className="flex items-start gap-3">
+            <div className="shrink-0 mt-0.5 rounded-lg overflow-hidden shadow-sm">
+              <VendorLogo name={detail.title} size={36} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: detail.tone }}>
+                {detail.title}
+              </p>
+              <p className="micro-label mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                {detail.meta}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                {detail.note}
+              </p>
+            </div>
           </div>
         ) : (
           <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
@@ -446,7 +435,6 @@ function GraphSvg({
         const p = layout.orbit[o.name];
         if (!p) return null;
         const tone = STATUS_TONE[o.meta.status];
-        const r = o.meta.status === 'available' ? 8 : o.meta.status === 'partner' ? 7 : 6;
         return (
           <motion.g
             key={o.name}
@@ -458,13 +446,11 @@ function GraphSvg({
           >
             {/* Прозорий диск під вузлом: інакше в нього важко потрапити мишею. */}
             <circle cx={p.x} cy={p.y} r={20} fill="transparent" />
-            <circle
-              cx={p.x} cy={p.y} r={r}
-              style={{ fill: tone, fillOpacity: active === o.name ? 0.95 : 0.55, stroke: tone }}
-              strokeWidth="1.25"
-            />
+            <foreignObject x={p.x - 9} y={p.y - 9} width={18} height={18} className="pointer-events-none overflow-visible">
+              <VendorLogo name={o.name} size={18} />
+            </foreignObject>
             <text
-              x={p.x} y={p.y + r + 13}
+              x={p.x} y={p.y + 20}
               textAnchor="middle" fontSize="9.5"
               style={{ fill: active === o.name ? 'var(--text-primary)' : 'var(--text-muted)' }}
             >
@@ -488,13 +474,15 @@ function GraphSvg({
           >
             <circle cx={hp.x} cy={hp.y} r={26} fill="transparent" />
             <circle
-              cx={hp.x} cy={hp.y} r="15"
+              cx={hp.x} cy={hp.y} r="18"
               style={{ fill: h.tone, fillOpacity: 0.18, stroke: h.tone }}
               strokeWidth="1.75"
             />
-            <circle cx={hp.x} cy={hp.y} r="5" style={{ fill: h.tone }} />
+            <foreignObject x={hp.x - 12} y={hp.y - 12} width={24} height={24} className="pointer-events-none overflow-visible">
+              <VendorLogo name={h.id} size={24} />
+            </foreignObject>
             <text
-              x={hp.x} y={hp.y + 31}
+              x={hp.x} y={hp.y + 33}
               textAnchor="middle" fontSize="12" fontWeight="600"
               style={{ fill: 'var(--text-primary)' }}
             >
@@ -526,21 +514,9 @@ function GraphSvg({
           style={{ fill: 'var(--surface-inset)', stroke: 'var(--accent)' }}
           strokeOpacity="0.5" strokeWidth="1.75"
         />
-        <text
-          x={core.x} y={core.y - 1}
-          textAnchor="middle" fontSize="13" fontWeight="700"
-          className="font-display"
-          style={{ fill: 'var(--text-primary)' }}
-        >
-          VELES
-        </text>
-        <text
-          x={core.x} y={core.y + 13}
-          textAnchor="middle" fontSize="8.5"
-          style={{ fill: 'var(--accent)' }}
-        >
-          ERP
-        </text>
+        <foreignObject x={core.x - 14} y={core.y - 14} width={28} height={28} className="pointer-events-none overflow-visible">
+          <VendorLogo name="core" size={28} />
+        </foreignObject>
       </motion.g>
     </svg>
   );
