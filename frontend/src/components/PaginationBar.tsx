@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { t } from '@/lib/i18n';
 
 interface PaginationBarProps {
   currentPage: number;
@@ -30,16 +31,16 @@ export default function PaginationBar({
           <span className="tabular font-medium text-txt-secondary">
             {from}–{to}
           </span>{' '}
-          з <span className="tabular font-medium text-txt-secondary">{totalItems}</span>
+          {t('common.of')} <span className="tabular font-medium text-txt-secondary">{totalItems}</span>
         </p>
 
         <label className="flex items-center gap-1.5 text-2xs text-txt-muted">
-          <span className="hidden sm:inline">На сторінці</span>
+          <span className="hidden sm:inline">{t('ui.perPage')}</span>
           <select
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
             className="field field-sm w-auto"
-            aria-label="Кількість записів на сторінці"
+            aria-label={t('ui.rowsPerPage')}
           >
             {[10, 25, 50, 100].map((n) => (
               <option key={n} value={n}>
@@ -52,7 +53,7 @@ export default function PaginationBar({
 
       <div className="flex items-center gap-2">
         <span className="text-2xs text-txt-muted">
-          Сторінка <span className="tabular font-medium text-txt-secondary">{currentPage}</span> з{' '}
+          {t('ui.page')} <span className="tabular font-medium text-txt-secondary">{currentPage}</span> {t('common.of')}{' '}
           <span className="tabular font-medium text-txt-secondary">{totalPages}</span>
         </span>
 
@@ -60,8 +61,8 @@ export default function PaginationBar({
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage <= 1}
           className="btn-icon h-8 w-8 disabled:pointer-events-none disabled:opacity-35"
-          title="Попередня сторінка"
-          aria-label="Попередня сторінка"
+          title={t('common.previousPage')}
+          aria-label={t('common.previousPage')}
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -69,8 +70,8 @@ export default function PaginationBar({
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage >= totalPages}
           className="btn-icon h-8 w-8 disabled:pointer-events-none disabled:opacity-35"
-          title="Наступна сторінка"
-          aria-label="Наступна сторінка"
+          title={t('common.nextPage')}
+          aria-label={t('common.nextPage')}
         >
           <ChevronRight className="h-4 w-4" />
         </button>

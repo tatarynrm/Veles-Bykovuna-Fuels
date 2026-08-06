@@ -1,3 +1,44 @@
+import { t, intlLocale } from '@/lib/i18n';
+
+/**
+ * Експорт зчитує вже намальовану таблицю з DOM, тому тип колонки доводиться
+ * вгадувати за її підписом. Підпис перекладений, тож ключові слова потрібні
+ * всіма чотирма мовами — інакше в англійському чи німецькому інтерфейсі
+ * колонка «Сума» перестала б форматуватись як гроші, а колонка дій потрапила
+ * б у файл. Там, де у виклику передано `type`, він має пріоритет.
+ *
+ * i18n-ignore-raw: KEYWORDS
+ */
+const KEYWORDS: Record<'action' | 'currency' | 'volume' | 'identifier', string[]> = {
+  action: [
+    'action', 'basket', 'details', 'status',
+    'кошик', 'деталі', 'дію', 'дії', 'статус',
+    'koszyk', 'szczegóły', 'akcje', 'akcja',
+    'warenkorb', 'aktion', 'aktionen', 'einzelheiten',
+  ],
+  currency: [
+    'amount', 'price', 'balance', 'limit', 'uah', '₴',
+    'сума', 'ціна', 'баланс', 'ліміт',
+    'kwota', 'cena', 'saldo',
+    'betrag', 'preis', 'guthaben', 'kosten',
+  ],
+  volume: [
+    'volume', 'litre', 'liter',
+    'обʼєм', "об'єм", 'обсяг', 'літр',
+    'ilość', 'litr',
+    'menge',
+  ],
+  identifier: [
+    'card', 'number', 'pan',
+    'картка', 'номер',
+    'karta', 'numer',
+    'karte', 'nummer', 'kennzeichen',
+  ],
+};
+
+const matchesKeyword = (text: string, group: keyof typeof KEYWORDS) =>
+  KEYWORDS[group].some((word) => text.includes(word));
+
 export interface ExportColumn {
   label: string;
   key: string;
@@ -36,7 +77,7 @@ export function parseHTMLTable(tableElementOrSelector: HTMLTableElement | string
   // Helper to check if a column is empty or contains non-exportable action elements (e.g. basket icon buttons, buttons)
   const isActionColumn = (text: string) => {
     const t = text.trim().toLowerCase();
-    return t === '' || t.includes('action') || t.includes('кошик') || t.includes('деталі') || t.includes('дію') || t.includes('дії') || t.includes('статус');
+    return t === '' || matchesKeyword(t, 'action');
   };
 
   // Find headers
@@ -71,10 +112,12 @@ export function parseHTMLTable(tableElementOrSelector: HTMLTableElement | string
         // Strip nested button texts/actions, get raw text representation
         let val = cell.textContent?.trim() || '';
 
-        // Clean value formatting to detect numeric values (e.g. "50.00 ₴" -> 50, "10 л" -> 10)
+        // Clean value formatting to detect numeric values (e.g. "50.00 ₴" -> 50, "10 л" -> 10).
+        // Одиниця об'єму зрізається лише коли стоїть одразу після числа в кінці:
+        // так це працює і для «л», і для «L»/«l», і не псує коди на кшталт CE1130CT.
         let cleanVal = val.replace(/\s+/g, '')
                           .replace(/₴/g, '')
-                          .replace(/л/g, '')
+                          .replace(/(\d)[лlL]$/, '$1')
                           .replace(/%/g, '')
                           .replace(/,/g, '.');
 
@@ -111,9 +154,9 @@ export async function exportToExcel(
 ) {
   const {
     filename = 'export',
-    title = 'Звіт даних',
+    title = t('export.dataReport'),
     subtitle = '',
-    sheetName = 'Дані',
+    sheetName = t('common.data'),
     columns: customColumns,
   } = options;
 
@@ -122,7 +165,7 @@ export async function exportToExcel(
 
   if (Array.isArray(inputData)) {
     if (inputData.length === 0) {
-      throw new Error('Дані для експорту порожні');
+      throw new Error(t('export.thereNoDataExport'));
     }
     data = inputData;
     if (customColumns) {
@@ -168,7 +211,7 @@ export async function exportToExcel(
   }
 
   // Subtitle / Date Row
-  const dateStr = `Згенеровано: ${new Date().toLocaleString('uk-UA')}`;
+  const dateStr = t('export.generated', { v0: new Date().toLocaleString(intlLocale()) });
   const subText = subtitle ? `${subtitle} | ${dateStr}` : dateStr;
   const subRow = worksheet.addRow([subText]);
   subRow.height = 20;
@@ -238,10 +281,10 @@ export async function exportToExcel(
         // Formatting currency / volume / numeric
         const label = col.label.toLowerCase();
         const key = col.key.toLowerCase();
-        if (col.type === 'currency' || label.includes('сума') || label.includes('ціна') || label.includes('баланс') || label.includes('ліміт') || label.includes('uah') || label.includes('₴')) {
+        if (col.type === 'currency' || matchesKeyword(label, 'currency')) {
           cell.numFmt = '#,##0.00 "₴"';
-        } else if (label.includes('об\'єм') || label.includes('volume') || label.includes('літр') || key.includes('volume')) {
-          cell.numFmt = '#,##0.00 "л"';
+        } else if (matchesKeyword(label, 'volume') || key.includes('volume')) {
+          cell.numFmt = t('export.n000L');
         } else {
           cell.numFmt = Number.isInteger(val) ? '#,##0' : '#,##0.00';
         }
@@ -254,7 +297,7 @@ export async function exportToExcel(
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
         }
         // Identifiers centering
-        if (col.label.toLowerCase().includes('картка') || col.label.toLowerCase().includes('pan') || col.label.toLowerCase().includes('номер')) {
+        if (matchesKeyword(col.label.toLowerCase(), 'identifier')) {
           cell.alignment = { vertical: 'middle', horizontal: 'center' };
         } else {
           // Відформатовані числа-рядки ("-1 234,56 ₴") теж фарбуємо за знаком
@@ -407,7 +450,7 @@ export async function exportToPDF(
 ) {
   const {
     filename = 'export',
-    title = 'Звіт даних',
+    title = t('export.dataReport'),
     subtitle = '',
     columns: customColumns,
     orientation: customOrientation,
@@ -418,7 +461,7 @@ export async function exportToPDF(
 
   if (Array.isArray(inputData)) {
     if (inputData.length === 0) {
-      throw new Error('Дані для експорту порожні');
+      throw new Error(t('export.thereNoDataExport'));
     }
     data = inputData;
     if (customColumns) {
@@ -461,12 +504,12 @@ export async function exportToPDF(
 
       if (typeof val === 'number') {
         const label = col.label.toLowerCase();
-        if (col.type === 'currency' || label.includes('сума') || label.includes('ціна') || label.includes('баланс') || label.includes('ліміт') || label.includes('₴')) {
+        if (col.type === 'currency' || matchesKeyword(label, 'currency')) {
           return sanitizePdfText(new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(val));
-        } else if (label.includes('об\'єм') || label.includes('volume') || label.includes('літр')) {
-          return sanitizePdfText(`${val.toLocaleString('uk-UA')} л`);
+        } else if (matchesKeyword(label, 'volume')) {
+          return sanitizePdfText(t('common.l', { v0: val.toLocaleString(intlLocale()) }));
         }
-        return sanitizePdfText(val.toLocaleString('uk-UA'));
+        return sanitizePdfText(val.toLocaleString(intlLocale()));
       }
       return sanitizePdfText(val.toString());
     });
@@ -516,7 +559,7 @@ export async function exportToPDF(
       doc.setFont(activeFontFamily, 'normal');
       doc.setFontSize(9);
       doc.setTextColor(100, 116, 139); // Slate-500
-      const dateStr = `Згенеровано: ${new Date().toLocaleString('uk-UA')}`;
+      const dateStr = t('export.generated', { v0: new Date().toLocaleString(intlLocale()) });
       const subText = sanitizePdfText(subtitle ? `${subtitle} | ${dateStr}` : dateStr);
       doc.text(subText, pageData.settings.margin.left, 18);
 
@@ -527,9 +570,9 @@ export async function exportToPDF(
 
       // Footer Section
       const currentPage = (doc.internal as any).getNumberOfPages();
-      let footerStr = `Сторінка ${currentPage}`;
+      let footerStr = t('export.page', { v0: currentPage });
       if (typeof doc.putTotalPages === 'function') {
-        footerStr += ` з ${totalPagesPlaceholder}`;
+        footerStr += t('export.of', { v0: totalPagesPlaceholder });
       }
 
       doc.setFont(activeFontFamily, 'normal');

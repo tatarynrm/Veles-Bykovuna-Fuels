@@ -6,6 +6,7 @@ import PaginationBar from './PaginationBar';
 import ExportDropdown from './ExportDropdown';
 import { EmptyState } from './Skeletons';
 import { formatNumber } from '@/lib/format';
+import { t } from '@/lib/i18n';
 
 interface Merchant {
   merchant_id: string;
@@ -49,10 +50,10 @@ export default function MerchantsGrid({ merchants }: MerchantsGridProps) {
         <div>
           <h2 className="flex items-center gap-2 text-base font-semibold text-txt-primary">
             <Compass className="h-4 w-4 text-accent" />
-            Партнерські АЗК
+            {t('merchants.partnerStations')}
           </h2>
           <p className="mt-0.5 text-2xs text-txt-muted">
-            {formatNumber(totalItems)} заправних комплексів з підтримкою паливних карток
+            {formatNumber(totalItems)} {t('merchants.stationsAcceptingFuelCards')}
           </p>
         </div>
 
@@ -66,8 +67,8 @@ export default function MerchantsGrid({ merchants }: MerchantsGridProps) {
                 setQuery(e.target.value);
                 setCurrentPage(1);
               }}
-              placeholder="Пошук за назвою або адресою…"
-              aria-label="Пошук АЗК"
+              placeholder={t('merchants.searchNameAddressEllipsis')}
+              aria-label={t('merchants.searchStations')}
               className="field field-sm w-56 pl-9"
             />
           </div>
@@ -76,18 +77,18 @@ export default function MerchantsGrid({ merchants }: MerchantsGridProps) {
             data={() => filtered}
             options={{
               filename: `merchants_${new Date().toISOString().slice(0, 10)}`,
-              title: 'Партнерські АЗК',
-              subtitle: 'Мережа ОККО та Shell',
+              title: t('merchants.partnerStations'),
+              subtitle: t('merchants.okkoShellNetwork'),
               columns: [
                 { label: 'ID', key: 'merchant_id', type: 'string' },
                 { label: 'SAP ID', key: 'merchant_sap_id', type: 'string' },
-                { label: 'Назва', key: 'merchant_name', type: 'string' },
-                { label: 'Адреса', key: 'merchant_address', type: 'string' },
-                { label: 'Регіон', key: 'region', type: 'string' },
-                { label: 'Статус', key: 'status', type: 'string' },
+                { label: t('common.title'), key: 'merchant_name', type: 'string' },
+                { label: t('merchants.address'), key: 'merchant_address', type: 'string' },
+                { label: t('merchants.region'), key: 'region', type: 'string' },
+                { label: t('common.status'), key: 'status', type: 'string' },
               ],
             }}
-            buttonText="Експорт"
+            buttonText={t('common.export')}
           />
         </div>
       </div>
@@ -95,11 +96,11 @@ export default function MerchantsGrid({ merchants }: MerchantsGridProps) {
       {paginated.length === 0 ? (
         <EmptyState
           icon={MapPin}
-          title="Комплексів не знайдено"
+          title={t('merchants.noStationsFound')}
           hint={
             query
-              ? `За запитом «${query}» нічого не знайдено.`
-              : 'Шлюз постачальника не повернув перелік АЗК.'
+              ? t('merchants.nothingFoundFor', { v0: query })
+              : t('merchants.providerGatewayReturnedNo')
           }
         />
       ) : (
@@ -116,7 +117,7 @@ export default function MerchantsGrid({ merchants }: MerchantsGridProps) {
                     <span className="font-mono text-micro text-txt-muted">#{m.merchant_id}</span>
                     <span className="badge badge-success">
                       <span className="badge-dot" />
-                      Відкрито
+                      {t('merchants.open')}
                     </span>
                   </div>
 
@@ -151,7 +152,7 @@ export default function MerchantsGrid({ merchants }: MerchantsGridProps) {
                     className="btn btn-ghost px-2.5 py-1.5 text-micro"
                   >
                     <Navigation className="h-3 w-3" />
-                    Мапа
+                    {t('merchants.map')}
                   </a>
                 </div>
               </article>

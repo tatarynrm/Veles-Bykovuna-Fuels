@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { clearApiCache } from './apiCache';
 
 export interface SessionPermissions {
   readOnly: boolean;
@@ -95,4 +96,8 @@ export function useAuthGuard() {
 export function signOut() {
   localStorage.removeItem('veles_token');
   localStorage.removeItem('veles_user');
+  // Кеш відповідей переживає перезавантаження, тож без цього наступний, хто
+  // ввійде на цьому ж комп'ютері, побачив би дані попередньої сесії ще до
+  // першої відповіді сервера.
+  clearApiCache();
 }

@@ -5,6 +5,7 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import { DateRange } from './DateRangePicker';
 import { REFRESH_EVENT } from './ui/CommandPalette';
+import { t } from '@/lib/i18n';
 
 interface PageShellProps {
   title: string;
@@ -73,7 +74,7 @@ export function AuthGate() {
     <div className="flex min-h-screen items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <span className="h-6 w-6 animate-spin rounded-full border-2 border-bdr-strong border-t-accent" />
-        <p className="text-2xs text-txt-muted">Перевірка сесії…</p>
+        <p className="text-2xs text-txt-muted">{t('nav.checkingTheSessionEllipsis')}</p>
       </div>
     </div>
   );

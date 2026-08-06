@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { t } from '@/lib/i18n';
 
 export default function RuptelaRootPage() {
   const router = useRouter();
@@ -12,7 +13,7 @@ export default function RuptelaRootPage() {
 
   return (
     <div className="min-h-screen bg-page flex items-center justify-center text-txt-secondary font-semibold">
-      Перенаправлення в роздiл Мій автопарк...
+      {t('telematics.redirectingMyFleetEllipsis')}
     </div>
   );
 }

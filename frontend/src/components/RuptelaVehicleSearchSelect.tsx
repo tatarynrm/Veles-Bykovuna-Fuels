@@ -3,6 +3,7 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Truck, Search, Check, ChevronDown, X } from 'lucide-react';
 import { NO_DATA, STATUS_LABEL, metric, type RuptelaVehicle } from '@/lib/ruptela';
+import { t } from '@/lib/i18n';
 
 interface RuptelaVehicleSearchSelectProps {
   vehicles: RuptelaVehicle[];
@@ -23,7 +24,7 @@ export default function RuptelaVehicleSearchSelect({
   vehicles,
   selectedVehicleId,
   onSelectVehicle,
-  label = 'Транспортний засіб (Ruptela)',
+  label = t('telematics.vehicleRuptela'),
 }: RuptelaVehicleSearchSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -83,7 +84,7 @@ export default function RuptelaVehicleSearchSelect({
     <div className={`relative ${isOpen ? 'z-50' : 'z-20'}`} ref={dropdownRef}>
       <div className="mb-1.5 flex items-center justify-between">
         <span className="micro-label">{label}</span>
-        <span className="font-mono text-micro text-txt-muted">{vehicles.length} ТЗ</span>
+        <span className="font-mono text-micro text-txt-muted">{vehicles.length} {t('common.vehicleShort')}</span>
       </div>
 
       <button
@@ -106,12 +107,12 @@ export default function RuptelaVehicleSearchSelect({
                 <span className="badge badge-warn">{selected.plate}</span>
               </div>
               <p className="mt-0.5 truncate text-micro text-txt-muted">
-                {selected.make} {selected.model} · Водій: {selected.driver_name ?? NO_DATA}
+                {selected.make} {selected.model} {t('telematics.driverColon')} {selected.driver_name ?? NO_DATA}
               </p>
             </div>
           </div>
         ) : (
-          <span className="text-xs text-txt-muted">Оберіть транспортний засіб…</span>
+          <span className="text-xs text-txt-muted">{t('telematics.selectAVehicleEllipsis')}</span>
         )}
 
         <div className="flex shrink-0 items-center gap-2">
@@ -134,7 +135,7 @@ export default function RuptelaVehicleSearchSelect({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Номер, марка або водій…"
+              placeholder={t('telematics.plateMakeDriverEllipsis')}
               autoFocus
               className="field field-sm pl-9 pr-8"
             />
@@ -142,7 +143,7 @@ export default function RuptelaVehicleSearchSelect({
               <button
                 type="button"
                 onClick={() => setSearch('')}
-                aria-label="Очистити пошук"
+                aria-label={t('telematics.clearSearch')}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-txt-muted hover:text-txt-primary"
               >
                 <X className="h-3.5 w-3.5" />
@@ -162,7 +163,7 @@ export default function RuptelaVehicleSearchSelect({
                     : 'bg-surface-hover text-txt-secondary hover:text-txt-primary'
                 }`}
               >
-                {m === 'ALL' ? 'Всі марки' : m}
+                {m === 'ALL' ? t('telematics.allBrands') : m}
               </button>
             ))}
             <span className="ml-auto shrink-0 pl-2 font-mono text-micro text-txt-muted">
@@ -173,7 +174,7 @@ export default function RuptelaVehicleSearchSelect({
           <div className="flex-1 space-y-1 overflow-y-auto pr-0.5" role="listbox">
             {filtered.length === 0 ? (
               <p className="py-8 text-center text-2xs text-txt-muted">
-                Транспортних засобів не знайдено
+                {t('telematics.noVehiclesFound')}
               </p>
             ) : (
               filtered.map((v) => {
@@ -206,14 +207,14 @@ export default function RuptelaVehicleSearchSelect({
                           </span>
                         </div>
                         <p className="mt-0.5 truncate text-micro text-txt-muted">
-                          Водій: {v.driver_name ?? NO_DATA}
+                          {t('telematics.driverColon2')} {v.driver_name ?? NO_DATA}
                         </p>
                       </div>
                     </div>
 
                     <div className="flex shrink-0 items-center gap-2">
                       <span className="tabular font-mono text-micro text-txt-muted">
-                        {metric(v.telemetry.speed, { unit: 'км/год' })}
+                        {metric(v.telemetry.speed, { unit: t('unit.kmh') })}
                       </span>
                       {isSelected && <Check className="h-4 w-4 text-warn" />}
                     </div>

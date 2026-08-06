@@ -7,7 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Fleet-fuel ERP dashboard for ТОВ "Велес Буковина". A NestJS backend proxies three external
 vendor APIs (OKKO fuel cards, Shell Mobility B2B cards, Ruptela/fm-track telematics) and
 normalizes them into one shape; a Next.js App Router frontend renders the dashboard.
-UI text is Ukrainian — keep new user-facing strings in Ukrainian.
+UI text is authored in Ukrainian and translated at runtime into English, Polish and German —
+write new user-facing strings in Ukrainian and wrap them in `t()` (see *Localisation* below).
 
 Not a git repository. No test suite, no linter config beyond `next lint`.
 
@@ -158,6 +159,20 @@ Every page under `src/app/` is a `'use client'` component. The shared pieces:
   `/api/merchants`, `/api/transactions`) return `{items,total,page,size,totalPages}`, while
   `/api/contracts` and the analytics routes return bare arrays. Treating one as the other
   silently renders an empty screen — that bug had blanked the cards page.
+- `src/lib/apiCache.ts` — `cachedList` / `cachedObject`, stale-while-revalidate over
+  `apiGet`. The five vendor-backed pages (dashboard, cards, transactions, analytics,
+  merchants) go through **this**, not `apiList`/`apiObject` directly: OKKO and Shell take
+  ~13 s for a wide date range, so every visit used to be a fresh skeleton. Cache hit
+  younger than 30 s → no network at all; older but under 12 h → the stale copy paints
+  immediately and an `onFresh` callback pushes the new data in when it lands. Entries are
+  keyed by path + sorted params (so `{brand,size}` and `{size,brand}` are one entry) and
+  persisted in `localStorage` under `veles_cache_v1:` so a cold tab is instant too;
+  identical concurrent requests share one fetch. Manual «Оновити» passes `force: true`.
+  `useApiRefreshing()` drives the topbar spinner while a background revalidation runs.
+  Deliberately **not** cached: `/api/ruptela/vehicles/:id/coordinates` — a stale truck
+  position is worse than a spinner. `signOut()` calls `clearApiCache()`, otherwise the next
+  person to sign in on that machine sees the previous session's data before the first
+  response.
 - `src/lib/useAuthGuard.ts` — the session gate every page uses.
 - `src/lib/format.ts` — `uk-UA` currency/number/date formatters.
 - `components/PageShell.tsx` — sidebar + sticky topbar + brand tabs + date picker.
@@ -187,6 +202,104 @@ Both `ThreeTruckViewer` (react-three-fiber) and `RuptelaFleetMap` (Leaflet) are 
 `next/dynamic` because they touch `window`; keep any new map/3D component the same way.
 Anything using `useSearchParams()` needs a `<Suspense>` boundary or the static export fails.
 
+#### Map settings (`lib/mapPrefs.ts` + `lib/mapRuntime.ts` + `components/MapSettingsPanel.tsx`)
+
+Both Leaflet maps share **one** preferences object — basemap (10 providers incl. Esri
+imagery/topo, plus `auto` = follow the app theme), a labels overlay, tile opacity/grayscale/
+brightness/contrast, which controls exist (zoom, scale metric/imperial/both, attribution,
+fullscreen, locate, cursor coordinates) and interaction (wheel/double-click zoom, dragging,
+inertia, keyboard, box zoom, 180° wrap, zoom step). Persisted in `localStorage`
+(`veles_map_v1`), normalised on read, and mirrored to other tabs via the `storage` event.
+
+The state lives **outside React** (`getMapPrefs` / `setMapPrefs` / `onMapPrefsChange`),
+because the maps are imperative `L.map` instances in refs, not component trees.
+`applyMapPrefs(handles, prefs, theme)` is idempotent — it brings any map to the described
+state, so both maps run the same code and no setting needs prop-drilling.
+
+Facts that cost time to rediscover:
+- Maps **must** be constructed with `attributionControl: true` — that is what makes
+  `TileLayer.onAdd` register the provider's credit. Hide it by removing the control, not by
+  the option (the option is read only in the constructor). Same for `worldCopyJump`, which
+  is reimplemented here as a `moveend` handler.
+- Each provider has its own `maxZoom` (OpenTopoMap stops at 17); `map.setMaxZoom()` follows
+  the basemap, otherwise the map goes blank past the provider's ceiling.
+- No Leaflet plugins — fullscreen/locate/coordinates are hand-rolled `L.Control`s, and
+  fullscreen expands the `[data-map-shell]` wrapper (not the Leaflet container) so the
+  legend and settings button come along; `invalidateSize()` after the switch is required.
+- The panel sits inside `[data-map-shell]`, which has `overflow-hidden` for its rounded
+  corners: it is a bounded flex column with `min-h-0` so it shrinks and scrolls instead of
+  being clipped, and `pointer-events-none` on the wrapper keeps the map draggable.
+
+### Localisation — Ukrainian source, three target languages
+
+Local, no network, no `/en` routes. Keys are semantic ids — `namespace.name`, the same across
+all four dictionaries (`src/locales/{uk,en,pl,de}.json`):
+
+```tsx
+t('common.fuelCards')   // Паливні картки · Fuel cards · Karty paliwowe · Tankkarten
+```
+
+Namespaces follow the app's sections (`nav`, `auth`, `cards`, `tx`, `analytics`, `merchants`,
+`telematics`, `live`, `trip`, `insights`, `diag`, `console`, `tour`, `guest`, `export`, `ui`,
+`unit`, `error`), with `common` for strings used across sections. Ukrainian lives in `uk.json`
+like any other language and is the **fallback**: a missing translation shows Ukrainian, never
+a bare key. A key missing everywhere logs `[i18n] немає ключа: …` in development.
+
+- `src/lib/i18n.ts` — `t()`, `plural()`, `intlLocale()`, `localizedMap()`. `t()` is
+  deliberately **not** a hook: `utils/exportManager.ts` and the Leaflet popups call it too.
+- `src/context/I18nContext.tsx` — resolves the language in a layout effect (before first paint,
+  so no flash of the wrong language): saved `veles_locale` → `detectLocale()` over
+  `navigator.languages` → **`en`**. Note the two different fallbacks: `FALLBACK_LOCALE = 'en'`
+  is what a visitor whose language we don't support sees, while `DEFAULT_LOCALE = 'uk'` is the
+  source language a *missing key* falls back to — do not collapse them into one constant.
+  Autodetection deliberately does **not** write to storage; only an explicit `setLocale` does,
+  so a user who changes their system language isn't stuck on the first language ever detected.
+  The same priority order is duplicated in the inline bootstrap script in `app/layout.tsx`
+  (it sets `<html lang>` before React runs) — change one, change the other. It also
+  **remounts the subtree on change** via
+  `<Fragment key={locale}>`. That is what makes non-subscribed call sites (module-level
+  helpers, chart formatters) follow the language. Switching resets page-local state; it is a
+  rare action, so that is the trade.
+- `components/LanguageSwitcher.tsx` — `compact` in the topbar and on /login, `segmented` in
+  the sidebar. Language codes, **not** flag emoji: Windows has no flag glyphs and renders 🇺🇦
+  as "UA", which turned the button into "UA UA".
+- `lib/format.ts` caches one `Intl.NumberFormat` per locale — building them at module level
+  would freeze the formatter on whichever language was active at import time.
+- `utils/exportManager.ts` infers column types from the **rendered** header text, so its
+  `KEYWORDS` lists carry the words in all four languages; a Ukrainian-only match silently
+  dropped currency formatting once the UI was translated.
+
+The rule that bites: **never call `t()` at module level.** Constant arrays (nav, table
+columns, presets) store the *key*, and `t()` goes at the render site — `{t(item.label)}`. For
+`Record<K, string>` label maps use `localizedMap({…})`, which translates on read. Forgetting
+the render-site `t()` is the one failure this setup makes visible the hard way: the key itself
+appears on screen. To check a page, paste in the browser console:
+
+```js
+[...new Set((document.body.innerText.match(/\b[a-z][a-zA-Z0-9]*\.[a-zA-Z0-9]{2,}\b/g) || []))]
+```
+
+Tooling under `frontend/scripts/i18n/` (TypeScript-AST based, so it knows module scope from
+function scope):
+
+```
+npm run i18n           # coverage + text that still has no key
+npm run i18n:check     # same, exit 1 on gaps (CI)
+npm run i18n:wrap      # codemod: wrap new Ukrainian text in t() — an intermediate state
+npm run i18n:keyize    # assign keys from a TSV (uk-text ⇥ key), fill uk.json
+npm run i18n:merge     # apply scripts/i18n/translations/*.tsv (key ⇥ en ⇥ pl ⇥ de)
+npm run i18n:prune     # drop keys no longer used in the code
+npm run i18n:rename -- old.key new.key
+```
+
+Deliberately **not** translated: vendor data arriving from the backend (vehicle names, OKKO
+transaction descriptions), code comments, and `lib/ruptelaApiDocs.ts` + `RuptelaApiDocs.tsx` —
+the Ruptela integration reference for developers, listed in `EXCLUDE`. Strings that are type
+discriminators or matching heuristics are exempted per-file with `i18n-ignore-props:` /
+`i18n-ignore-raw:` pragmas.
+
+The `i18n-translator` agent (`.claude/agents/`) runs this loop after UI changes.
+
 ### Design system — "Aurora Glass"
 
 Tokens live in `src/app/globals.css` and are surfaced to Tailwind in `tailwind.config.ts`.
@@ -202,10 +315,23 @@ Rules that matter:
 - Accent colors are declared as RGB channel triplets (`--accent-rgb`), so Tailwind opacity
   modifiers (`bg-accent/10`, `text-warn`) work. Emerald = product accent; amber (`warn`) is
   reserved for Ruptela/telematics; red = destructive/negative only.
-- Theme is `useTheme()` from `src/context/ThemeContext.tsx`, single storage key
-  `veles_theme`, applied pre-paint by an inline script in `layout.tsx`. Do not add a second
-  toggle with its own key — there used to be three, which disagreed with each other.
+- Theme is `useTheme()` from `src/context/ThemeContext.tsx`, single storage key `veles_theme`
+  holding a **preference**: `light | dark | system`, defaulting to `system`. The context
+  exposes `preference` (what the switcher highlights) and `theme` (the *resolved* light/dark
+  that maps and charts need). Do not add a second toggle with its own key — there used to be
+  three, which disagreed with each other. UI: `ThemeSwitcher` (three icons, sidebar),
+  `ThemeToggleButton` (one cycling icon, topbars), plus three ⌘K commands.
+  **Anti-flash rules, both halves required:** the inline script in `layout.tsx` resolves the
+  same preference before first paint, and the provider syncs React state in a *layout*
+  effect. Using `useEffect` there is what made the theme flash — the class was already right,
+  but every component reading `theme` (Leaflet tiles, chart palette, the toggle icon)
+  painted once with the default first.
 - Charts read colors from CSS variables at render time so they follow the theme.
+- The desktop sidebar collapses to a 72 px icon rail (`veles_sidebar_collapsed`), animated
+  with `transition-[width,padding]`. Its width is an **inline style**, not `w-[248px]`:
+  the JIT-generated arbitrary-value rule went missing across dev hot-rebuilds and left the
+  rail stuck wide. The stored state is read in a layout effect, and the transition class is
+  withheld until then so the rail does not visibly fold on every page load.
 
 `.claude/skills/ui-design` and `.claude/skills/fullstack` hold the full conventions.
 

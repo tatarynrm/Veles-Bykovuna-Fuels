@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/cn';
+import { t } from '@/lib/i18n';
 
 export interface MarqueeProps {
   children: React.ReactNode;
@@ -66,7 +67,7 @@ export function PriceTicker({ items, speed = 52 }: { items: PriceTickerItem[]; s
   if (!items.length) {
     return (
       <p className="px-4 py-3 text-2xs text-txt-muted">
-        Ціни на паливо ще не завантажено за обраний період.
+        {t('ui.fuelPricesHaveNot')}
       </p>
     );
   }
@@ -81,8 +82,8 @@ export function PriceTicker({ items, speed = 52 }: { items: PriceTickerItem[]; s
             key={`${item.station}-${item.fuel}-${i}`}
             className="flex items-center gap-2.5 whitespace-nowrap px-4 py-2.5"
           >
-            <span className="micro-label">{item.station}</span>
-            <span className="text-2xs font-medium text-txt-secondary">{item.fuel}</span>
+            <span className="micro-label">{t(item.station)}</span>
+            <span className="text-2xs font-medium text-txt-secondary">{t(item.fuel)}</span>
             <span className="stat text-xs">{priceFmt.format(item.price)} ₴</span>
             {item.delta !== undefined && item.delta !== 0 && (
               <span

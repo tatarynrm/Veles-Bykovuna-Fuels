@@ -2,13 +2,17 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, User, Fuel, ArrowRight, AlertCircle, Loader2, Eye } from 'lucide-react';
+import { Lock, User, ArrowRight, AlertCircle, Loader2, Eye } from 'lucide-react';
+import VelesLogo from '@/components/VelesLogo';
 import { API_BASE } from '@/lib/api';
+import { t } from '@/lib/i18n';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { markSplashPending } from '@/lib/splashFlag';
 
 const QUICK_LOGINS = [
-  { user: 'admin', label: 'Адміністратор' },
-  { user: 'okko', label: 'ОККО' },
-  { user: 'shell', label: 'Shell' },
+  { user: 'admin', label: 'auth.administrator' },
+  { user: 'okko', label: 'common.okko' },
+  { user: 'shell', label: 'common.shell' },
 ];
 
 /** Published on purpose — the guest role is read-only and enforced server-side. */
@@ -36,12 +40,13 @@ export default function LoginPage() {
       if (res.ok && data.token) {
         localStorage.setItem('veles_token', data.token);
         localStorage.setItem('veles_user', JSON.stringify(data.user));
+        markSplashPending();
         router.push('/');
       } else {
-        setError(data.message || 'Неправильне імʼя користувача або пароль');
+        setError(data.message || t('auth.incorrectUsernamePassword'));
       }
     } catch {
-      setError(`Немає звʼязку з сервером авторизації (${API_BASE})`);
+      setError(t('auth.noConnectionAuthenticationServer', { v0: API_BASE }));
     } finally {
       setLoading(false);
     }
@@ -54,18 +59,15 @@ export default function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden p-4">
+      {/* Мову треба вибрати ще до входу — інакше екран авторизації лишається українським */}
+      <div className="absolute right-4 top-4 z-10">
+        <LanguageSwitcher />
+      </div>
+
       <div className="glass-panel rise w-full max-w-[400px] p-8">
         {/* Brand */}
-        <div className="mb-7 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-panel bg-accent-sheen shadow-accent-glow">
-            <Fuel className="h-5 w-5 text-white" />
-          </div>
-          <h1 className="text-xl font-semibold tracking-tight text-txt-primary">
-            VELES <span className="text-accent">ERP</span>
-          </h1>
-          <p className="mt-1 text-2xs text-txt-muted">
-            Інтегрована система обліку палива · OKKO · Shell · Ruptela
-          </p>
+        <div className="mb-6 flex justify-center">
+          <VelesLogo size={180} />
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
@@ -80,14 +82,14 @@ export default function LoginPage() {
           )}
 
           <label className="block">
-            <span className="micro-label mb-1.5 block">Імʼя користувача</span>
+            <span className="micro-label mb-1.5 block">{t('auth.username')}</span>
             <div className="relative">
               <User className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-txt-muted" />
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Введіть логін"
+                placeholder={t('auth.enterYourUsername')}
                 autoComplete="username"
                 required
                 className="field field-lg pl-10"
@@ -96,14 +98,14 @@ export default function LoginPage() {
           </label>
 
           <label className="block">
-            <span className="micro-label mb-1.5 block">Пароль</span>
+            <span className="micro-label mb-1.5 block">{t('auth.password')}</span>
             <div className="relative">
               <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-txt-muted" />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Введіть пароль"
+                placeholder={t('auth.enterYourPassword')}
                 autoComplete="current-password"
                 required
                 className="field field-lg pl-10"
@@ -119,11 +121,11 @@ export default function LoginPage() {
             {loading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Авторизація…
+                {t('auth.signingInEllipsis')}
               </>
             ) : (
               <>
-                Увійти в систему
+                {t('auth.signIn')}
                 <ArrowRight className="h-4 w-4" />
               </>
             )}
@@ -139,33 +141,15 @@ export default function LoginPage() {
             className="btn btn-ghost w-full py-2.5 text-xs"
           >
             <Eye className="h-4 w-4" />
-            Гостьовий вхід — лише перегляд
+            {t('auth.guestSignViewOnly')}
           </button>
           <p className="mt-2 text-center text-micro leading-relaxed text-txt-muted">
-            Логін <span className="font-mono text-txt-secondary">guest</span> · пароль{' '}
-            <span className="font-mono text-txt-secondary">guest</span>. Доступні всі дані
-            для перегляду; створення та редагування маршрутів заблоковані.
+            {t('auth.login')} <span className="font-mono text-txt-secondary">guest</span> {t('auth.passwordFragment')}{' '}
+            <span className="font-mono text-txt-secondary">guest</span>{t('auth.allDataAvailableViewing')}
           </p>
         </div>
 
-        <div className="hairline-t mt-5 pt-5">
-          <p className="micro-label mb-2.5 text-center">Швидкий вхід</p>
-          <div className="grid grid-cols-3 gap-2">
-            {QUICK_LOGINS.map((q) => (
-              <button
-                key={q.user}
-                type="button"
-                onClick={() => {
-                  setUsername(q.user);
-                  setPassword('');
-                }}
-                className="btn btn-ghost justify-center py-2 text-micro"
-              >
-                {q.label}
-              </button>
-            ))}
-          </div>
-        </div>
+
       </div>
     </div>
   );

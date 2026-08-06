@@ -5,51 +5,52 @@ import { Terminal, Send, Copy, Check, Server, BookOpen } from 'lucide-react';
 import { API_BASE } from '@/lib/api';
 import { usePersistentState } from '@/lib/usePersistentState';
 import RuptelaApiDocs from './RuptelaApiDocs';
+import { t } from '@/lib/i18n';
 
 const ENDPOINTS = [
-  { group: 'OKKO', items: [
-    { label: 'Список договорів', value: '/api/contracts' },
-    { label: 'Паливні картки', value: '/api/cards' },
-    { label: 'Статистика карток', value: '/api/cards/stats' },
-    { label: 'Станції АЗК', value: '/api/merchants' },
-    { label: 'Журнал заправок', value: '/api/transactions' },
+  { group: 'common.okko', items: [
+    { label: 'console.contractList', value: '/api/contracts' },
+    { label: 'common.fuelCards', value: '/api/cards' },
+    { label: 'console.cardStatistics', value: '/api/cards/stats' },
+    { label: 'console.fuelStations', value: '/api/merchants' },
+    { label: 'console.refuellingLog', value: '/api/transactions' },
   ]},
-  { group: 'Аналітика', items: [
-    { label: 'Сумарна аналітика', value: '/api/analytics/summary' },
-    { label: 'Структура пального', value: '/api/analytics/fuel-breakdown' },
-    { label: 'Динаміка витрат', value: '/api/analytics/spending-trends' },
+  { group: 'console.analytics', items: [
+    { label: 'console.summaryAnalytics', value: '/api/analytics/summary' },
+    { label: 'console.fuelMix', value: '/api/analytics/fuel-breakdown' },
+    { label: 'console.spendingTrend', value: '/api/analytics/spending-trends' },
   ]},
-  { group: 'Shell / Ruptela', items: [
-    { label: 'Shell — акаунти', value: '/api/shell/accounts' },
-    { label: 'Shell — транзакції', value: '/api/shell/transactions' },
-    { label: 'Ruptela — статус шлюзу', value: '/api/ruptela/status' },
-    { label: 'Ruptela — транспорт', value: '/api/ruptela/vehicles' },
+  { group: 'console.shellRuptela', items: [
+    { label: 'console.shellAccounts', value: '/api/shell/accounts' },
+    { label: 'console.shellTransactions', value: '/api/shell/transactions' },
+    { label: 'console.ruptelaGatewayStatus', value: '/api/ruptela/status' },
+    { label: 'console.ruptelaVehicles', value: '/api/ruptela/vehicles' },
   ]},
   // GET-довідники FMS; параметризовані звіти вимагають query — приклад у плейсхолдері
-  { group: 'Ruptela FMS Insights', items: [
-    { label: 'Водії (v2)', value: '/api/ruptela/insights/drivers' },
-    { label: 'Геозони', value: '/api/ruptela/insights/geozones' },
-    { label: 'Групи транспорту', value: '/api/ruptela/insights/object-groups' },
-    { label: 'Користувачі', value: '/api/ruptela/insights/users' },
-    { label: 'Публічні посилання', value: '/api/ruptela/insights/share-links' },
-    { label: 'Правила подій', value: '/api/ruptela/insights/events' },
-    { label: 'Паливні події (потрібні objectId, from, to)', value: '/api/ruptela/insights/fuel-events?objectId=<id>&from=2026-07-28T00:00:00Z&to=2026-08-04T00:00:00Z' },
-    { label: 'Еко-водіння ТЗ (потрібні from, to)', value: '/api/ruptela/insights/ecodriving/object/<id>?from=2026-07-28T00:00:00Z&to=2026-08-04T00:00:00Z' },
-    { label: 'Країни ТЗ (потрібні from, to)', value: '/api/ruptela/insights/countries/object/<id>?from=2026-07-28T00:00:00Z&to=2026-08-04T00:00:00Z' },
-    { label: 'Трек ТЗ (потрібні from, to)', value: '/api/ruptela/insights/coordinates/<id>?from=2026-08-03T00:00:00Z&to=2026-08-04T00:00:00Z&limit=50' },
-    { label: 'Останнє призначення водія', value: '/api/ruptela/insights/assignations/last?objectId=<id>' },
-    { label: 'Детектовані події (потрібні from, to)', value: '/api/ruptela/insights/detected-events?from=2026-07-28T00:00:00Z&to=2026-08-04T00:00:00Z' },
-    { label: 'Стани водія (потрібні from, to)', value: '/api/ruptela/insights/drivers/<id>/states?from=2026-07-28T00:00:00Z&to=2026-08-04T00:00:00Z' },
-    { label: 'Аналіз робочого часу водія', value: '/api/ruptela/insights/drivers/<id>/time-analysis' },
-    { label: 'Статус SentGeo', value: '/api/ruptela/insights/sentgeo/<id>' },
+  { group: 'console.ruptelaFmsInsights', items: [
+    { label: 'console.driversV2', value: '/api/ruptela/insights/drivers' },
+    { label: 'common.geofences', value: '/api/ruptela/insights/geozones' },
+    { label: 'common.vehicleGroups', value: '/api/ruptela/insights/object-groups' },
+    { label: 'console.users', value: '/api/ruptela/insights/users' },
+    { label: 'console.publicLinks', value: '/api/ruptela/insights/share-links' },
+    { label: 'console.eventRules', value: '/api/ruptela/insights/events' },
+    { label: 'console.fuelEventsObjectidRequired', value: '/api/ruptela/insights/fuel-events?objectId=<id>&from=2026-07-28T00:00:00Z&to=2026-08-04T00:00:00Z' },
+    { label: 'console.vehicleEcoDrivingRequired', value: '/api/ruptela/insights/ecodriving/object/<id>?from=2026-07-28T00:00:00Z&to=2026-08-04T00:00:00Z' },
+    { label: 'console.vehicleCountriesRequired', value: '/api/ruptela/insights/countries/object/<id>?from=2026-07-28T00:00:00Z&to=2026-08-04T00:00:00Z' },
+    { label: 'console.vehicleTrackRequired', value: '/api/ruptela/insights/coordinates/<id>?from=2026-08-03T00:00:00Z&to=2026-08-04T00:00:00Z&limit=50' },
+    { label: 'console.lastDriverAssignment', value: '/api/ruptela/insights/assignations/last?objectId=<id>' },
+    { label: 'console.detectedEventsRequired', value: '/api/ruptela/insights/detected-events?from=2026-07-28T00:00:00Z&to=2026-08-04T00:00:00Z' },
+    { label: 'console.driverStatesRequired', value: '/api/ruptela/insights/drivers/<id>/states?from=2026-07-28T00:00:00Z&to=2026-08-04T00:00:00Z' },
+    { label: 'console.driverWorkingTimeAnalysis', value: '/api/ruptela/insights/drivers/<id>/time-analysis' },
+    { label: 'console.sentgeoStatus', value: '/api/ruptela/insights/sentgeo/<id>' },
   ]},
   // Routing & Tasking — GraphQL під капотом; шлюз віддає їх звичайним REST
-  { group: 'Ruptela Routing & Tasking', items: [
-    { label: 'Статус шлюзу рейсів', value: '/api/ruptela/routing/status' },
-    { label: 'Активні поїздки', value: '/api/ruptela/trips?scope=active' },
-    { label: 'Архів поїздок (перший запит ~30 с)', value: '/api/ruptela/trips?scope=archive' },
-    { label: 'Одна поїздка', value: '/api/ruptela/trips/<uuid>' },
-    { label: 'Завдання водіям', value: '/api/ruptela/tasks' },
+  { group: 'console.ruptelaRoutingTasking', items: [
+    { label: 'console.tripGatewayStatus', value: '/api/ruptela/routing/status' },
+    { label: 'console.activeTrips', value: '/api/ruptela/trips?scope=active' },
+    { label: 'console.tripArchiveFirstRequest', value: '/api/ruptela/trips?scope=archive' },
+    { label: 'console.singleTrip', value: '/api/ruptela/trips/<uuid>' },
+    { label: 'console.driverTasks', value: '/api/ruptela/tasks' },
   ]},
 ];
 
@@ -77,7 +78,7 @@ export default function ApiConsole() {
       setLatency(Math.round(performance.now() - start));
       setResponse({
         error: e?.message ?? 'Network error',
-        hint: `Переконайтесь, що NestJS backend запущено на ${API_BASE}`,
+        hint: t('console.makeSureNestjsBackend', { v0: API_BASE }),
       });
     } finally {
       setLoading(false);
@@ -103,7 +104,7 @@ export default function ApiConsole() {
             <div>
               <h3 className="text-sm font-semibold text-txt-primary">Live API Inspector</h3>
               <p className="mt-0.5 text-2xs text-txt-muted">
-                Інтерактивне тестування ендпоінтів шлюзу та перегляд сирих JSON-відповідей
+                {t('console.interactiveTestingGatewayEndpoints')}
               </p>
             </div>
           </div>
@@ -111,23 +112,23 @@ export default function ApiConsole() {
           {/* Документація Ruptela відкривається окремим вікном — вона задовга для сторінки */}
           <button onClick={() => setDocsOpen(true)} className="btn btn-ghost">
             <BookOpen className="h-3.5 w-3.5 text-warn" />
-            <span>Документація Ruptela</span>
+            <span>{t('console.ruptelaDocumentation')}</span>
           </button>
         </div>
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
           <label className="block">
-            <span className="micro-label mb-1.5 block">Ендпоінт</span>
+            <span className="micro-label mb-1.5 block">{t('console.endpoint')}</span>
             <select
               value={endpoint}
               onChange={(e) => setEndpoint(e.target.value)}
               className="field"
             >
               {ENDPOINTS.map((g) => (
-                <optgroup key={g.group} label={g.group}>
+                <optgroup key={g.group} label={t(g.group)}>
                   {g.items.map((ep) => (
                     <option key={ep.value} value={ep.value}>
-                      GET {ep.value} — {ep.label}
+                      GET {ep.value} — {t(ep.label)}
                     </option>
                   ))}
                 </optgroup>
@@ -138,7 +139,7 @@ export default function ApiConsole() {
           <div className="flex items-end">
             <button onClick={runRequest} disabled={loading} className="btn btn-primary h-[42px] px-5">
               <Send className={`h-3.5 w-3.5 ${loading ? 'animate-pulse' : ''}`} />
-              <span>{loading ? 'Виконується…' : 'Виконати запит'}</span>
+              <span>{loading ? t('console.runningEllipsis') : t('console.sendRequest')}</span>
             </button>
           </div>
         </div>
@@ -156,7 +157,7 @@ export default function ApiConsole() {
           >
             <BookOpen className="h-3 w-3" />
             <span>
-              Куди шлюз пересилає цей запит, у якому форматі та як зробити те саме з Delphi →
+              {t('console.whereGatewayForwardsRequest')}
             </span>
           </button>
         )}
@@ -168,7 +169,7 @@ export default function ApiConsole() {
             <div className="flex flex-wrap items-center gap-2">
               <span className={`badge ${ok ? 'badge-success' : 'badge-danger'}`}>
                 <span className="badge-dot" />
-                {status === 0 ? 'Немає звʼязку' : `HTTP ${status}`}
+                {status === 0 ? t('common.offline') : `HTTP ${status}`}
               </span>
               <span className="badge badge-neutral">
                 <span className="tabular">{latency} ms</span>
@@ -181,7 +182,7 @@ export default function ApiConsole() {
               ) : (
                 <Copy className="h-3.5 w-3.5" />
               )}
-              <span>{copied ? 'Скопійовано' : 'Копіювати JSON'}</span>
+              <span>{copied ? t('console.copied') : t('console.copyJSON')}</span>
             </button>
           </div>
 

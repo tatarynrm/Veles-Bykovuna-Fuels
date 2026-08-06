@@ -4,6 +4,16 @@ import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { useTheme } from '@/context/ThemeContext';
 import { NO_DATA, STATUS_LABEL, metric, type RuptelaVehicle } from '@/lib/ruptela';
+import { t } from '@/lib/i18n';
+import { getMapPrefs, onMapPrefsChange } from '@/lib/mapPrefs';
+import {
+  applyMapPrefs,
+  createHandles,
+  disposeHandles,
+  drawUserLocation,
+  type MapHandles,
+} from '@/lib/mapRuntime';
+import MapSettingsPanel from './MapSettingsPanel';
 
 interface RuptelaFleetMapProps {
   vehicles: RuptelaVehicle[];
@@ -13,11 +23,6 @@ interface RuptelaFleetMapProps {
   /** False for a guest session — the popup then offers no write action. */
   canCreateTrip?: boolean;
 }
-
-const TILES = {
-  dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-  light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-};
 
 const STATUS_COLOR = {
   moving: '#10B981',
@@ -36,13 +41,15 @@ export default function RuptelaFleetMap({
   const { theme } = useTheme();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
-  const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const handlesRef = useRef<MapHandles | null>(null);
   const markersRef = useRef<Record<string, L.Marker>>({});
 
   /* Init once */
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
+    // zoomControl вимкнено, бо його додає applyMapPrefs; attributionControl,
+    // навпаки, потрібен від початку — інакше плитка не зареєструє свій підпис.
     const map = L.map(mapContainerRef.current, {
       center: [48.8, 27.5],
       zoom: 7,
@@ -50,28 +57,28 @@ export default function RuptelaFleetMap({
       attributionControl: true,
     });
 
-    tileLayerRef.current = L.tileLayer(TILES.dark, {
-      attribution: '&copy; CARTO &copy; OpenStreetMap',
-      maxZoom: 19,
-      subdomains: 'abcd',
-    }).addTo(map);
-
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    const handles = createHandles(map);
+    handlesRef.current = handles;
+    map.on('locationfound', (e) => drawUserLocation(handles, e as L.LocationEvent));
     mapInstanceRef.current = map;
 
     return () => {
+      disposeHandles(handles);
       map.remove();
       mapInstanceRef.current = null;
-      tileLayerRef.current = null;
+      handlesRef.current = null;
       markersRef.current = {};
     };
   }, []);
 
-  /* Swap basemap with the theme */
+  /* Підкладка й поведінка — з налаштувань користувача, плюс реакція на тему */
   useEffect(() => {
-    if (tileLayerRef.current) {
-      tileLayerRef.current.setUrl(theme === 'light' ? TILES.light : TILES.dark);
-    }
+    const apply = () => {
+      const handles = handlesRef.current;
+      if (handles) applyMapPrefs(handles, getMapPrefs(), theme === 'light' ? 'light' : 'dark');
+    };
+    apply();
+    return onMapPrefsChange(apply);
   }, [theme]);
 
   /* Sync markers */
@@ -156,11 +163,11 @@ export default function RuptelaFleetMap({
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px">
             <div style="padding:6px 8px;border-radius:10px;background:var(--surface-inset);border:1px solid var(--border-subtle)">
-              <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">Швидкість</div>
-              <div style="font-size:13px;font-weight:600;color:var(--text-primary);font-variant-numeric:tabular-nums">${metric(v.telemetry.speed, { unit: 'км/год' })}</div>
+              <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">${t('common.speed')}</div>
+              <div style="font-size:13px;font-weight:600;color:var(--text-primary);font-variant-numeric:tabular-nums">${metric(v.telemetry.speed, { unit: t('unit.kmh') })}</div>
             </div>
             <div style="padding:6px 8px;border-radius:10px;background:var(--surface-inset);border:1px solid var(--border-subtle)">
-              <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">Пальне</div>
+              <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">${t('common.fuel')}</div>
               <div style="font-size:13px;font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums">${metric(v.telemetry.fuel_level_percent, { unit: '%', digits: 1 })}</div>
             </div>
           </div>
@@ -171,7 +178,7 @@ export default function RuptelaFleetMap({
             width:100%;margin-top:10px;padding:7px 12px;border:none;cursor:pointer;
             border-radius:10px;background:var(--warn);color:#1A1206;
             font-size:11px;font-weight:600;font-family:inherit">
-            Створити поїздку
+            ${t('common.createATrip')}
           </button>`
               : ''
           }
@@ -210,11 +217,16 @@ export default function RuptelaFleetMap({
   );
 
   return (
-    <div className="relative h-[400px] w-full overflow-hidden rounded-card border border-bdr-subtle lg:h-[480px]">
+    <div
+      data-map-shell
+      className="relative h-[400px] w-full overflow-hidden rounded-card border border-bdr-subtle lg:h-[480px]"
+    >
       <div ref={mapContainerRef} className="z-0 h-full w-full" />
 
+      <MapSettingsPanel />
+
       <div className="glass-float absolute left-3 top-3 z-[400] rounded-field px-3 py-2.5">
-        <p className="micro-label mb-1.5">Статус транспорту</p>
+        <p className="micro-label mb-1.5">{t('telematics.vehicleStatus')}</p>
         <div className="space-y-1">
           {(['moving', 'idle', 'stopped', 'offline'] as const).map((key) => (
             <div key={key} className="flex items-center gap-2 text-micro">

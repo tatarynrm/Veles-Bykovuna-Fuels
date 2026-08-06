@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Sidebar from '@/components/Sidebar';
 import { AuthGate } from '@/components/PageShell';
-import { useTheme } from '@/context/ThemeContext';
 import { useAuthGuard, signOut } from '@/lib/useAuthGuard';
 import {
   Truck,
@@ -26,13 +25,15 @@ import {
   Sliders,
   ShieldAlert,
 } from 'lucide-react';
+import { t } from '@/lib/i18n';
+import ThemeToggleButton from '@/components/ThemeToggleButton';
 
 const ThreeTruckViewer = dynamic(() => import('@/components/ThreeTruckViewer'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-[360px] sm:h-[480px] lg:h-[580px] rounded-card flex flex-col items-center justify-center bg-surface-inset border border-bdr-subtle">
       <div className="w-10 h-10 border-4 border-bdr-highlight border-t-okko-emerald rounded-full animate-spin mb-3"></div>
-      <p className="text-txt-secondary text-sm font-semibold font-sans">Ініціалізація 3D Canvas...</p>
+      <p className="text-txt-secondary text-sm font-semibold font-sans">{t('diag.initialising3DCanvasEllipsis')}</p>
     </div>
   ),
 });
@@ -41,126 +42,126 @@ const ThreeTruckViewer = dynamic(() => import('@/components/ThreeTruckViewer'), 
 const diagnosticCategories = [
   {
     id: 'reefer_unit',
-    title: '1. Холодильно-обігрівальна установка',
+    title: 'diag.n1RefrigerationUnit',
     system: 'refrigerator',
     groups: [
       {
-        subTitle: 'Двигун та привод рефрижератора',
+        subTitle: 'diag.reeferEngineDrive',
         items: [
-          { id: 'reefer_engine_failure', title: 'Поломка дизельного двигуна установки', desc: 'Двигун не запускається / заглух.', status: 'damaged' as const, code: 'REF-ENG-101', recommendation: 'Діагностика паливної системи дизельного двигуна установки, заміна паливного насоса або свічок розжарювання.' },
-          { id: 'reefer_belt_snapped', title: 'Обрив або знос приводного ременя', desc: 'Обрив або знос приводного ременя (Drive Belt).', status: 'damaged' as const, code: 'REF-BLT-102', recommendation: 'Термінова заміна приводного ременя. Перевірка натяжних роликів.' },
-          { id: 'reefer_starter_fault', title: 'Несправність стартера рефрижератора', desc: 'Стартер не прокручує вал двигуна установки.', status: 'warning' as const, code: 'REF-STR-103', recommendation: 'Ремонт або заміна втягующего реле стартера, перевірка клем.' },
-          { id: 'reefer_alternator_fault', title: 'Поломка генератора рефрижератора', desc: 'Відсутній заряд акумулятора установки.', status: 'warning' as const, code: 'REF-ALT-104', recommendation: 'Заміна регулятора напруги генератора або ремонт діодного моста.' },
-          { id: 'reefer_battery_dead', title: 'Акумулятор рефа розряджений/відмовив', desc: 'Напруга АКБ нижче критичного рівня.', status: 'warning' as const, code: 'REF-BAT-105', recommendation: 'Зарядка АКБ рефрижератора або заміна на новий акумулятор 12V 95Ah.' },
+          { id: 'reefer_engine_failure', title: 'diag.unitDieselEngineFailure', desc: 'diag.engineWillNotStart', status: 'damaged' as const, code: 'REF-ENG-101', recommendation: 'diag.diagnoseUnitSDiesel' },
+          { id: 'reefer_belt_snapped', title: 'diag.driveBeltBrokenWorn2', desc: 'diag.driveBeltBrokenWorn', status: 'damaged' as const, code: 'REF-BLT-102', recommendation: 'diag.replaceDriveBeltImmediately' },
+          { id: 'reefer_starter_fault', title: 'diag.reeferStarterFault', desc: 'diag.starterDoesNotTurn', status: 'warning' as const, code: 'REF-STR-103', recommendation: 'diag.repairReplaceStarterSolenoid' },
+          { id: 'reefer_alternator_fault', title: 'diag.reeferAlternatorFailure', desc: 'diag.unitSBatteryNot', status: 'warning' as const, code: 'REF-ALT-104', recommendation: 'diag.replaceAlternatorVoltageRegulator' },
+          { id: 'reefer_battery_dead', title: 'diag.reeferBatteryFlatFailed', desc: 'diag.batteryVoltageBelowCritical', status: 'warning' as const, code: 'REF-BAT-105', recommendation: 'diag.chargeReeferBatteryFit' },
         ]
       },
       {
-        subTitle: 'Контур охолодження та фреон',
+        subTitle: 'diag.refrigerationCircuitRefrigerant',
         items: [
-          { id: 'compressor_failure', title: 'Заклинювання/поломка компресора', desc: 'Критична несправність компресора установки.', status: 'damaged' as const, code: 'REF-CMP-201', recommendation: 'Заміна компресора холодильного контуру, вакуумування та промивка системи від металевої стружки.' },
-          { id: 'freon_leak', title: 'Витік хладагенту / фреону', desc: 'Пошкодження трубок, конденсера чи випарника.', status: 'damaged' as const, code: 'REF-FRN-202', recommendation: 'Опресування системи азотом, паяння витоків, заміна фільтра-осушувача, заправка фреоном R404A.' },
-          { id: 'condenser_fan_broken', title: 'Поломка вентилятора конденсатора', desc: 'Вентилятор зовнішнього блоку не обертається.', status: 'damaged' as const, code: 'REF-FAN-203', recommendation: 'Заміна електродвигуна вентилятора конденсатора або перевірка реле живлення.' },
-          { id: 'evaporator_fan_broken', title: 'Поломка вентиляторів випарника', desc: 'Не працюють вентилятори всередині будки.', status: 'damaged' as const, code: 'REF-FAN-204', recommendation: 'Заміна крильчатки або мотора внутрішнього вентилятора, відновлення проводки.' },
-          { id: 'evaporator_icing', title: 'Обмерзання випарника / збій розморозки', desc: 'Несправність системи розморожування (Defrost).', status: 'warning' as const, code: 'REF-DEF-205', recommendation: 'Перевірка ТЕНів розморожування, заміна датчика відтайки випарника.' },
+          { id: 'compressor_failure', title: 'diag.compressorSeizureFailure', desc: 'diag.criticalFaultUnitS', status: 'damaged' as const, code: 'REF-CMP-201', recommendation: 'diag.replaceRefrigerationCompressorEvacuate' },
+          { id: 'freon_leak', title: 'diag.refrigerantLeak', desc: 'diag.damageLinesCondenserEvaporator', status: 'damaged' as const, code: 'REF-FRN-202', recommendation: 'diag.pressureTestSystemNitrogen' },
+          { id: 'condenser_fan_broken', title: 'diag.condenserFanFailure', desc: 'diag.outdoorUnitFanDoes', status: 'damaged' as const, code: 'REF-FAN-203', recommendation: 'diag.replaceCondenserFanMotor' },
+          { id: 'evaporator_fan_broken', title: 'diag.evaporatorFanFailure', desc: 'diag.fansInsideBoxNot', status: 'damaged' as const, code: 'REF-FAN-204', recommendation: 'diag.replaceImpellerInternalFan' },
+          { id: 'evaporator_icing', title: 'diag.evaporatorIcingDefrostFailure', desc: 'diag.defrostSystemFault', status: 'warning' as const, code: 'REF-DEF-205', recommendation: 'diag.checkDefrostHeatersReplace' },
         ]
       },
       {
-        subTitle: 'Електроніка та паливна система рефа',
+        subTitle: 'diag.reeferElectronicsFuelSystem',
         items: [
-          { id: 'reefer_controller_error', title: 'Збій блоку управління / екрана', desc: 'Код помилки зв\'язку на панелі керування.', status: 'warning' as const, code: 'REF-CTR-301', recommendation: 'Діагностика шини CAN контролера рефрижератора, перепрошивка плати управління.' },
-          { id: 'temp_sensor_fault', title: 'Поломка датчиків температури', desc: 'Помилка сенсорів Return або Supply Air.', status: 'warning' as const, code: 'REF-SNS-302', recommendation: 'Заміна датчика температури повітря у будці (вхідного/вихідного потоків).' },
-          { id: 'reefer_fuel_filter_clogged', title: 'Засмічений паливний фільтр рефрижератора', desc: 'Падіння тиску дизельного палива в системі.', status: 'warning' as const, code: 'REF-FLT-303', recommendation: 'Планова заміна паливного та водовіддільного фільтрів установки.' },
-          { id: 'reefer_fuel_tank_leak', title: 'Пробиття або витік з бака рефрижератора', desc: 'Витік палива з нижньої частини бака установки.', status: 'damaged' as const, code: 'REF-TNK-304', recommendation: 'Злив залишків палива, зварювання бака або заміна паливного резервуара рефа.' },
+          { id: 'reefer_controller_error', title: 'diag.controlUnitDisplayFailure', desc: 'diag.communicationErrorCodeControl', status: 'warning' as const, code: 'REF-CTR-301', recommendation: 'diag.diagnoseReeferControllerCAN' },
+          { id: 'temp_sensor_fault', title: 'diag.temperatureSensorFailure', desc: 'diag.returnSupplyAirSensor', status: 'warning' as const, code: 'REF-SNS-302', recommendation: 'diag.replaceBoxAirTemperature' },
+          { id: 'reefer_fuel_filter_clogged', title: 'diag.reeferFuelFilterClogged', desc: 'diag.dieselPressureHasDropped', status: 'warning' as const, code: 'REF-FLT-303', recommendation: 'diag.scheduledReplacementUnitS' },
+          { id: 'reefer_fuel_tank_leak', title: 'diag.reeferTankPunctureLeak', desc: 'diag.fuelLeakingBottomUnit', status: 'damaged' as const, code: 'REF-TNK-304', recommendation: 'diag.drainRemainingFuelWeld' },
         ]
       }
     ]
   },
   {
     id: 'trailer_body',
-    title: '2. Кузов та ізоляція напівпричепа',
+    title: 'diag.n2SemiTrailerBody',
     system: 'cabin',
     groups: [
       {
-        subTitle: 'Герметичність та фурнітура',
+        subTitle: 'diag.sealingAndHardware',
         items: [
-          { id: 'door_seal_damage', title: 'Пошкодження ущільнювачів дверей', desc: 'Знос гумових ущільнювачів (витік холоду).', status: 'damaged' as const, code: 'TRL-SEL-401', recommendation: 'Повна заміна контурного гумового ущільнювача задніх воріт напівпричепа.' },
-          { id: 'door_latch_broken', title: 'Поломка замка задніх дверей', desc: 'Деформація запірного штангового механізму.', status: 'warning' as const, code: 'TRL-LTH-402', recommendation: 'Ремонт або заміна замків штангового типу задніх воріт.' },
-          { id: 'wall_panel_damage', title: 'Пробиття термоізоляційної стінки', desc: 'Пошкодження сендвіч-панелі напівпричепа.', status: 'warning' as const, code: 'TRL-WAL-403', recommendation: 'Герметизація отворів монтажною піною та встановлення склопластикових латок.' },
-          { id: 'roof_leak', title: 'Пошкодження або витік даху будки', desc: 'Протікання вологи через стики даху.', status: 'warning' as const, code: 'TRL-ROF-404', recommendation: 'Очищення покрівлі причепа, герметизація зовнішніх швів поліуретановим клеєм-герметиком.' },
-          { id: 'air_chute_detached', title: 'Обрив розподільного рукава повітря', desc: 'Пошкодження стельового рукава (Air Chute).', status: 'warning' as const, code: 'TRL-CHT-405', recommendation: 'Повторне закріплення або заміна повітняного гнучкого рукава під стелею будки.' },
-          { id: 'drain_hole_clogged', title: 'Засмічення дренажних отворів', desc: 'Замерзання або бруд у водовідводах підлоги.', status: 'warning' as const, code: 'TRL-DRN-406', recommendation: 'Механічне прочищення дренажних клапанів у кутах підлоги причепа.' },
-          { id: 'floor_damage', title: 'Пошкодження алюмінієвої підлоги', desc: 'Деформація реф-підлоги (T-floor) роклою.', status: 'warning' as const, code: 'TRL-FLR-407', recommendation: 'Рихтування алюмінієвого профілю або зварювання тріщин аргоном.' },
+          { id: 'door_seal_damage', title: 'diag.doorSealDamage', desc: 'diag.wornRubberSealsCold', status: 'damaged' as const, code: 'TRL-SEL-401', recommendation: 'diag.fullReplacementRearDoor' },
+          { id: 'door_latch_broken', title: 'diag.rearDoorLockFailure', desc: 'diag.rodTypeLockingMechanism', status: 'warning' as const, code: 'TRL-LTH-402', recommendation: 'diag.repairReplaceRodType' },
+          { id: 'wall_panel_damage', title: 'diag.insulatedWallPunctured', desc: 'diag.damageSemiTrailerSandwich', status: 'warning' as const, code: 'TRL-WAL-403', recommendation: 'diag.sealHolesExpandingFoam' },
+          { id: 'roof_leak', title: 'diag.boxRoofDamageLeak', desc: 'diag.moistureLeakingThroughRoof', status: 'warning' as const, code: 'TRL-ROF-404', recommendation: 'diag.cleanTrailerRoofSeal' },
+          { id: 'air_chute_detached', title: 'diag.airChuteDetached', desc: 'diag.damageCeilingAirChute', status: 'warning' as const, code: 'TRL-CHT-405', recommendation: 'diag.refastenReplaceFlexibleAir' },
+          { id: 'drain_hole_clogged', title: 'diag.drainHolesBlocked', desc: 'diag.iceDirtFloorDrains', status: 'warning' as const, code: 'TRL-DRN-406', recommendation: 'diag.mechanicallyClearDrainValves' },
+          { id: 'floor_damage', title: 'diag.aluminiumFloorDamage', desc: 'diag.reeferTFloorHas', status: 'warning' as const, code: 'TRL-FLR-407', recommendation: 'diag.straightenAluminiumProfileTIG' },
         ]
       }
     ]
   },
   {
     id: 'trailer_chassis',
-    title: '3. Ходова часть та підвіска причепа',
+    title: 'diag.n3TrailerRunningGear',
     system: 'wheels',
     groups: [
       {
-        subTitle: 'Осі, підвіска та гальма',
+        subTitle: 'diag.axlesSuspensionBrakes',
         items: [
-          { id: 'tire_blowout', title: 'Вибух / пробій шини причепа', desc: 'Втрата тиску колеса на середній осі.', status: 'damaged' as const, code: 'TRL-TIR-501', recommendation: 'Монтаж запасного колеса або заміна пошкодженої покришки 385/65 R22.5.' },
-          { id: 'tire_wear_uneven', title: 'Нерівномірний знос протектора шин', desc: 'Знос плечової зони через порушення співвісності.', status: 'warning' as const, code: 'TRL-TIR-502', recommendation: 'Регулювання співвісності осей напівпричепа на СТО.' },
-          { id: 'brake_pad_wear', title: 'Граничний знос гальмівних колодок', desc: 'Товщина фрикційних накладок менше 3 мм.', status: 'warning' as const, code: 'TRL-BRK-503', recommendation: 'Заміна гальмівних колодок та датчиків зносу на осях SAF/BPW.' },
-          { id: 'air_bag_puncture', title: 'Пробій/витік пневмоподушки причепа', desc: 'Витік повітря з гумового балона підвіски.', status: 'damaged' as const, code: 'TRL-PNE-504', recommendation: 'Заміна пневморесори (пневмоподушки) напівпричепа.' },
-          { id: 'brake_air_line_leak', title: 'Витік повітря з гальмівних шлангів', desc: 'Пошкодження гнучких сполучних трубок.', status: 'damaged' as const, code: 'TRL-AIR-505', recommendation: 'Заміна пошкодженої ділянки пластикової трубки швидкого з\'єднання.' },
-          { id: 'wheel_bearing_overheat', title: 'Перегрів підшипника маточини', desc: 'Руйнування мастила маточини, ризик заклинювання.', status: 'damaged' as const, code: 'TRL-BRG-506', recommendation: 'Термінова заміна підшипника маточини разом із сальниками.' },
-          { id: 'landing_gear_broken', title: 'Поломка опорних лап напівпричепа', desc: 'Пошкодження редуктора підйомного пристрою.', status: 'warning' as const, code: 'TRL-LND-507', recommendation: 'Ремонт шестерень редуктора опорних стійок JOST або заміна опорної лапи.' },
-          { id: 'kingpin_damage', title: 'Знос/пошкодження зчіпного шкворня', desc: 'Критичний люфт у сідельно-зчіпному пристрої.', status: 'warning' as const, code: 'TRL-PIN-508', recommendation: 'Вимірювання зносу шкворня (Kingpin 2"). Заміна зчіпного шкворня плити.' },
+          { id: 'tire_blowout', title: 'diag.trailerTyreBlowoutPuncture', desc: 'diag.pressureLossMiddleAxle', status: 'damaged' as const, code: 'TRL-TIR-501', recommendation: 'diag.fitSpareWheelReplace' },
+          { id: 'tire_wear_uneven', title: 'diag.unevenTreadWear', desc: 'diag.shoulderWearCausedAxle', status: 'warning' as const, code: 'TRL-TIR-502', recommendation: 'diag.haveSemiTrailerAxle' },
+          { id: 'brake_pad_wear', title: 'diag.brakePadsWearLimit', desc: 'diag.frictionLiningThicknessBelow', status: 'warning' as const, code: 'TRL-BRK-503', recommendation: 'diag.replaceBrakePadsWear' },
+          { id: 'air_bag_puncture', title: 'diag.trailerAirSpringPuncture', desc: 'diag.airEscapingRubberSuspension', status: 'damaged' as const, code: 'TRL-PNE-504', recommendation: 'diag.replaceSemiTrailerAir' },
+          { id: 'brake_air_line_leak', title: 'diag.airLeakBrakeHoses', desc: 'diag.damageFlexibleConnectingTubes', status: 'damaged' as const, code: 'TRL-AIR-505', recommendation: 'diag.replaceDamagedSectionQuick' },
+          { id: 'wheel_bearing_overheat', title: 'diag.hubBearingOverheating', desc: 'diag.hubGreaseHasBroken', status: 'damaged' as const, code: 'TRL-BRG-506', recommendation: 'diag.replaceHubBearingTogether' },
+          { id: 'landing_gear_broken', title: 'diag.semiTrailerLandingLeg', desc: 'diag.damageLandingGearGearbox', status: 'warning' as const, code: 'TRL-LND-507', recommendation: 'diag.repairJOSTLandingGear' },
+          { id: 'kingpin_damage', title: 'diag.kingpinWearDamage', desc: 'diag.criticalPlayFifthWheel', status: 'warning' as const, code: 'TRL-PIN-508', recommendation: 'diag.measureKingpinWear2' },
         ]
       }
     ]
   },
   {
     id: 'truck_tractor',
-    title: '4. Тягач (Truck Tractor)',
+    title: 'diag.n4TruckTractor',
     system: 'engine',
     groups: [
       {
-        subTitle: 'Двигун та трансмісія тягача',
+        subTitle: 'diag.tractorEngineDrivetrain',
         items: [
-          { id: 'engine_overheat', title: 'Перегрів двигуна тягача', desc: 'Критична температура ОР, витік антифризу.', status: 'damaged' as const, code: 'TRK-ENG-601', recommendation: 'Перевірка помпи охолодження, герметичності радіатора та рівня охолоджуючої рідини.' },
-          { id: 'engine_oil_leak', title: 'Витік моторної оливи', desc: 'Витік під прокладкою клапанної кришки або піддону.', status: 'damaged' as const, code: 'TRK-OIL-602', recommendation: 'Заміна прокладок двигуна, очищення сапуна, доливання мастила.' },
-          { id: 'turbo_failure', title: 'Поломка турбокомпресора тягача', desc: 'Втрата тяги двигуна, сизий дим з вихлопної.', status: 'damaged' as const, code: 'TRK-TRB-603', recommendation: 'Демонтаж та ремонт турбіни, заміна картриджа, очищення інтеркулера.' },
-          { id: 'transmission_fault', title: 'Несправність коробки передач', desc: 'Збої при переході передач КПП I-Shift / Opticruise.', status: 'warning' as const, code: 'TRK-TRN-604', recommendation: 'Комп\'ютерна діагностика ЕБУ КПП, перевірка клапанів зчеплення.' },
-          { id: 'driveshaft_issue', title: 'Знос хрестовини / карданного вала', desc: 'Вібрація під час руху під навантаженням.', status: 'warning' as const, code: 'TRK-DRV-605', recommendation: 'Заміна хрестовини або підвісного підшипника карданного вала.' },
+          { id: 'engine_overheat', title: 'diag.tractorEngineOverheating', desc: 'diag.criticalCoolantTemperatureAntifreeze', status: 'damaged' as const, code: 'TRK-ENG-601', recommendation: 'diag.checkWaterPumpRadiator' },
+          { id: 'engine_oil_leak', title: 'diag.engineOilLeak', desc: 'diag.leakUnderValveCover', status: 'damaged' as const, code: 'TRK-OIL-602', recommendation: 'diag.replaceEngineGasketsClean' },
+          { id: 'turbo_failure', title: 'diag.tractorTurbochargerFailure', desc: 'diag.lossEnginePowerGrey', status: 'damaged' as const, code: 'TRK-TRB-603', recommendation: 'diag.removeOverhaulTurboReplace' },
+          { id: 'transmission_fault', title: 'diag.gearboxFault', desc: 'diag.shiftFaultsIShift', status: 'warning' as const, code: 'TRK-TRN-604', recommendation: 'diag.computerDiagnosisGearboxECU' },
+          { id: 'driveshaft_issue', title: 'diag.universalJointPropshaftWear', desc: 'diag.vibrationWhenDrivingUnder', status: 'warning' as const, code: 'TRK-DRV-605', recommendation: 'diag.replaceUniversalJointPropshaft' },
         ]
       },
       {
-        subTitle: 'Електрика та пневматика тягача',
+        subTitle: 'diag.tractorElectricsPneumatics',
         items: [
-          { id: 'main_battery_dead', title: 'Розряд акумуляторів тягача', desc: 'Напруга бортової мережі нижче 22V.', status: 'warning' as const, code: 'TRK-BAT-606', recommendation: 'Зарядка або заміна стартерних акумуляторних батарей (12V 225Ah - 2 од.).' },
-          { id: 'truck_alternator_fault', title: 'Несправність генератора тягача', desc: 'Помилка заряду АКБ на приладовій панелі.', status: 'warning' as const, code: 'TRK-ALT-607', recommendation: 'Ремонт або заміна генератора тягача (28V, 120A).' },
-          { id: 'air_compressor_failure', title: 'Поломка пневмокомпресора тягача', desc: 'Повільний набір повітря в ресивери системи.', status: 'warning' as const, code: 'TRK-CMP-608', recommendation: 'Заміна поршневих кілець компресора або повна його заміна.' },
-          { id: 'gladhand_leak', title: 'Витік у з\'єднувальних головках', desc: 'Витік повітря через ущільнювачі Gladhands.', status: 'damaged' as const, code: 'TRK-GLD-609', recommendation: 'Заміна гумових ущільнювачів або самих зчіпних головок червоного/жовтого шлангів.' },
-          { id: 'seven_way_cable_damage', title: 'Пошкодження 7-жильного кабелю', desc: 'Збої в передачі сигналів освітлення та ABS.', status: 'warning' as const, code: 'TRK-CBL-610', recommendation: 'Заміна або відновлення пошкодженої крученої розетки/кабелю 24V ISO.' },
+          { id: 'main_battery_dead', title: 'diag.tractorBatteriesFlat', desc: 'diag.boardVoltageBelow22', status: 'warning' as const, code: 'TRK-BAT-606', recommendation: 'diag.chargeReplaceStarterBatteries' },
+          { id: 'truck_alternator_fault', title: 'diag.tractorAlternatorFault', desc: 'diag.batteryChargeWarningDashboard', status: 'warning' as const, code: 'TRK-ALT-607', recommendation: 'diag.repairReplaceTractorAlternator' },
+          { id: 'air_compressor_failure', title: 'diag.tractorAirCompressorFailure', desc: 'diag.systemReservoirsFillAir', status: 'warning' as const, code: 'TRK-CMP-608', recommendation: 'diag.replaceCompressorPistonRings' },
+          { id: 'gladhand_leak', title: 'diag.leakCouplingHeads', desc: 'diag.airEscapingThroughGladhand', status: 'damaged' as const, code: 'TRK-GLD-609', recommendation: 'diag.replaceRubberSealsGladhands' },
+          { id: 'seven_way_cable_damage', title: 'diag.n7CoreCableDamage', desc: 'diag.lightingABSSignalsDropping', status: 'warning' as const, code: 'TRK-CBL-610', recommendation: 'diag.replaceRepairDamaged24' },
         ]
       },
       {
-        subTitle: 'Екологія та вихлоп',
+        subTitle: 'diag.emissionsAndExhaust',
         items: [
-          { id: 'dpf_clogged', title: 'Забруднення сажового фільтра DPF', desc: 'Засмічення сажею понад 85%.', status: 'warning' as const, code: 'TRK-DPF-611', recommendation: 'Запуск примусової регенерації або професійна мийка сажового фільтра на СТО.' },
-          { id: 'egr_valve_fault', title: 'Поломка клапана EGR', desc: 'Помилка датчика положення клапана рециркуляції.', status: 'warning' as const, code: 'TRK-EGR-612', recommendation: 'Очищення клапана EGR від нагару або заміна виконавчого механізму.' },
-          { id: 'def_adblue_leak', title: 'Витік або несправність системи AdBlue', desc: 'Помилка системи SCR, кристалізація сечовини.', status: 'warning' as const, code: 'TRK-DEF-613', recommendation: 'Промивка форсунки впорскування AdBlue, перевірка підігріву бака DEF.' },
+          { id: 'dpf_clogged', title: 'diag.dpfSootFilterClogged', desc: 'diag.sootLoadingAbove85', status: 'warning' as const, code: 'TRK-DPF-611', recommendation: 'diag.runForcedRegenerationHave' },
+          { id: 'egr_valve_fault', title: 'diag.egrValveFailure', desc: 'diag.egrValvePositionSensor', status: 'warning' as const, code: 'TRK-EGR-612', recommendation: 'diag.decokeEGRValveReplace' },
+          { id: 'def_adblue_leak', title: 'diag.adblueSystemLeakFault', desc: 'diag.scrSystemErrorUrea', status: 'warning' as const, code: 'TRK-DEF-613', recommendation: 'diag.flushAdblueInjectorCheck' },
         ]
       }
     ]
   },
   {
     id: 'optics_equipment',
-    title: '5. Оптика та додаткове обладнання',
+    title: 'diag.n5LightingAuxiliaryEquipment',
     system: 'lights',
     groups: [
       {
-        subTitle: 'Освітлення та сенсори безпеки',
+        subTitle: 'diag.lightingSafetySensors',
         items: [
-          { id: 'tail_light_broken', title: 'Непрацюючі задні ліхтарі причепа', desc: 'Збій живлення або розбитий плафон вогнів.', status: 'damaged' as const, code: 'EQP-LGT-701', recommendation: 'Заміна ламп/світлодіодного модуля заднього комбінованого ліхтаря.' },
-          { id: 'side_marker_fault', title: 'Поломка габаритних бокових вогнів', desc: 'Відсутність живлення на маркерній стрічці причепа.', status: 'warning' as const, code: 'EQP-LGT-702', recommendation: 'Пошук обриву проводки вздовж лонжеронів напівпричепа, заміна LED маркерів.' },
-          { id: 'abs_sensor_fault', title: 'Поломка датчика ABS причепа', desc: 'Світиться індикатор ABS причепа на панелі.', status: 'warning' as const, code: 'EQP-ABS-703', recommendation: 'Очищення датчика ABS від бруду, регулювання зазору або заміна індуктивного сенсора.' },
-          { id: 'tpms_sensor_fault', title: 'Несправність датчика тиску TPMS', desc: 'Відсутній сигнал від колеса причепа.', status: 'warning' as const, code: 'EQP-TPM-704', recommendation: 'Заміна батарейки або встановлення нового датчика тиску в колесі.' },
+          { id: 'tail_light_broken', title: 'diag.trailerRearLightsNot', desc: 'diag.powerFailureBrokenLamp', status: 'damaged' as const, code: 'EQP-LGT-701', recommendation: 'diag.replaceBulbsLEDModule' },
+          { id: 'side_marker_fault', title: 'diag.sideMarkerLightFailure', desc: 'diag.noPowerTrailerMarker', status: 'warning' as const, code: 'EQP-LGT-702', recommendation: 'diag.traceWiringBreakAlong' },
+          { id: 'abs_sensor_fault', title: 'diag.trailerABSSensorFailure', desc: 'diag.trailerABSLightDashboard', status: 'warning' as const, code: 'EQP-ABS-703', recommendation: 'diag.cleanABSSensorAdjust' },
+          { id: 'tpms_sensor_fault', title: 'diag.tpmsPressureSensorFault', desc: 'diag.noSignalTrailerWheel', status: 'warning' as const, code: 'EQP-TPM-704', recommendation: 'diag.replaceBatteryFitNew' },
         ]
       }
     ]
@@ -170,52 +171,52 @@ const diagnosticCategories = [
 // Initial Wheels Configuration Data
 const initialWheelsData: Record<string, WheelInfo[]> = {
   'volvo-reefer-damaged': [
-    { id: 'FL', name: 'FL', positionName: 'Переднє ліве (Рульова вісь тягача)', pressure: 8.5, temperature: 45, treadWear: 75, lastReplacement: '15.06.2025', mileageSinceReplacement: 45000, status: 'ok' },
-    { id: 'FR', name: 'FR', positionName: 'Переднє праве (Рульова вісь тягача)', pressure: 8.4, temperature: 46, treadWear: 72, lastReplacement: '15.06.2025', mileageSinceReplacement: 45000, status: 'ok' },
-    { id: 'RL', name: 'RL', positionName: 'Заднє ліве (Ведуча вісь тягача)', pressure: 8.6, temperature: 52, treadWear: 55, lastReplacement: '10.11.2024', mileageSinceReplacement: 95000, status: 'ok' },
-    { id: 'RR', name: 'RR', positionName: 'Заднє праве (Ведуча вісь тягача)', pressure: 8.6, temperature: 53, treadWear: 53, lastReplacement: '10.11.2024', mileageSinceReplacement: 95000, status: 'ok' },
-    { id: 'T1L', name: 'T1L', positionName: 'Перше ліве (1-ша вісь причепа)', pressure: 8.5, temperature: 40, treadWear: 68, lastReplacement: '20.01.2025', mileageSinceReplacement: 62000, status: 'ok' },
-    { id: 'T1R', name: 'T1R', positionName: 'Перше праве (1-ша вісь причепа)', pressure: 4.8, temperature: 85, treadWear: 12, lastReplacement: '14.05.2023', mileageSinceReplacement: 165000, status: 'damaged' }, // Damaged tire
-    { id: 'T2L', name: 'T2L', positionName: 'Друге ліве (2-га вісь причепа)', pressure: 8.7, temperature: 42, treadWear: 64, lastReplacement: '20.01.2025', mileageSinceReplacement: 62000, status: 'ok' },
-    { id: 'T2R', name: 'T2R', positionName: 'Друге праве (2-га вісь причепа)', pressure: 8.6, temperature: 41, treadWear: 62, lastReplacement: '20.01.2025', mileageSinceReplacement: 62000, status: 'ok' },
-    { id: 'T3L', name: 'T3L', positionName: 'Третє ліве (3-тя вісь причепа)', pressure: 8.4, temperature: 44, treadWear: 42, lastReplacement: '12.04.2024', mileageSinceReplacement: 122000, status: 'warning' }, // Warning tire
-    { id: 'T3R', name: 'T3R', positionName: 'Третє праве (3-тя вісь причепа)', pressure: 8.5, temperature: 43, treadWear: 40, lastReplacement: '12.04.2024', mileageSinceReplacement: 122000, status: 'warning' }, // Warning tire
+    { id: 'FL', name: 'FL', positionName: 'diag.frontLeftTractorSteering', pressure: 8.5, temperature: 45, treadWear: 75, lastReplacement: '15.06.2025', mileageSinceReplacement: 45000, status: 'ok' },
+    { id: 'FR', name: 'FR', positionName: 'diag.frontRightTractorSteering', pressure: 8.4, temperature: 46, treadWear: 72, lastReplacement: '15.06.2025', mileageSinceReplacement: 45000, status: 'ok' },
+    { id: 'RL', name: 'RL', positionName: 'diag.rearLeftTractorDrive', pressure: 8.6, temperature: 52, treadWear: 55, lastReplacement: '10.11.2024', mileageSinceReplacement: 95000, status: 'ok' },
+    { id: 'RR', name: 'RR', positionName: 'diag.rearRightTractorDrive', pressure: 8.6, temperature: 53, treadWear: 53, lastReplacement: '10.11.2024', mileageSinceReplacement: 95000, status: 'ok' },
+    { id: 'T1L', name: 'T1L', positionName: 'diag.firstLeftTrailerAxle', pressure: 8.5, temperature: 40, treadWear: 68, lastReplacement: '20.01.2025', mileageSinceReplacement: 62000, status: 'ok' },
+    { id: 'T1R', name: 'T1R', positionName: 'diag.firstRightTrailerAxle', pressure: 4.8, temperature: 85, treadWear: 12, lastReplacement: '14.05.2023', mileageSinceReplacement: 165000, status: 'damaged' }, // Damaged tire
+    { id: 'T2L', name: 'T2L', positionName: 'diag.secondLeftTrailerAxle', pressure: 8.7, temperature: 42, treadWear: 64, lastReplacement: '20.01.2025', mileageSinceReplacement: 62000, status: 'ok' },
+    { id: 'T2R', name: 'T2R', positionName: 'diag.secondRightTrailerAxle', pressure: 8.6, temperature: 41, treadWear: 62, lastReplacement: '20.01.2025', mileageSinceReplacement: 62000, status: 'ok' },
+    { id: 'T3L', name: 'T3L', positionName: 'diag.thirdLeftTrailerAxle', pressure: 8.4, temperature: 44, treadWear: 42, lastReplacement: '12.04.2024', mileageSinceReplacement: 122000, status: 'warning' }, // Warning tire
+    { id: 'T3R', name: 'T3R', positionName: 'diag.thirdRightTrailerAxle', pressure: 8.5, temperature: 43, treadWear: 40, lastReplacement: '12.04.2024', mileageSinceReplacement: 122000, status: 'warning' }, // Warning tire
   ],
   'scania-reefer-warning': [
-    { id: 'FL', name: 'FL', positionName: 'Переднє ліве (Рульова вісь тягача)', pressure: 8.6, temperature: 38, treadWear: 88, lastReplacement: '10.09.2025', mileageSinceReplacement: 12000, status: 'ok' },
-    { id: 'FR', name: 'FR', positionName: 'Переднє праве (Рульова вісь тягача)', pressure: 8.6, temperature: 39, treadWear: 86, lastReplacement: '10.09.2025', mileageSinceReplacement: 12000, status: 'ok' },
-    { id: 'RL', name: 'RL', positionName: 'Заднє ліве (Ведуча вісь тягача)', pressure: 8.5, temperature: 42, treadWear: 70, lastReplacement: '01.03.2025', mileageSinceReplacement: 52000, status: 'ok' },
-    { id: 'RR', name: 'RR', positionName: 'Заднє праве (Ведуча вісь тягача)', pressure: 8.5, temperature: 43, treadWear: 68, lastReplacement: '01.03.2025', mileageSinceReplacement: 52000, status: 'ok' },
-    { id: 'T1L', name: 'T1L', positionName: 'Перше ліве (1-ша вісь причепа)', pressure: 8.4, temperature: 36, treadWear: 74, lastReplacement: '15.05.2025', mileageSinceReplacement: 38000, status: 'ok' },
-    { id: 'T1R', name: 'T1R', positionName: 'Перше праве (1-ша вісь причепа)', pressure: 8.4, temperature: 37, treadWear: 72, lastReplacement: '15.05.2025', mileageSinceReplacement: 38000, status: 'ok' },
-    { id: 'T2L', name: 'T2L', positionName: 'Друге ліве (2-га вісь причепа)', pressure: 8.5, temperature: 38, treadWear: 35, lastReplacement: '18.02.2024', mileageSinceReplacement: 128000, status: 'warning' },
-    { id: 'T2R', name: 'T2R', positionName: 'Друге праве (2-га вісь причепа)', pressure: 8.5, temperature: 38, treadWear: 33, lastReplacement: '18.02.2024', mileageSinceReplacement: 128000, status: 'warning' },
-    { id: 'T3L', name: 'T3L', positionName: 'Третє ліве (3-тя вісь причепа)', pressure: 8.6, temperature: 36, treadWear: 76, lastReplacement: '15.05.2025', mileageSinceReplacement: 38000, status: 'ok' },
-    { id: 'T3R', name: 'T3R', positionName: 'Третє праве (3-тя вісь причепа)', pressure: 8.6, temperature: 35, treadWear: 75, lastReplacement: '15.05.2025', mileageSinceReplacement: 38000, status: 'ok' },
+    { id: 'FL', name: 'FL', positionName: 'diag.frontLeftTractorSteering', pressure: 8.6, temperature: 38, treadWear: 88, lastReplacement: '10.09.2025', mileageSinceReplacement: 12000, status: 'ok' },
+    { id: 'FR', name: 'FR', positionName: 'diag.frontRightTractorSteering', pressure: 8.6, temperature: 39, treadWear: 86, lastReplacement: '10.09.2025', mileageSinceReplacement: 12000, status: 'ok' },
+    { id: 'RL', name: 'RL', positionName: 'diag.rearLeftTractorDrive', pressure: 8.5, temperature: 42, treadWear: 70, lastReplacement: '01.03.2025', mileageSinceReplacement: 52000, status: 'ok' },
+    { id: 'RR', name: 'RR', positionName: 'diag.rearRightTractorDrive', pressure: 8.5, temperature: 43, treadWear: 68, lastReplacement: '01.03.2025', mileageSinceReplacement: 52000, status: 'ok' },
+    { id: 'T1L', name: 'T1L', positionName: 'diag.firstLeftTrailerAxle', pressure: 8.4, temperature: 36, treadWear: 74, lastReplacement: '15.05.2025', mileageSinceReplacement: 38000, status: 'ok' },
+    { id: 'T1R', name: 'T1R', positionName: 'diag.firstRightTrailerAxle', pressure: 8.4, temperature: 37, treadWear: 72, lastReplacement: '15.05.2025', mileageSinceReplacement: 38000, status: 'ok' },
+    { id: 'T2L', name: 'T2L', positionName: 'diag.secondLeftTrailerAxle', pressure: 8.5, temperature: 38, treadWear: 35, lastReplacement: '18.02.2024', mileageSinceReplacement: 128000, status: 'warning' },
+    { id: 'T2R', name: 'T2R', positionName: 'diag.secondRightTrailerAxle', pressure: 8.5, temperature: 38, treadWear: 33, lastReplacement: '18.02.2024', mileageSinceReplacement: 128000, status: 'warning' },
+    { id: 'T3L', name: 'T3L', positionName: 'diag.thirdLeftTrailerAxle', pressure: 8.6, temperature: 36, treadWear: 76, lastReplacement: '15.05.2025', mileageSinceReplacement: 38000, status: 'ok' },
+    { id: 'T3R', name: 'T3R', positionName: 'diag.thirdRightTrailerAxle', pressure: 8.6, temperature: 35, treadWear: 75, lastReplacement: '15.05.2025', mileageSinceReplacement: 38000, status: 'ok' },
   ],
   'daf-reefer-ok': [
-    { id: 'FL', name: 'FL', positionName: 'Переднє ліве (Рульова вісь тягача)', pressure: 8.6, temperature: 34, treadWear: 95, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
-    { id: 'FR', name: 'FR', positionName: 'Переднє праве (Рульова вісь тягача)', pressure: 8.6, temperature: 35, treadWear: 94, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
-    { id: 'RL', name: 'RL', positionName: 'Заднє ліве (Ведуча вісь тягача)', pressure: 8.5, temperature: 38, treadWear: 90, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
-    { id: 'RR', name: 'RR', positionName: 'Заднє праве (Ведуча вісь тягача)', pressure: 8.5, temperature: 37, treadWear: 89, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
-    { id: 'T1L', name: 'T1L', positionName: 'Перше ліве (1-ша вісь причепа)', pressure: 8.6, temperature: 34, treadWear: 92, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
-    { id: 'T1R', name: 'T1R', positionName: 'Перше праве (1-ша вісь причепа)', pressure: 8.6, temperature: 34, treadWear: 92, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
-    { id: 'T2L', name: 'T2L', positionName: 'Друге ліве (2-га вісь причепа)', pressure: 8.5, temperature: 35, treadWear: 91, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
-    { id: 'T2R', name: 'T2R', positionName: 'Друге праве (2-га вісь причепа)', pressure: 8.5, temperature: 35, treadWear: 91, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
-    { id: 'T3L', name: 'T3L', positionName: 'Третє ліве (3-тя вісь причепа)', pressure: 8.6, temperature: 33, treadWear: 92, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
-    { id: 'T3R', name: 'T3R', positionName: 'Третє праве (3-тя вісь причепа)', pressure: 8.6, temperature: 33, treadWear: 92, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
+    { id: 'FL', name: 'FL', positionName: 'diag.frontLeftTractorSteering', pressure: 8.6, temperature: 34, treadWear: 95, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
+    { id: 'FR', name: 'FR', positionName: 'diag.frontRightTractorSteering', pressure: 8.6, temperature: 35, treadWear: 94, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
+    { id: 'RL', name: 'RL', positionName: 'diag.rearLeftTractorDrive', pressure: 8.5, temperature: 38, treadWear: 90, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
+    { id: 'RR', name: 'RR', positionName: 'diag.rearRightTractorDrive', pressure: 8.5, temperature: 37, treadWear: 89, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
+    { id: 'T1L', name: 'T1L', positionName: 'diag.firstLeftTrailerAxle', pressure: 8.6, temperature: 34, treadWear: 92, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
+    { id: 'T1R', name: 'T1R', positionName: 'diag.firstRightTrailerAxle', pressure: 8.6, temperature: 34, treadWear: 92, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
+    { id: 'T2L', name: 'T2L', positionName: 'diag.secondLeftTrailerAxle', pressure: 8.5, temperature: 35, treadWear: 91, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
+    { id: 'T2R', name: 'T2R', positionName: 'diag.secondRightTrailerAxle', pressure: 8.5, temperature: 35, treadWear: 91, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
+    { id: 'T3L', name: 'T3L', positionName: 'diag.thirdLeftTrailerAxle', pressure: 8.6, temperature: 33, treadWear: 92, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
+    { id: 'T3R', name: 'T3R', positionName: 'diag.thirdRightTrailerAxle', pressure: 8.6, temperature: 33, treadWear: 92, lastReplacement: '10.01.2026', mileageSinceReplacement: 5000, status: 'ok' },
   ],
   'man-reefer-mixed': [
-    { id: 'FL', name: 'FL', positionName: 'Переднє ліве (Рульова вісь тягача)', pressure: 8.5, temperature: 40, treadWear: 82, lastReplacement: '12.05.2025', mileageSinceReplacement: 24000, status: 'ok' },
-    { id: 'FR', name: 'FR', positionName: 'Переднє праве (Рульова вісь тягача)', pressure: 8.5, temperature: 40, treadWear: 80, lastReplacement: '12.05.2025', mileageSinceReplacement: 24000, status: 'ok' },
-    { id: 'RL', name: 'RL', positionName: 'Заднє ліве (Ведуча вісь тягача)', pressure: 8.6, temperature: 44, treadWear: 62, lastReplacement: '18.10.2024', mileageSinceReplacement: 68000, status: 'ok' },
-    { id: 'RR', name: 'RR', positionName: 'Заднє праве (Ведуча вісь тягача)', pressure: 8.6, temperature: 45, treadWear: 60, lastReplacement: '18.10.2024', mileageSinceReplacement: 68000, status: 'ok' },
-    { id: 'T1L', name: 'T1L', positionName: 'Перше ліве (1-ша вісь причепа)', pressure: 8.5, temperature: 38, treadWear: 72, lastReplacement: '10.03.2025', mileageSinceReplacement: 42000, status: 'ok' },
-    { id: 'T1R', name: 'T1R', positionName: 'Перше праве (1-ша вісь причепа)', pressure: 8.4, temperature: 37, treadWear: 70, lastReplacement: '10.03.2025', mileageSinceReplacement: 42000, status: 'ok' },
-    { id: 'T2L', name: 'T2L', positionName: 'Друге ліве (2-га вісь причепа)', pressure: 8.5, temperature: 39, treadWear: 42, lastReplacement: '05.08.2024', mileageSinceReplacement: 84000, status: 'warning' },
-    { id: 'T2R', name: 'T2R', positionName: 'Друге праве (2-га вісь причепа)', pressure: 8.5, temperature: 38, treadWear: 40, lastReplacement: '05.08.2024', mileageSinceReplacement: 84000, status: 'warning' },
-    { id: 'T3L', name: 'T3L', positionName: 'Третє ліве (3-тя вісь причепа)', pressure: 8.6, temperature: 37, treadWear: 75, lastReplacement: '10.03.2025', mileageSinceReplacement: 42000, status: 'ok' },
-    { id: 'T3R', name: 'T3R', positionName: 'Третє праве (3-тя вісь причепа)', pressure: 8.6, temperature: 37, treadWear: 73, lastReplacement: '10.03.2025', mileageSinceReplacement: 42000, status: 'ok' },
+    { id: 'FL', name: 'FL', positionName: 'diag.frontLeftTractorSteering', pressure: 8.5, temperature: 40, treadWear: 82, lastReplacement: '12.05.2025', mileageSinceReplacement: 24000, status: 'ok' },
+    { id: 'FR', name: 'FR', positionName: 'diag.frontRightTractorSteering', pressure: 8.5, temperature: 40, treadWear: 80, lastReplacement: '12.05.2025', mileageSinceReplacement: 24000, status: 'ok' },
+    { id: 'RL', name: 'RL', positionName: 'diag.rearLeftTractorDrive', pressure: 8.6, temperature: 44, treadWear: 62, lastReplacement: '18.10.2024', mileageSinceReplacement: 68000, status: 'ok' },
+    { id: 'RR', name: 'RR', positionName: 'diag.rearRightTractorDrive', pressure: 8.6, temperature: 45, treadWear: 60, lastReplacement: '18.10.2024', mileageSinceReplacement: 68000, status: 'ok' },
+    { id: 'T1L', name: 'T1L', positionName: 'diag.firstLeftTrailerAxle', pressure: 8.5, temperature: 38, treadWear: 72, lastReplacement: '10.03.2025', mileageSinceReplacement: 42000, status: 'ok' },
+    { id: 'T1R', name: 'T1R', positionName: 'diag.firstRightTrailerAxle', pressure: 8.4, temperature: 37, treadWear: 70, lastReplacement: '10.03.2025', mileageSinceReplacement: 42000, status: 'ok' },
+    { id: 'T2L', name: 'T2L', positionName: 'diag.secondLeftTrailerAxle', pressure: 8.5, temperature: 39, treadWear: 42, lastReplacement: '05.08.2024', mileageSinceReplacement: 84000, status: 'warning' },
+    { id: 'T2R', name: 'T2R', positionName: 'diag.secondRightTrailerAxle', pressure: 8.5, temperature: 38, treadWear: 40, lastReplacement: '05.08.2024', mileageSinceReplacement: 84000, status: 'warning' },
+    { id: 'T3L', name: 'T3L', positionName: 'diag.thirdLeftTrailerAxle', pressure: 8.6, temperature: 37, treadWear: 75, lastReplacement: '10.03.2025', mileageSinceReplacement: 42000, status: 'ok' },
+    { id: 'T3R', name: 'T3R', positionName: 'diag.thirdRightTrailerAxle', pressure: 8.6, temperature: 37, treadWear: 73, lastReplacement: '10.03.2025', mileageSinceReplacement: 42000, status: 'ok' },
   ],
 };
 
@@ -236,13 +237,13 @@ const mockVehicles = [
     id: 'volvo-reefer-damaged',
     name: 'Volvo FH16 Globetrotter Reefer',
     plate: 'CE 7749 BE',
-    type: 'Рефрижератор',
+    type: 'diag.reefer',
     status: 'damaged',
-    driver: 'Олександр Шевченко',
+    driver: 'diag.oleksandrShevchenko',
     phone: '+380 50 123 45 67',
-    mileage: '342,150 км',
-    fuelConsumption: '28.5 л/100км',
-    activeRoute: 'Чернівці (База) - Львів (Склад №4)',
+    mileage: 'diag.n342150Km',
+    fuelConsumption: 'diag.n285L100',
+    activeRoute: 'diag.chernivtsiDepotLvivWarehouse',
     temperatureSet: '-18°C',
     temperatureCurrent: '-4°C',
     activeFaultIds: [
@@ -269,13 +270,13 @@ const mockVehicles = [
     id: 'scania-reefer-warning',
     name: 'Scania S580 Highline Reefer',
     plate: 'CE 2200 OK',
-    type: 'Рефрижератор',
+    type: 'diag.reefer',
     status: 'warning',
-    driver: 'Микола Козак',
+    driver: 'diag.mykolaKozak',
     phone: '+380 67 987 65 43',
-    mileage: '189,420 км',
-    fuelConsumption: '31.2 л/100км',
-    activeRoute: 'Тернопіль (Склад №2) - Чернівці',
+    mileage: 'diag.n189420Km',
+    fuelConsumption: 'diag.n312L100',
+    activeRoute: 'diag.ternopilWarehouse2Chernivtsi',
     temperatureSet: '-20°C',
     temperatureCurrent: '-16°C',
     activeFaultIds: [
@@ -309,14 +310,14 @@ const mockVehicles = [
   {
     id: 'daf-reefer-ok',
     name: 'DAF XF 530 Super Space Reefer',
-    plate: 'CE 0555 ВВ',
-    type: 'Рефрижератор',
+    plate: 'diag.ce0555BB',
+    type: 'diag.reefer',
     status: 'ok',
-    driver: 'Віталій Петренко',
+    driver: 'diag.vitaliiPetrenko',
     phone: '+380 99 444 33 22',
-    mileage: '412,800 км',
-    fuelConsumption: '29.0 л/100км',
-    activeRoute: 'Київ (Логістичний центр) - Чернівці',
+    mileage: 'diag.n412800Km',
+    fuelConsumption: 'diag.n290L100',
+    activeRoute: 'diag.kyivLogisticsCentreChernivtsi',
     temperatureSet: '-18°C',
     temperatureCurrent: '-18°C',
     activeFaultIds: [],
@@ -325,13 +326,13 @@ const mockVehicles = [
     id: 'man-reefer-mixed',
     name: 'MAN TGX 18.510 Lion\'s Reefer',
     plate: 'CE 9911 KM',
-    type: 'Рефрижератор',
+    type: 'diag.reefer',
     status: 'warning',
-    driver: 'Дмитро Коваленко',
+    driver: 'diag.dmytroKovalenko',
     phone: '+380 63 555 11 22',
-    mileage: '224,100 км',
-    fuelConsumption: '27.4 л/100км',
-    activeRoute: 'Одеса (Порт) - Чернівці',
+    mileage: 'diag.n224100Km',
+    fuelConsumption: 'diag.n274L100',
+    activeRoute: 'diag.odesaPortChernivtsi',
     temperatureSet: '-22°C',
     temperatureCurrent: '-19°C',
     activeFaultIds: [
@@ -352,7 +353,6 @@ const mockVehicles = [
 export default function FleetPage() {
   const router = useRouter();
   const { authenticated } = useAuthGuard();
-  const { theme, toggleTheme } = useTheme();
   const [selectedVehicle, setSelectedVehicle] = useState(mockVehicles[0]);
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const [selectedSubFault, setSelectedSubFault] = useState<string | null>(null);
@@ -564,27 +564,20 @@ export default function FleetPage() {
         <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-bdr-subtle bg-glass px-4 py-3 backdrop-blur-chrome sm:px-6">
           <div className="min-w-0 flex-1 pl-12 lg:pl-0">
             <h1 className="truncate text-base font-semibold tracking-tight text-txt-primary sm:text-lg">
-              Моніторинг та інспекція автопарку
+              {t('diag.fleetMonitoringInspection')}
             </h1>
             <p className="mt-0.5 truncate text-2xs text-txt-muted">
-              Інтерактивний 3D-контроль технічного стану · демонстраційні дані
+              {t('diag.interactive3DConditionMonitoring')}
             </p>
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={toggleTheme}
-              className="btn-icon"
-              title={theme === 'dark' ? 'Світла тема' : 'Темна тема'}
-              aria-label={theme === 'dark' ? 'Увімкнути світлу тему' : 'Увімкнути темну тему'}
-            >
-              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
+            <ThemeToggleButton />
             <button
               onClick={handleLogout}
               className="btn-icon hover:text-danger"
-              title="Вийти з системи"
-              aria-label="Вийти з системи"
+              title={t('common.signOut')}
+              aria-label={t('common.signOut')}
             >
               <LogOut className="h-4 w-4" />
             </button>
@@ -602,10 +595,10 @@ export default function FleetPage() {
               <div className="glass-card rounded-card overflow-hidden border border-bdr-subtle">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-bdr-subtle bg-surface-inset">
                   <h3 className="font-semibold text-xs text-txt-secondary tracking-wider uppercase flex items-center gap-2">
-                    <Layers className="w-3.5 h-3.5 text-accent" /> Рефрижератори
+                    <Layers className="w-3.5 h-3.5 text-accent" /> {t('diag.reefers')}
                   </h3>
                   <span className="bg-surface-inset border border-bdr-subtle text-[9px] px-2 py-0.5 rounded-full font-bold text-txt-secondary">
-                    {mockVehicles.length} од.
+                    {mockVehicles.length} {t('diag.units')}
                   </span>
                 </div>
                 
@@ -636,9 +629,9 @@ export default function FleetPage() {
                         <div className="flex items-start justify-between">
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-semibold text-xs text-txt-primary">{vehicle.plate}</span>
+                              <span className="font-semibold text-xs text-txt-primary">{t(vehicle.plate)}</span>
                               <span className="bg-surface-inset border border-bdr-subtle text-[8px] text-txt-secondary font-bold px-1.5 py-0.5 rounded">
-                                {vehicle.type}
+                                {t(vehicle.type)}
                               </span>
                             </div>
                             <h4 className="text-[10px] text-txt-secondary font-semibold mt-1 truncate">{vehicle.name}</h4>
@@ -655,10 +648,10 @@ export default function FleetPage() {
                         </div>
                         <div className="mt-2.5 pt-2.5 border-t border-bdr-subtle flex items-center justify-between text-[9px] text-txt-secondary font-semibold gap-2">
                           <span className="flex items-center gap-1 min-w-0 truncate">
-                            <User className="w-2.5 h-2.5 text-txt-muted flex-shrink-0" /> {vehicle.driver}
+                            <User className="w-2.5 h-2.5 text-txt-muted flex-shrink-0" /> {t(vehicle.driver)}
                           </span>
                           <span className="flex items-center gap-1 font-mono flex-shrink-0">
-                            <Gauge className="w-2.5 h-2.5 text-txt-muted" /> {vehicle.mileage}
+                            <Gauge className="w-2.5 h-2.5 text-txt-muted" /> {t(vehicle.mileage)}
                           </span>
                         </div>
                       </div>
@@ -670,23 +663,23 @@ export default function FleetPage() {
               {/* Стан автопарку */}
               <div className="glass-card p-4 rounded-card border border-bdr-subtle">
                 <h4 className="font-bold text-[10px] text-txt-secondary tracking-wider uppercase mb-3 flex items-center gap-1.5">
-                  <Activity className="w-3.5 h-3.5 text-accent" /> Експрес-статус рефів
+                  <Activity className="w-3.5 h-3.5 text-accent" /> {t('diag.reeferQuickStatus')}
                 </h4>
                 <div className="space-y-2 text-xs">
                   <div className="flex items-center justify-between font-semibold">
-                    <span className="text-txt-secondary">Активні рефрижератори:</span>
+                    <span className="text-txt-secondary">{t('diag.activeReefersColon')}</span>
                     <span className="text-txt-primary font-bold">{mockVehicles.length}</span>
                   </div>
                   <div className="flex items-center justify-between font-semibold">
-                    <span className="text-txt-secondary">Справний стан (OK):</span>
+                    <span className="text-txt-secondary">{t('diag.healthyOKColon')}</span>
                     <span className="text-accent font-bold">1</span>
                   </div>
                   <div className="flex items-center justify-between font-semibold">
-                    <span className="text-txt-secondary">Часткові попередження:</span>
+                    <span className="text-txt-secondary">{t('diag.partialWarningsColon')}</span>
                     <span className="text-okko-accent font-bold">2</span>
                   </div>
                   <div className="flex items-center justify-between font-semibold">
-                    <span className="text-txt-secondary">Критична аварія:</span>
+                    <span className="text-txt-secondary">{t('diag.criticalFaultColon')}</span>
                     <span className="text-okko-red font-bold">1</span>
                   </div>
                 </div>
@@ -700,7 +693,7 @@ export default function FleetPage() {
               <div className="glass-card p-4 sm:p-5 rounded-card border border-bdr-subtle">
                 <div className="flex items-center justify-between mb-4 pb-2 border-b border-bdr-subtle">
                   <h3 className="font-semibold text-xs text-txt-secondary tracking-wider uppercase flex items-center gap-2">
-                    <Wrench className="w-3.5 h-3.5 text-accent" /> Карта несправностей
+                    <Wrench className="w-3.5 h-3.5 text-accent" /> {t('diag.faultMap')}
                   </h3>
                   <span className="text-[10px] text-txt-secondary font-bold uppercase tracking-wider flex items-center gap-1">
                     <Sliders className="w-3.5 h-3.5 text-accent" /> OBD-II
@@ -727,7 +720,7 @@ export default function FleetPage() {
                             className="w-full flex items-center justify-between px-3 py-2.5 bg-surface-inset hover:bg-surface-inset transition-colors text-left"
                           >
                             <span className="text-[11px] font-semibold text-txt-primary tracking-wide uppercase flex items-center gap-2">
-                              {cat.title}
+                              {t(cat.title)}
                               <span className="bg-danger/20 text-okko-red text-[9px] px-1.5 py-0.5 rounded font-semibold">
                                 {totalActive}
                               </span>
@@ -745,7 +738,7 @@ export default function FleetPage() {
                               {cat.id === 'trailer_chassis' && (
                                 <div className="p-1 space-y-2 border-b border-bdr-subtle pb-3">
                                   <span className="text-[9px] text-accent font-semibold uppercase tracking-widest block mb-2">
-                                    Інтерактивна схема коліс
+                                    {t('diag.interactiveWheelDiagram')}
                                   </span>
                                   
                                   <div className="grid grid-cols-12 gap-3 items-center bg-surface-inset p-2 rounded-lg border border-bdr-subtle">
@@ -774,13 +767,13 @@ export default function FleetPage() {
                                           onClick={() => handleWheelSelect('FL')}
                                           style={{ left: '10px', top: '22px', width: '9px', height: '22px' }}
                                           className={`absolute rounded-[2px] transition-all border ${getWheelColorClass('FL')}`}
-                                          title="Переднє ліве (Рульове)"
+                                          title={t('diag.frontLeftSteering')}
                                         />
                                         <button 
                                           onClick={() => handleWheelSelect('FR')}
                                           style={{ right: '10px', top: '22px', width: '9px', height: '22px' }}
                                           className={`absolute rounded-[2px] transition-all border ${getWheelColorClass('FR')}`}
-                                          title="Переднє праве (Рульове)"
+                                          title={t('diag.frontRightSteering')}
                                         />
 
                                         {/* Tractor Rear Drive Axle (Twin/Dual tires on each side) */}
@@ -789,13 +782,13 @@ export default function FleetPage() {
                                           onClick={() => handleWheelSelect('RL')}
                                           style={{ left: '8px', top: '88px', width: '7px', height: '22px' }}
                                           className={`absolute rounded-[2px] transition-all border ${getWheelColorClass('RL')}`}
-                                          title="Заднє ліве зовнішнє (Ведуче)"
+                                          title={t('diag.rearLeftOuterDrive')}
                                         />
                                         <button 
                                           onClick={() => handleWheelSelect('RL')}
                                           style={{ left: '17px', top: '88px', width: '7px', height: '22px' }}
                                           className={`absolute rounded-[2px] transition-all border ${getWheelColorClass('RL')}`}
-                                          title="Заднє ліве внутрішнє (Ведуче)"
+                                          title={t('diag.rearLeftInnerDrive')}
                                         />
 
                                         {/* RR Duals */}
@@ -803,13 +796,13 @@ export default function FleetPage() {
                                           onClick={() => handleWheelSelect('RR')}
                                           style={{ right: '17px', top: '88px', width: '7px', height: '22px' }}
                                           className={`absolute rounded-[2px] transition-all border ${getWheelColorClass('RR')}`}
-                                          title="Заднє праве внутрішнє (Ведуче)"
+                                          title={t('diag.rearRightInnerDrive')}
                                         />
                                         <button 
                                           onClick={() => handleWheelSelect('RR')}
                                           style={{ right: '8px', top: '88px', width: '7px', height: '22px' }}
                                           className={`absolute rounded-[2px] transition-all border ${getWheelColorClass('RR')}`}
-                                          title="Заднє праве зовнішнє (Ведуче)"
+                                          title={t('diag.rearRightOuterDrive')}
                                         />
 
                                         {/* Trailer Axle 1 (Sticks out at the very edge of the trailer box width) */}
@@ -817,13 +810,13 @@ export default function FleetPage() {
                                           onClick={() => handleWheelSelect('T1L')}
                                           style={{ left: '2px', top: '165px', width: '9px', height: '22px' }}
                                           className={`absolute rounded-[2px] transition-all border ${getWheelColorClass('T1L')}`}
-                                          title="Причіп 1 Ліве"
+                                          title={t('diag.trailer1Left')}
                                         />
                                         <button 
                                           onClick={() => handleWheelSelect('T1R')}
                                           style={{ right: '2px', top: '165px', width: '9px', height: '22px' }}
                                           className={`absolute rounded-[2px] transition-all border ${getWheelColorClass('T1R')}`}
-                                          title="Причіп 1 Праве"
+                                          title={t('diag.trailer1Right')}
                                         />
 
                                         {/* Trailer Axle 2 */}
@@ -831,13 +824,13 @@ export default function FleetPage() {
                                           onClick={() => handleWheelSelect('T2L')}
                                           style={{ left: '2px', top: '195px', width: '9px', height: '22px' }}
                                           className={`absolute rounded-[2px] transition-all border ${getWheelColorClass('T2L')}`}
-                                          title="Причіп 2 Ліве"
+                                          title={t('diag.trailer2Left')}
                                         />
                                         <button 
                                           onClick={() => handleWheelSelect('T2R')}
                                           style={{ right: '2px', top: '195px', width: '9px', height: '22px' }}
                                           className={`absolute rounded-[2px] transition-all border ${getWheelColorClass('T2R')}`}
-                                          title="Причіп 2 Праве"
+                                          title={t('diag.trailer2Right')}
                                         />
 
                                         {/* Trailer Axle 3 */}
@@ -845,13 +838,13 @@ export default function FleetPage() {
                                           onClick={() => handleWheelSelect('T3L')}
                                           style={{ left: '2px', top: '225px', width: '9px', height: '22px' }}
                                           className={`absolute rounded-[2px] transition-all border ${getWheelColorClass('T3L')}`}
-                                          title="Причіп 3 Ліве"
+                                          title={t('diag.trailer3Left')}
                                         />
                                         <button 
                                           onClick={() => handleWheelSelect('T3R')}
                                           style={{ right: '2px', top: '225px', width: '9px', height: '22px' }}
                                           className={`absolute rounded-[2px] transition-all border ${getWheelColorClass('T3R')}`}
-                                          title="Причіп 3 Праве"
+                                          title={t('diag.trailer3Right')}
                                         />
                                       </div>
                                     </div>
@@ -862,45 +855,45 @@ export default function FleetPage() {
                                         <div className="space-y-1.5 fade-in">
                                           <div className="flex items-center justify-between">
                                             <span className="font-semibold text-[10px] text-txt-primary">
-                                              Колесо {selectedWheel.id}
+                                              {t('diag.wheel')} {selectedWheel.id}
                                             </span>
                                             <span className={`text-[7px] font-semibold px-1 py-0.5 rounded-full uppercase ${
                                               selectedWheel.status === 'damaged' ? 'bg-danger/10 text-okko-red border border-okko-red/25 animate-pulse' :
                                               selectedWheel.status === 'warning' ? 'bg-warn/10 text-okko-accent border border-okko-accent/25' :
                                               'bg-accent/10 text-accent border border-bdr-highlight'
                                             }`}>
-                                              {selectedWheel.status === 'damaged' ? 'Аварія' : selectedWheel.status === 'warning' ? 'Знос' : 'Норма'}
+                                              {selectedWheel.status === 'damaged' ? t('diag.fault') : selectedWheel.status === 'warning' ? t('diag.wear') : t('diag.normal')}
                                             </span>
                                           </div>
-                                          <p className="text-[8px] text-txt-secondary font-semibold leading-tight">{selectedWheel.positionName}</p>
+                                          <p className="text-[8px] text-txt-secondary font-semibold leading-tight">{t(selectedWheel.positionName)}</p>
                                           
                                           <div className="grid grid-cols-2 gap-1 text-[9px]">
                                             <div className="bg-surface-inset p-1 rounded border border-bdr-subtle">
-                                              <span className="text-txt-muted block text-[7px] font-bold">ТИСК</span>
-                                              <span className={`font-mono font-bold ${selectedWheel.pressure < 6.0 ? 'text-okko-red animate-pulse' : 'text-txt-primary'}`}>{selectedWheel.pressure} бар</span>
+                                              <span className="text-txt-muted block text-[7px] font-bold">{t('diag.pressure')}</span>
+                                              <span className={`font-mono font-bold ${selectedWheel.pressure < 6.0 ? 'text-okko-red animate-pulse' : 'text-txt-primary'}`}>{selectedWheel.pressure} {t('diag.bar')}</span>
                                             </div>
                                             <div className="bg-surface-inset p-1 rounded border border-bdr-subtle">
-                                              <span className="text-txt-muted block text-[7px] font-bold">ТЕМП.</span>
+                                              <span className="text-txt-muted block text-[7px] font-bold">{t('diag.temp')}</span>
                                               <span className={`font-mono font-bold ${selectedWheel.temperature > 70 ? 'text-okko-red' : 'text-txt-primary'}`}>{selectedWheel.temperature}°C</span>
                                             </div>
                                             <div className="bg-surface-inset p-1 rounded border border-bdr-subtle">
-                                              <span className="text-txt-muted block text-[7px] font-bold">ПРОТЕКТОР</span>
-                                              <span className={`font-mono font-bold ${selectedWheel.treadWear < 20 ? 'text-okko-red' : selectedWheel.treadWear < 45 ? 'text-okko-accent' : 'text-txt-primary'}`}>{selectedWheel.treadWear}% залишок</span>
+                                              <span className="text-txt-muted block text-[7px] font-bold">{t('diag.tread')}</span>
+                                              <span className={`font-mono font-bold ${selectedWheel.treadWear < 20 ? 'text-okko-red' : selectedWheel.treadWear < 45 ? 'text-okko-accent' : 'text-txt-primary'}`}>{selectedWheel.treadWear}{t('diag.remaining')}</span>
                                             </div>
                                             <div className="bg-surface-inset p-1 rounded border border-bdr-subtle">
-                                              <span className="text-txt-muted block text-[7px] font-bold">ПРОБІГ ШИНИ</span>
-                                              <span className="font-mono font-bold text-txt-primary">{selectedWheel.mileageSinceReplacement.toLocaleString()} км</span>
+                                              <span className="text-txt-muted block text-[7px] font-bold">{t('diag.tyreMileage')}</span>
+                                              <span className="font-mono font-bold text-txt-primary">{selectedWheel.mileageSinceReplacement.toLocaleString()} {t('common.km')}</span>
                                             </div>
                                           </div>
                                           
                                           <div className="pt-1.5 text-[8px] text-txt-secondary flex flex-wrap items-center justify-between gap-1 border-t border-bdr-subtle">
-                                            <span>Заміна: {selectedWheel.lastReplacement}</span>
+                                            <span>{t('diag.replacedColon')} {selectedWheel.lastReplacement}</span>
                                             {selectedWheel.status !== 'ok' && (
                                               <button
                                                 onClick={() => handleReplaceWheel(selectedWheel.id)}
                                                 className="px-2 py-0.5 rounded bg-accent/20 hover:bg-accent text-[8px] font-semibold uppercase text-accent hover:text-txt-primary border border-bdr-highlight hover:border-bdr-highlight transition-all active:scale-95"
                                               >
-                                                Замінити
+                                                {t('diag.replace')}
                                               </button>
                                             )}
                                           </div>
@@ -908,7 +901,7 @@ export default function FleetPage() {
                                       ) : (
                                         <div className="text-center py-6 text-txt-muted text-[9px] font-semibold flex flex-col items-center gap-1">
                                           <Info className="w-4 h-4 text-txt-muted" />
-                                          <span>Оберіть шину на схемі для діагностики</span>
+                                          <span>{t('diag.selectTyreDiagramDiagnose')}</span>
                                         </div>
                                       )}
                                     </div>
@@ -923,7 +916,7 @@ export default function FleetPage() {
                                 return (
                                   <div key={groupIdx} className="space-y-1.5">
                                     <span className="text-[9px] text-txt-muted font-semibold uppercase tracking-wider block ml-1">
-                                      {group.subTitle}
+                                      {t(group.subTitle)}
                                     </span>
                                     <div className="space-y-1.5">
                                       {activeInGroup.map((item) => {
@@ -941,11 +934,11 @@ export default function FleetPage() {
                                             <div className="flex items-start justify-between gap-1 mb-1">
                                               <span className="font-semibold text-[11px] text-txt-primary flex items-center gap-1.5 leading-tight">
                                                 <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${item.status === 'damaged' ? 'bg-danger animate-pulse' : 'bg-warn'}`} />
-                                                {item.title}
+                                                {t(item.title)}
                                               </span>
                                               <span className="text-[8px] font-mono text-txt-muted font-bold flex-shrink-0">{item.code}</span>
                                             </div>
-                                            <p className="text-[10px] text-txt-secondary line-clamp-1">{item.desc}</p>
+                                            <p className="text-[10px] text-txt-secondary line-clamp-1">{t(item.desc)}</p>
                                           </div>
                                         );
                                       })}
@@ -963,9 +956,9 @@ export default function FleetPage() {
                     <div className="p-6 rounded-xl bg-accent/5 border border-bdr-highlight text-center space-y-3.5">
                       <CheckCircle className="w-10 h-10 text-accent mx-auto shadow shadow-okko-green/10" />
                       <div>
-                        <h4 className="font-bold text-xs text-txt-primary">Всі системи працюють нормально</h4>
+                        <h4 className="font-bold text-xs text-txt-primary">{t('diag.allSystemsOperatingNormally')}</h4>
                         <p className="text-[10px] text-txt-secondary mt-1 leading-relaxed">
-                          Помилок в блоках OBD-II / CAN-gateway не виявлено. Холодильний контур тримає стабільні -18°C. Тягач готовий до рейсу.
+                          {t('diag.noErrorsDetectedOBD')}
                         </p>
                       </div>
                     </div>
@@ -979,28 +972,28 @@ export default function FleetPage() {
                   <div className="space-y-3 fade-in">
                     <div className="flex items-center justify-between">
                       <span className="text-[9px] text-accent font-semibold uppercase tracking-widest flex items-center gap-1.5">
-                        <Activity className="w-3.5 h-3.5" /> Рекомендація з ремонту
+                        <Activity className="w-3.5 h-3.5" /> {t('diag.repairRecommendation')}
                       </span>
                       <span className="text-[9px] font-mono font-bold text-txt-muted">{activeSubFaultData.code}</span>
                     </div>
-                    <h4 className="text-txt-primary font-semibold text-xs">{activeSubFaultData.title}</h4>
-                    <p className="text-[11px] text-txt-secondary leading-relaxed">{activeSubFaultData.desc}</p>
+                    <h4 className="text-txt-primary font-semibold text-xs">{t(activeSubFaultData.title)}</h4>
+                    <p className="text-[11px] text-txt-secondary leading-relaxed">{t(activeSubFaultData.desc)}</p>
                     
                     <div className="p-3 rounded-lg bg-danger/5 border-l-4 border-okko-red text-[11px] text-txt-secondary leading-normal">
-                      <strong className="text-txt-primary block mb-0.5">Необхідні роботи:</strong>
-                      {activeSubFaultData.recommendation}
+                      <strong className="text-txt-primary block mb-0.5">{t('diag.workRequiredColon')}</strong>
+                      {t(activeSubFaultData.recommendation)}
                     </div>
                     
                     <div className="flex gap-2 justify-end">
                       <button className="okko-btn px-4 py-2 text-[9px] uppercase font-semibold tracking-wider rounded-lg text-txt-primary active:scale-95 shadow">
-                        Створити наряд на СТО
+                        {t('diag.createWorkshopOrder')}
                       </button>
                     </div>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2.5 text-xs text-txt-secondary justify-center py-3.5 font-semibold">
                     <Info className="w-4 h-4 text-txt-muted" />
-                    <span>{selectedVehicle.activeFaultIds.length > 0 ? 'Оберіть несправність зі списку для перегляду рекомендацій' : 'Автомобіль повністю справний'}</span>
+                    <span>{selectedVehicle.activeFaultIds.length > 0 ? t('diag.selectFaultListSee') : t('diag.vehicleFullyOperational')}</span>
                   </div>
                 )}
               </div>
@@ -1016,10 +1009,10 @@ export default function FleetPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3 px-1">
                   <div>
                     <span className="bg-danger/10 text-okko-red border border-okko-red/20 text-[9px] font-semibold uppercase px-2 py-0.5 rounded-full tracking-wider animate-pulse inline-flex items-center gap-1">
-                      <AlertTriangle className="w-2.5 h-2.5" /> 3D-Діагностика {selectedVehicle.type}
+                      <AlertTriangle className="w-2.5 h-2.5" /> {t('diag.n3dDiagnostics')} {t(selectedVehicle.type)}
                     </span>
                     <h2 className="text-sm sm:text-base font-semibold text-txt-primary mt-1">
-                      {selectedVehicle.name} <span className="text-txt-muted font-normal">({selectedVehicle.plate})</span>
+                      {selectedVehicle.name} <span className="text-txt-muted font-normal">({t(selectedVehicle.plate)})</span>
                     </h2>
                   </div>
 
@@ -1035,7 +1028,7 @@ export default function FleetPage() {
                         : 'bg-surface-inset hover:bg-surface-hover border-bdr-subtle text-txt-secondary active:scale-95'
                     }`}
                   >
-                    Скинути камеру
+                    {t('diag.resetTheCamera')}
                   </button>
                 </div>
 
@@ -1078,8 +1071,8 @@ export default function FleetPage() {
                 <div className="mt-3 p-3 rounded-xl bg-surface-inset border border-bdr-subtle text-[10px] text-txt-secondary leading-relaxed flex items-start gap-2 fade-in">
                   <Info className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
                   <div>
-                    <strong className="text-txt-primary block mb-0.5">Інтерактивна 3D інспекція:</strong>
-                    Для огляду коліс знизу або з боків обертайте камеру мишею. Натискайте на колісні пари на 2D-схемі або в 3D для детального аналізу стану шин, тиску та пробігу.
+                    <strong className="text-txt-primary block mb-0.5">{t('diag.interactive3DInspectionColon')}</strong>
+                    {t('diag.inspectWheelsBelowSide')}
                   </div>
                 </div>
               </div>
@@ -1090,25 +1083,25 @@ export default function FleetPage() {
                 {/* Driver */}
                 <div className="glass-card p-4 rounded-card border border-bdr-subtle">
                   <h4 className="font-bold text-[10px] text-txt-secondary tracking-wider uppercase mb-3 flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-accent" /> Відповідальний водій
+                    <User className="w-3.5 h-3.5 text-accent" /> {t('diag.assignedDriver')}
                   </h4>
                   <div className="flex items-center gap-3 mb-3.5">
                     <div className="w-10 h-10 rounded-xl bg-surface-inset border border-bdr-subtle flex items-center justify-center flex-shrink-0">
                       <User className="w-5 h-5 text-accent/75" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-txt-primary truncate">{selectedVehicle.driver}</p>
+                      <p className="text-xs font-semibold text-txt-primary truncate">{t(selectedVehicle.driver)}</p>
                       <p className="text-[10px] text-txt-secondary font-semibold">{selectedVehicle.phone}</p>
                     </div>
                   </div>
                   <div className="pt-2.5 border-t border-bdr-subtle text-[10px] text-txt-secondary font-semibold space-y-1">
                     <div className="flex justify-between gap-2">
-                      <span className="text-txt-muted">Рейс:</span>
-                      <span className="text-txt-primary font-bold truncate max-w-[140px]">{selectedVehicle.activeRoute}</span>
+                      <span className="text-txt-muted">{t('diag.tripColon')}</span>
+                      <span className="text-txt-primary font-bold truncate max-w-[140px]">{t(selectedVehicle.activeRoute)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-txt-muted">Час виїзду:</span>
-                      <span className="text-txt-primary font-bold">Сьогодні, 06:15</span>
+                      <span className="text-txt-muted">{t('diag.departureTimeColon')}</span>
+                      <span className="text-txt-primary font-bold">{t('diag.today0615')}</span>
                     </div>
                   </div>
                 </div>
@@ -1116,26 +1109,26 @@ export default function FleetPage() {
                 {/* Sensors */}
                 <div className="glass-card p-4 rounded-card border border-bdr-subtle">
                   <h4 className="font-bold text-[10px] text-txt-secondary tracking-wider uppercase mb-3 flex items-center gap-1.5">
-                    <Activity className="w-3.5 h-3.5 text-accent" /> Датчики рефрижератора
+                    <Activity className="w-3.5 h-3.5 text-accent" /> {t('diag.reeferSensors')}
                   </h4>
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     <div className="bg-surface-inset border border-bdr-subtle p-2 rounded-xl text-center">
-                      <span className="text-[8px] text-txt-secondary font-bold block">Цільова темп.</span>
+                      <span className="text-[8px] text-txt-secondary font-bold block">{t('diag.targetTemp')}</span>
                       <span className="text-txt-primary font-semibold text-xs font-mono">{selectedVehicle.temperatureSet}</span>
                     </div>
                     <div className={`p-2 rounded-xl text-center ${selectedVehicle.status === 'ok' ? 'bg-accent/5 border border-bdr-highlight' : 'bg-danger/5 border border-danger/30'}`}>
-                      <span className="text-[8px] font-bold block text-txt-secondary">Поточна темп.</span>
+                      <span className="text-[8px] font-bold block text-txt-secondary">{t('diag.currentTemp')}</span>
                       <span className={`font-semibold text-xs font-mono ${selectedVehicle.status === 'ok' ? 'text-accent' : 'text-okko-red animate-pulse'}`}>{selectedVehicle.temperatureCurrent}</span>
                     </div>
                   </div>
                   <div className="pt-2.5 border-t border-bdr-subtle text-[10px] text-txt-secondary font-semibold space-y-1">
                     <div className="flex justify-between">
-                      <span className="text-txt-muted">Вологість:</span>
-                      <span className="text-txt-primary font-bold">54% (Норма)</span>
+                      <span className="text-txt-muted">{t('diag.humidityColon')}</span>
+                      <span className="text-txt-primary font-bold">{t('diag.n54Normal')}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-txt-muted">Вентилятори:</span>
-                      <span className={`font-bold ${selectedVehicle.status === 'ok' ? 'text-accent' : 'text-okko-accent'}`}>{selectedVehicle.status === 'ok' ? 'Стабільно' : '100% потужності'}</span>
+                      <span className="text-txt-muted">{t('diag.fansColon')}</span>
+                      <span className={`font-bold ${selectedVehicle.status === 'ok' ? 'text-accent' : 'text-okko-accent'}`}>{selectedVehicle.status === 'ok' ? t('diag.steady') : t('diag.n100Capacity')}</span>
                     </div>
                   </div>
                 </div>

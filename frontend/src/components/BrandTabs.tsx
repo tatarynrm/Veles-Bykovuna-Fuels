@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Layers, Droplet, Flame } from 'lucide-react';
+import { t } from '@/lib/i18n';
 
 interface BrandTabsProps {
   activeBrand: string;
@@ -9,14 +10,14 @@ interface BrandTabsProps {
 }
 
 const brands = [
-  { id: 'ALL', label: 'Всі мережі', hint: 'OKKO + Shell', icon: Layers },
-  { id: 'OKKO', label: 'ОККО', hint: 'ERP v2', icon: Droplet },
-  { id: 'SHELL', label: 'Shell', hint: 'Mobility B2B', icon: Flame },
+  { id: 'ALL', label: 'nav.allNetworks', hint: 'OKKO + Shell', icon: Layers },
+  { id: 'OKKO', label: 'common.okko', hint: 'ERP v2', icon: Droplet },
+  { id: 'SHELL', label: 'common.shell', hint: 'Mobility B2B', icon: Flame },
 ];
 
 export default function BrandTabs({ activeBrand, onSelectBrand }: BrandTabsProps) {
   return (
-    <div className="segmented max-w-full overflow-x-auto" role="tablist" aria-label="Мережа АЗК">
+    <div className="segmented max-w-full overflow-x-auto" role="tablist" aria-label={t('common.stationNetwork')}>
       {brands.map((b) => {
         const active = activeBrand === b.id;
         const Icon = b.icon;
@@ -33,7 +34,7 @@ export default function BrandTabs({ activeBrand, onSelectBrand }: BrandTabsProps
                 active ? (b.id === 'SHELL' ? 'text-warn' : 'text-accent') : 'text-txt-muted'
               }`}
             />
-            <span>{b.label}</span>
+            <span>{t(b.label)}</span>
             <span className="hidden font-mono text-micro font-normal text-txt-muted sm:inline">
               {b.hint}
             </span>

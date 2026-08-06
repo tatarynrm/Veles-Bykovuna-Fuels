@@ -16,6 +16,7 @@ import BasketModal from './BasketModal';
 import ExportDropdown from './ExportDropdown';
 import { EmptyState } from './Skeletons';
 import { formatCurrency, formatDateTime, formatNumber } from '@/lib/format';
+import { t } from '@/lib/i18n';
 
 interface Transaction {
   trans_id: string;
@@ -41,13 +42,13 @@ interface TransactionsJournalProps {
 }
 
 const TYPE_FILTERS = [
-  { value: 'ALL', label: 'Всі типи операцій' },
-  { value: '737', label: '737 — Заправка до повного' },
-  { value: '774', label: '774 — Списання пального' },
-  { value: '775', label: '775 — Часткова / повна відміна' },
-  { value: '783', label: '783 — Повернення талону' },
-  { value: '787', label: '787 — Часткове повернення талону' },
-  { value: 'SHELL_PURCHASE', label: 'Shell Mobility Purchase' },
+  { value: 'ALL', label: 'tx.allTransactionTypes' },
+  { value: '737', label: 'tx.n737FillUpFull' },
+  { value: '774', label: 'tx.n774FuelDebit' },
+  { value: '775', label: 'tx.n775PartialFullReversal' },
+  { value: '783', label: 'tx.n783VoucherReturn' },
+  { value: '787', label: 'tx.n787PartialVoucherReturn' },
+  { value: 'SHELL_PURCHASE', label: 'tx.shellMobilityPurchase' },
 ];
 
 export default function TransactionsJournal({ transactions }: TransactionsJournalProps) {
@@ -84,11 +85,11 @@ export default function TransactionsJournal({ transactions }: TransactionsJourna
         <div>
           <h2 className="flex items-center gap-2 text-base font-semibold text-txt-primary">
             <Fuel className="h-4 w-4 text-accent" />
-            Журнал транзакцій
+            {t('common.transactionLog')}
           </h2>
           <p className="mt-0.5 text-2xs text-txt-muted">
-            {formatNumber(totalItems)} операцій · {formatCurrency(totals.spend)} ·{' '}
-            {formatNumber(totals.volume)} л
+            {formatNumber(totalItems)} {t('tx.transactions')} {formatCurrency(totals.spend)} ·{' '}
+            {formatNumber(totals.volume)} {t('unit.litre')}
           </p>
         </div>
 
@@ -99,12 +100,12 @@ export default function TransactionsJournal({ transactions }: TransactionsJourna
               setTypeFilter(e.target.value);
               setCurrentPage(1);
             }}
-            aria-label="Тип операції"
+            aria-label={t('tx.transactionType')}
             className="field field-sm w-auto"
           >
             {TYPE_FILTERS.map((f) => (
               <option key={f.value} value={f.value}>
-                {f.label}
+                {t(f.label)}
               </option>
             ))}
           </select>
@@ -113,26 +114,24 @@ export default function TransactionsJournal({ transactions }: TransactionsJourna
             data={() => filtered}
             options={{
               filename: `transactions_${new Date().toISOString().slice(0, 10)}`,
-              title: 'Журнал заправок та транзакцій',
-              subtitle: `Мережа АЗК: ОККО та Shell | Фільтр: ${
-                TYPE_FILTERS.find((f) => f.value === typeFilter)?.label ?? typeFilter
-              }`,
+              title: t('tx.refuellingTransactionLog'),
+              subtitle: t('tx.stationNetworkOKKOShell', { v0: TYPE_FILTERS.find((f) => f.value === typeFilter)?.label ?? typeFilter }),
               columns: [
-                { label: 'Номер транзакції', key: 'trans_id', type: 'string' },
-                { label: 'Дата транзакції', key: 'trans_date', type: 'string' },
-                { label: 'Станція АЗК', key: 'azs_name', type: 'string' },
-                { label: 'Адреса АЗК', key: 'addr_name', type: 'string' },
-                { label: 'Картка (PAN)', key: 'card_num', type: 'string' },
-                { label: 'Клієнт / Водій', key: 'client_name', type: 'string' },
-                { label: 'Тип пального / Продукт', key: 'product_desc', type: 'string' },
-                { label: "Об'єм (л)", key: 'volume', type: 'number' },
-                { label: 'Ціна за л (₴)', key: 'price', type: 'number' },
-                { label: 'Сума операції (₴)', key: 'amnt_trans', type: 'currency' },
-                { label: 'Знижка (₴)', key: 'amount_discount', type: 'currency' },
-                { label: 'Тип операції', key: 'trans_type_desc', type: 'string' },
+                { label: t('tx.transactionNumber'), key: 'trans_id', type: 'string' },
+                { label: t('tx.transactionDate'), key: 'trans_date', type: 'string' },
+                { label: t('tx.fuelStation'), key: 'azs_name', type: 'string' },
+                { label: t('tx.stationAddress'), key: 'addr_name', type: 'string' },
+                { label: t('tx.cardPAN'), key: 'card_num', type: 'string' },
+                { label: t('tx.clientDriver'), key: 'client_name', type: 'string' },
+                { label: t('tx.fuelTypeProduct'), key: 'product_desc', type: 'string' },
+                { label: t('common.volumeL'), key: 'volume', type: 'number' },
+                { label: t('tx.pricePerLUAH'), key: 'price', type: 'number' },
+                { label: t('tx.transactionAmountUAH'), key: 'amnt_trans', type: 'currency' },
+                { label: t('tx.discountUAH'), key: 'amount_discount', type: 'currency' },
+                { label: t('tx.transactionType'), key: 'trans_type_desc', type: 'string' },
               ],
             }}
-            buttonText="Експорт"
+            buttonText={t('common.export')}
           />
         </div>
       </div>
@@ -140,8 +139,8 @@ export default function TransactionsJournal({ transactions }: TransactionsJourna
       {paginated.length === 0 ? (
         <EmptyState
           icon={Receipt}
-          title="Транзакцій не знайдено"
-          hint="Спробуйте розширити період або змінити тип операції. Порожній результат також можливий, якщо шлюз постачальника тимчасово недоступний."
+          title={t('tx.noTransactionsFound')}
+          hint={t('tx.tryWideningPeriodChanging')}
         />
       ) : (
         <>
@@ -149,14 +148,14 @@ export default function TransactionsJournal({ transactions }: TransactionsJourna
             <table className="data-table min-w-[860px]">
               <thead>
                 <tr>
-                  <th>Операція</th>
-                  <th>Картка / Клієнт</th>
-                  <th>Станція</th>
-                  <th>Пальне</th>
-                  <th className="num">Обʼєм</th>
-                  <th className="num">Ціна</th>
-                  <th className="num">Сума</th>
-                  <th className="text-center">Кошик</th>
+                  <th>{t('tx.operation')}</th>
+                  <th>{t('tx.cardClient')}</th>
+                  <th>{t('tx.station')}</th>
+                  <th>{t('common.fuel')}</th>
+                  <th className="num">{t('tx.volume')}</th>
+                  <th className="num">{t('tx.price')}</th>
+                  <th className="num">{t('tx.amount')}</th>
+                  <th className="text-center">{t('tx.basket')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -234,7 +233,7 @@ export default function TransactionsJournal({ transactions }: TransactionsJourna
                         )}
                       </td>
 
-                      <td className="num text-txt-primary">{formatNumber(tx.volume)} л</td>
+                      <td className="num text-txt-primary">{formatNumber(tx.volume)} {t('unit.litre')}</td>
 
                       <td className="num text-txt-secondary">
                         {tx.price ? formatCurrency(tx.price) : '—'}
@@ -259,8 +258,8 @@ export default function TransactionsJournal({ transactions }: TransactionsJourna
                         <button
                           onClick={() => setBasketTransId(tx.trans_id)}
                           className="btn-icon h-7 w-7"
-                          title="Переглянути товари в кошику"
-                          aria-label={`Кошик транзакції ${tx.trans_id}`}
+                          title={t('tx.viewBasketItems')}
+                          aria-label={t('tx.basketForTransaction', { v0: tx.trans_id })}
                         >
                           <ShoppingBag className="h-3.5 w-3.5" />
                         </button>

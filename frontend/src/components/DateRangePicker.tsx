@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, ChevronDown, Check } from 'lucide-react';
+import { t } from '@/lib/i18n';
 
 export interface DateRange {
   preset: string;
@@ -32,11 +33,11 @@ export default function DateRangePicker({ onDateChange, currentRange }: DateRang
     const today = new Date();
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
     return [
-      { id: 'ALL', label: 'Весь доступний період', dateFrom: '', dateTo: '' },
-      { id: 'TODAY', label: 'Сьогодні', dateFrom: toYmd(today), dateTo: toYmd(today) },
-      { id: 'LAST_7', label: 'Останні 7 днів', dateFrom: toYmd(shift(-6)), dateTo: toYmd(today) },
-      { id: 'LAST_30', label: 'Останні 30 днів', dateFrom: toYmd(shift(-29)), dateTo: toYmd(today) },
-      { id: 'THIS_MONTH', label: 'Поточний місяць', dateFrom: toYmd(monthStart), dateTo: toYmd(today) },
+      { id: 'ALL', label: t('ui.allAvailableData'), dateFrom: '', dateTo: '' },
+      { id: 'TODAY', label: t('common.today'), dateFrom: toYmd(today), dateTo: toYmd(today) },
+      { id: 'LAST_7', label: t('ui.last7Days'), dateFrom: toYmd(shift(-6)), dateTo: toYmd(today) },
+      { id: 'LAST_30', label: t('ui.last30Days'), dateFrom: toYmd(shift(-29)), dateTo: toYmd(today) },
+      { id: 'THIS_MONTH', label: t('ui.currentMonth'), dateFrom: toYmd(monthStart), dateTo: toYmd(today) },
     ];
   }, []);
 
@@ -58,7 +59,7 @@ export default function DateRangePicker({ onDateChange, currentRange }: DateRang
     presets.find((p) => p.id === currentRange.preset)?.label ??
     (currentRange.dateFrom || currentRange.dateTo
       ? `${currentRange.dateFrom || '…'} — ${currentRange.dateTo || '…'}`
-      : 'Довільний період');
+      : t('ui.customPeriod'));
 
   return (
     <div className="relative inline-block text-left" ref={ref}>
@@ -79,7 +80,7 @@ export default function DateRangePicker({ onDateChange, currentRange }: DateRang
 
       {isOpen && (
         <div className="glass-float animate-pop absolute right-0 z-50 mt-2 w-72 rounded-card p-3">
-          <p className="micro-label px-1 pb-2">Період даних</p>
+          <p className="micro-label px-1 pb-2">{t('ui.dataPeriod')}</p>
 
           <div className="space-y-0.5">
             {presets.map((p) => {
@@ -105,10 +106,10 @@ export default function DateRangePicker({ onDateChange, currentRange }: DateRang
           </div>
 
           <div className="hairline-t mt-3 space-y-2 pt-3">
-            <p className="micro-label px-1">Довільний період</p>
+            <p className="micro-label px-1">{t('ui.customPeriod')}</p>
             <div className="grid grid-cols-2 gap-2">
               <label className="block">
-                <span className="mb-1 block text-micro text-txt-muted">З дати</span>
+                <span className="mb-1 block text-micro text-txt-muted">{t('ui.fromDate')}</span>
                 <input
                   type="date"
                   value={customFrom}
@@ -117,7 +118,7 @@ export default function DateRangePicker({ onDateChange, currentRange }: DateRang
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-micro text-txt-muted">По дату</span>
+                <span className="mb-1 block text-micro text-txt-muted">{t('ui.toDate')}</span>
                 <input
                   type="date"
                   value={customTo}
@@ -134,7 +135,7 @@ export default function DateRangePicker({ onDateChange, currentRange }: DateRang
               }}
               className="btn btn-primary w-full"
             >
-              Застосувати фільтр
+              {t('ui.applyFilter')}
             </button>
           </div>
         </div>

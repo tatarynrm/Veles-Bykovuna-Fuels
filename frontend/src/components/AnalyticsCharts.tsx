@@ -19,6 +19,7 @@ import ExportDropdown from './ExportDropdown';
 import { EmptyState } from './Skeletons';
 import { useTheme } from '@/context/ThemeContext';
 import { formatCompact, formatCurrency, formatNumber } from '@/lib/format';
+import { t } from '@/lib/i18n';
 
 interface AnalyticsChartsProps {
   fuelBreakdown: any[];
@@ -99,7 +100,7 @@ function GlassTooltip({
       {totalRow && payload.length > 1 && (
         <p className="hairline-t mt-1 flex items-center gap-2 pt-1 text-txt-secondary">
           <span className="h-1.5 w-1.5" />
-          <span>Разом:</span>
+          <span>{t('common.totalColon')}</span>
           <span className="stat text-txt-primary">
             {formatter ? formatter(sum) : sum}
           </span>
@@ -235,7 +236,7 @@ function SpendingTrendChart({
           activeBorder="border-accent/50"
           onClick={() => pick('compare')}
           dots={[palette.accent, palette.warn]}
-          label="Порівняння"
+          label={t('analytics.comparison')}
           value="OKKO + Shell"
         />
         <StatTab
@@ -243,7 +244,7 @@ function SpendingTrendChart({
           activeBorder="border-accent/50"
           onClick={() => pick('total')}
           dots={[palette.accent]}
-          label="Разом"
+          label={t('analytics.total')}
           value={`${formatCompact(totals.spend)} ₴`}
         />
         <StatTab
@@ -322,7 +323,7 @@ function SpendingTrendChart({
               <Area
                 type="monotone"
                 dataKey={view === 'okko' ? 'okkoSpend' : view === 'shell' ? 'shellSpend' : 'spend'}
-                name={view === 'okko' ? 'OKKO' : view === 'shell' ? 'Shell' : 'Витрати'}
+                name={view === 'okko' ? 'OKKO' : view === 'shell' ? 'Shell' : t('analytics.spending')}
                 stroke={view === 'shell' ? palette.warn : palette.accent}
                 strokeWidth={2}
                 fill={view === 'shell' ? 'url(#vizFillWarn)' : 'url(#vizFillAccent)'}
@@ -348,13 +349,13 @@ function VolumeTooltip({ active, payload }: any) {
     <div className="glass-float rounded-field px-3 py-2 text-2xs">
       <p className="mb-1 font-medium text-txt-primary">{item.product}</p>
       <p className="text-txt-secondary">
-        Обʼєм: <span className="stat text-txt-primary">{formatNumber(item.volume)} л</span>
+        {t('analytics.volumeColon')} <span className="stat text-txt-primary">{formatNumber(item.volume)} {t('unit.litre')}</span>
       </p>
       <p className="text-txt-secondary">
-        Витрати: <span className="stat text-txt-primary">{formatCurrency(item.spend)}</span>
+        {t('analytics.spendingColon')} <span className="stat text-txt-primary">{formatCurrency(item.spend)}</span>
       </p>
       <p className="text-txt-secondary">
-        Заправок: <span className="stat text-txt-primary">{formatNumber(item.count)}</span>
+        {t('analytics.refuellingsColon')} <span className="stat text-txt-primary">{formatNumber(item.count)}</span>
       </p>
     </div>
   );
@@ -413,7 +414,7 @@ function FuelVolumeChart({
             <Tooltip content={<VolumeTooltip />} cursor={{ fill: palette.grid }} />
             <Bar
               dataKey="volume"
-              name="Обʼєм"
+              name='tx.volume'
               radius={[0, 6, 6, 0]}
               maxBarSize={26}
               onMouseLeave={() => setHot(null)}
@@ -432,7 +433,7 @@ function FuelVolumeChart({
                 position="right"
                 fill={palette.axis}
                 fontSize={10}
-                formatter={(v: number) => `${formatCompact(v)} л`}
+                formatter={(v: number) => t('common.l', { v0: formatCompact(v) })}
               />
             </Bar>
           </BarChart>
@@ -502,7 +503,7 @@ function SpendDonut({
     const rest = [...okko.slice(2), ...shell.slice(2)];
     if (rest.length > 0) {
       segments.push({
-        label: `Інші (${rest.length})`,
+        label: t('analytics.other', { v0: rest.length }),
         spend: rest.reduce((s, i) => s + (i.spend || 0), 0),
         volume: rest.reduce((s, i) => s + (i.volume || 0), 0),
         count: rest.reduce((s, i) => s + (i.count || 0), 0),
@@ -548,7 +549,7 @@ function SpendDonut({
         </svg>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           <span className="stat text-base">{formatCompact(total)} ₴</span>
-          <span className="micro-label mt-0.5">за період</span>
+          <span className="micro-label mt-0.5">{t('analytics.inThePeriod')}</span>
         </div>
       </div>
 
@@ -561,7 +562,7 @@ function SpendDonut({
             onMouseLeave={() => setHot(null)}
             onFocus={() => setHot(i)}
             onBlur={() => setHot(null)}
-            title={`${a.label}: ${formatNumber(a.volume)} л · заправок: ${formatNumber(a.count)}`}
+            title={t('analytics.lRefuellings', { v0: a.label, v1: formatNumber(a.volume), v2: formatNumber(a.count) })}
             className={`flex w-full items-center gap-2.5 rounded-field px-2 py-1.5 text-left transition-opacity duration-200 ${
               hot !== null && hot !== i ? 'opacity-35' : ''
             }`}
@@ -595,31 +596,31 @@ export default function AnalyticsCharts({
       <section className="glass-panel p-5 sm:p-6">
         <PanelHeader
           icon={TrendingUp}
-          title="Динаміка витрат на пальне"
-          subtitle="Щоденні витрати підприємства за обраний період"
+          title={t('analytics.fuelSpendingTrend')}
+          subtitle={t('analytics.dailyCompanySpendingOver')}
         >
           <ExportDropdown
             data={() => spendingTrends}
             options={{
               filename: `spending_trends_${new Date().toISOString().slice(0, 10)}`,
-              title: 'Динаміка витрат на пальне',
-              subtitle: 'ТОВ «Велес Буковина»',
+              title: t('analytics.fuelSpendingTrend'),
+              subtitle: t('common.velesBukovynaLLC'),
               columns: [
-                { label: 'Дата', key: 'date', type: 'string' },
-                { label: 'Витрати (₴)', key: 'spend', type: 'currency' },
-                { label: 'ОККО (₴)', key: 'okkoSpend', type: 'currency' },
+                { label: t('analytics.date'), key: 'date', type: 'string' },
+                { label: t('analytics.spendingUAH'), key: 'spend', type: 'currency' },
+                { label: t('analytics.okkoUAH'), key: 'okkoSpend', type: 'currency' },
                 { label: 'Shell (₴)', key: 'shellSpend', type: 'currency' },
               ],
             }}
-            buttonText="Експорт"
+            buttonText={t('common.export')}
           />
         </PanelHeader>
 
         {spendingTrends.length === 0 ? (
           <EmptyState
             icon={BarChart3}
-            title="Немає даних за період"
-            hint="Оберіть інший діапазон дат або перевірте доступність шлюзу постачальника."
+            title={t('analytics.noDataForPeriod')}
+            hint={t('analytics.pickAnotherDateRange')}
           />
         ) : (
           <SpendingTrendChart data={spendingTrends} palette={palette} />
@@ -631,29 +632,29 @@ export default function AnalyticsCharts({
         <section className="glass-panel p-5 sm:p-6">
           <PanelHeader
             icon={Droplets}
-            title="Розподіл за видами пального"
-            subtitle="Обʼєми заправленого пального, літри"
+            title={t('analytics.breakdownFuelType')}
+            subtitle={t('analytics.fuelVolumesDispensedLitres')}
             tone="info"
           >
             <ExportDropdown
               data={() => fuelBreakdown}
               options={{
                 filename: `fuel_breakdown_${new Date().toISOString().slice(0, 10)}`,
-                title: 'Розподіл за видами пального',
-                subtitle: 'ТОВ «Велес Буковина»',
+                title: t('analytics.breakdownFuelType'),
+                subtitle: t('common.velesBukovynaLLC'),
                 columns: [
-                  { label: 'Тип пального', key: 'product', type: 'string' },
-                  { label: "Об'єм (л)", key: 'volume', type: 'number' },
-                  { label: 'Витрати (₴)', key: 'spend', type: 'currency' },
-                  { label: 'Кількість заправок', key: 'count', type: 'number' },
+                  { label: t('analytics.fuelType'), key: 'product', type: 'string' },
+                  { label: t('common.volumeL'), key: 'volume', type: 'number' },
+                  { label: t('analytics.spendingUAH'), key: 'spend', type: 'currency' },
+                  { label: t('analytics.numberOfRefuellings'), key: 'count', type: 'number' },
                 ],
               }}
-              buttonText="Експорт"
+              buttonText={t('common.export')}
             />
           </PanelHeader>
 
           {fuelBreakdown.length === 0 ? (
-            <EmptyState icon={Droplets} title="Немає заправок за період" />
+            <EmptyState icon={Droplets} title={t('analytics.noRefuellingsPeriod')} />
           ) : (
             <FuelVolumeChart data={fuelBreakdown} palette={palette} />
           )}
@@ -663,13 +664,13 @@ export default function AnalyticsCharts({
         <section className="glass-panel p-5 sm:p-6">
           <PanelHeader
             icon={PieChart}
-            title="Структура витрат по продуктах"
-            subtitle="Фінансова частка кожної марки пального"
+            title={t('analytics.spendingMixProduct')}
+            subtitle={t('analytics.eachFuelGradeS')}
             tone="warn"
           />
 
           {fuelBreakdown.length === 0 ? (
-            <EmptyState icon={PieChart} title="Немає даних для розподілу" />
+            <EmptyState icon={PieChart} title={t('analytics.noDataBreakDown')} />
           ) : (
             <SpendDonut data={fuelBreakdown} palette={palette} />
           )}

@@ -1,3 +1,4 @@
+import { t, localizedMap, intlLocale } from '@/lib/i18n';
 /**
  * Shape of the Ruptela telematics feed, mirroring `backend/src/ruptela/ruptela-api.service.ts`.
  *
@@ -115,12 +116,12 @@ export interface RuptelaVehicleTrack {
   error: string | null;
 }
 
-export const STATUS_LABEL: Record<RuptelaStatus, string> = {
-  moving: 'В русі',
-  idle: 'Холостий хід',
-  stopped: 'Заглушено',
-  offline: 'Немає звʼязку',
-};
+export const STATUS_LABEL: Record<RuptelaStatus, string> = localizedMap({
+  moving: 'telematics.moving',
+  idle: 'common.idling',
+  stopped: 'telematics.stopped',
+  offline: 'common.offline',
+});
 
 /** The dash shown wherever the device reported nothing. */
 export const NO_DATA = '—';
@@ -132,7 +133,7 @@ export function metric(
 ): string {
   if (value === null || value === undefined || Number.isNaN(value)) return NO_DATA;
   const { unit, digits = 0 } = options;
-  const text = value.toLocaleString('uk-UA', {
+  const text = value.toLocaleString(intlLocale(), {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
@@ -143,13 +144,13 @@ export function metric(
 export function driverStateLabel(state: string | null): string {
   switch (state) {
     case 'DRIVE':
-      return 'Керування';
+      return t('telematics.driving');
     case 'REST':
-      return 'Відпочинок';
+      return t('telematics.rest');
     case 'WORK':
-      return 'Робота';
+      return t('telematics.work');
     case 'AVAILABLE':
-      return 'Готовність';
+      return t('telematics.availability');
     default:
       return state || NO_DATA;
   }
@@ -180,12 +181,12 @@ export function relativeAge(iso: string | null): string {
   if (!Number.isFinite(then)) return NO_DATA;
 
   const minutes = Math.round((Date.now() - then) / 60000);
-  if (minutes < 1) return 'щойно';
-  if (minutes < 60) return `${minutes} хв тому`;
+  if (minutes < 1) return t('telematics.justNow');
+  if (minutes < 60) return t('telematics.minAgo', { v0: minutes });
 
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours} год тому`;
-  return `${Math.round(hours / 24)} дн тому`;
+  if (hours < 24) return t('telematics.hAgo', { v0: hours });
+  return t('telematics.dAgo', { v0: Math.round(hours / 24) });
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -302,52 +303,52 @@ export interface TripListResult {
   error: string | null;
 }
 
-export const TRIP_SORT_LABEL: Record<TripSortKey, string> = {
-  default: 'Стандартний порядок',
-  departure: 'За відправленням',
-  eta: 'За прибуттям (ETA)',
-  title: 'За назвою',
-  distance: 'За дистанцією',
-  state: 'За станом',
-};
+export const TRIP_SORT_LABEL: Record<TripSortKey, string> = localizedMap({
+  default: 'telematics.defaultOrder',
+  departure: 'telematics.byDeparture',
+  eta: 'telematics.byArrivalETA',
+  title: 'telematics.byTitle',
+  distance: 'telematics.byDistance',
+  state: 'telematics.byState',
+});
 
 /** Ukrainian labels for the RnT trip state machine. */
-export const TRIP_STATE_LABEL: Record<TripState, string> = {
-  NEW: 'Нова',
-  SENT_TO_DRIVER: 'Надіслано водію',
-  SEEN: 'Переглянута',
-  ACCEPTED: 'Прийнята водієм',
-  IN_PROGRESS: 'В дорозі',
-  ON_HOLD: 'Призупинена',
-  CANCELED: 'Скасована',
-  COMPLETED: 'Завершена',
-};
+export const TRIP_STATE_LABEL: Record<TripState, string> = localizedMap({
+  NEW: 'telematics.new',
+  SENT_TO_DRIVER: 'telematics.sentToDriver',
+  SEEN: 'telematics.seen',
+  ACCEPTED: 'telematics.acceptedByDriver',
+  IN_PROGRESS: 'telematics.enRoute',
+  ON_HOLD: 'telematics.onHold',
+  CANCELED: 'telematics.cancelled',
+  COMPLETED: 'telematics.completed',
+});
 
-export const TRIP_STATUS_LABEL: Record<TripStatus, string> = {
-  planned: 'Заплановано',
-  in_progress: 'В дорозі',
-  completed: 'Завершено',
-  cancelled: 'Скасовано',
-};
+export const TRIP_STATUS_LABEL: Record<TripStatus, string> = localizedMap({
+  planned: 'telematics.planned',
+  in_progress: 'telematics.enRoute',
+  completed: 'telematics.statusCompleted',
+  cancelled: 'telematics.statusCancelled',
+});
 
-export const WAYPOINT_TYPE_LABEL: Record<string, string> = {
-  LOADING: 'Завантаження',
-  UNLOADING: 'Розвантаження',
-  CUSTOMS: 'Митниця',
-  REFUELLING: 'Заправка',
-  REST: 'Відпочинок',
-  BREAK: 'Перерва',
-  SERVICE: 'Сервіс',
-  TRAIN: 'Потяг',
-  FERRY: 'Пором',
-  TRAILER_SWITCH: 'Зміна причепа',
-  DRIVER_SWITCH: 'Зміна водія',
-  VEHICLE_SWITCH: 'Зміна ТЗ',
-  PASS_THROUGH: 'Проїзд',
-  START_ROUTE: 'Початок маршруту',
-  END_ROUTE: 'Кінець маршруту',
-  OTHER: 'Інше',
-};
+export const WAYPOINT_TYPE_LABEL: Record<string, string> = localizedMap({
+  LOADING: 'common.loading',
+  UNLOADING: 'telematics.unloading',
+  CUSTOMS: 'telematics.customs',
+  REFUELLING: 'common.refuelling',
+  REST: 'telematics.rest',
+  BREAK: 'telematics.break',
+  SERVICE: 'telematics.service',
+  TRAIN: 'telematics.train',
+  FERRY: 'telematics.ferry',
+  TRAILER_SWITCH: 'telematics.trailerSwap',
+  DRIVER_SWITCH: 'telematics.driverChange',
+  VEHICLE_SWITCH: 'telematics.vehicleChange',
+  PASS_THROUGH: 'telematics.passThrough',
+  START_ROUTE: 'telematics.startOfRoute',
+  END_ROUTE: 'telematics.endOfRoute',
+  OTHER: 'telematics.other',
+});
 
 /** Waypoint types a dispatcher can pick when planning a trip. */
 export const PLANNABLE_WAYPOINT_TYPES: WaypointType[] = [

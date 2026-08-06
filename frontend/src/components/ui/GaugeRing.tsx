@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/cn';
+import { t } from '@/lib/i18n';
 import NumberTicker from './NumberTicker';
 
 export type GaugeTone = 'accent' | 'warn' | 'danger' | 'info' | 'auto';
@@ -64,7 +65,14 @@ export default function GaugeRing({
       className={cn('relative inline-flex shrink-0 items-center justify-center', className)}
       style={{ width: size, height: size }}
       role="img"
-      aria-label={`${label ? `${label}: ` : ''}${value.toFixed(decimals)}${unit} з ${max}${unit}`}
+      aria-label={
+        (label ? `${label}: ` : '') +
+        t('ui.gaugeValueOfMax', {
+          value: value.toFixed(decimals),
+          unit,
+          max,
+        })
+      }
     >
       <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
         <circle

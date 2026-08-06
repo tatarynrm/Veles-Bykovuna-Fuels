@@ -8,10 +8,13 @@ import AnalyticsCharts from '@/components/AnalyticsCharts';
 import { DateRange } from '@/components/DateRangePicker';
 import { SkeletonKpi, SkeletonTable, SkeletonChart } from '@/components/Skeletons';
 import { useAuthGuard } from '@/lib/useAuthGuard';
-import { apiList, apiObject } from '@/lib/api';
+import { cachedList, cachedObject, hasFreshEnough, useApiRefreshing } from '@/lib/apiCache';
+import { t } from '@/lib/i18n';
 
 export default function OverviewPage() {
   const { authenticated } = useAuthGuard();
+  /** true, поки в фоні їде свіжа відповідь поверх показаного кешу. */
+  const revalidating = useApiRefreshing();
 
   const [activeBrand, setActiveBrand] = useState('ALL');
   const [dateRange, setDateRange] = useState<DateRange>({
@@ -29,28 +32,44 @@ export default function OverviewPage() {
   const [spendingTrends, setSpendingTrends] = useState<any[]>([]);
   const [apiStatus, setApiStatus] = useState<any>(null);
 
-  const loadData = useCallback(async (brand: string, range: DateRange) => {
-    setIsRefreshing(true);
-    const params = { date_from: range.dateFrom, date_to: range.dateTo, brand };
-
-    const [sum, tx, breakdown, trends] = await Promise.all([
-      apiObject<any>('/api/analytics/summary', params),
-      apiList<any>('/api/transactions', params),
-      apiList<any>('/api/analytics/fuel-breakdown', params),
-      apiList<any>('/api/analytics/spending-trends', params),
-    ]);
-
-    if (sum) {
-      setSummary(sum);
-      setApiStatus(sum.apiStatus);
-    }
-    setTransactions(tx);
-    setFuelBreakdown(breakdown);
-    setSpendingTrends(trends);
-
-    setLoading(false);
-    setIsRefreshing(false);
+  /** Один обробник для summary: він же джерело статусу шлюзу в топбарі. */
+  const applySummary = useCallback((sum: any) => {
+    if (!sum) return;
+    setSummary(sum);
+    setApiStatus(sum.apiStatus);
   }, []);
+
+  /*
+    `force` вмикає кнопка «Оновити»: там користувач свідомо просить свіже,
+    тож кеш пропускаємо. Звичайний вхід на сторінку малює кеш миттєво, а
+    onFresh-колбеки допишуть новіші дані, коли вендор відповість.
+  */
+  const loadData = useCallback(
+    async (brand: string, range: DateRange, force = false) => {
+      setIsRefreshing(true);
+      const params = { date_from: range.dateFrom, date_to: range.dateTo, brand };
+      const opts = { force };
+
+      // Скелетон показуємо лише коли показати нічого: інакше кеш зробить це краще.
+      if (!hasFreshEnough('/api/analytics/summary', params)) setLoading(true);
+
+      const [sum, tx, breakdown, trends] = await Promise.all([
+        cachedObject<any>('/api/analytics/summary', params, applySummary, opts),
+        cachedList<any>('/api/transactions', params, setTransactions, opts),
+        cachedList<any>('/api/analytics/fuel-breakdown', params, setFuelBreakdown, opts),
+        cachedList<any>('/api/analytics/spending-trends', params, setSpendingTrends, opts),
+      ]);
+
+      applySummary(sum);
+      setTransactions(tx);
+      setFuelBreakdown(breakdown);
+      setSpendingTrends(trends);
+
+      setLoading(false);
+      setIsRefreshing(false);
+    },
+    [applySummary],
+  );
 
   useEffect(() => {
     if (authenticated) loadData(activeBrand, dateRange);
@@ -60,17 +79,17 @@ export default function OverviewPage() {
 
   const title =
     activeBrand === 'SHELL'
-      ? 'Портал Shell Mobility'
+      ? t('common.shellMobilityPortal')
       : activeBrand === 'OKKO'
-        ? 'Портал АЗК ОККО'
-        : 'Інтегрована панель';
+        ? t('common.okkoStationPortal')
+        : t('common.integratedDashboard');
 
   return (
     <PageShell
       title={title}
-      subtitle="Аналітика витрат та транзакцій автопарку ТОВ «Велес Буковина»"
-      onRefresh={() => loadData(activeBrand, dateRange)}
-      isRefreshing={isRefreshing}
+      subtitle={t('common.spendingTransactionAnalyticsVeles')}
+      onRefresh={() => loadData(activeBrand, dateRange, true)}
+      isRefreshing={isRefreshing || revalidating}
       currentRange={dateRange}
       onDateChange={setDateRange}
       activeBrand={activeBrand}

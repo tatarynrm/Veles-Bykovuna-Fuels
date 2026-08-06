@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { RefreshCw, LogOut, Sun, Moon } from 'lucide-react';
+import { RefreshCw, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import DateRangePicker, { DateRange } from './DateRangePicker';
 import BrandTabs from './BrandTabs';
 import { CommandPaletteTrigger } from './ui/CommandPalette';
-import { useTheme } from '@/context/ThemeContext';
+import LanguageSwitcher from './LanguageSwitcher';
+import ThemeToggleButton from './ThemeToggleButton';
 import { signOut, SessionUser } from '@/lib/useAuthGuard';
+import { t } from '@/lib/i18n';
 
 interface HeaderProps {
   title: string;
@@ -33,7 +35,6 @@ export default function Header({
   actions,
 }: HeaderProps) {
   const router = useRouter();
-  const { theme, toggleTheme } = useTheme();
   const [user, setUser] = useState<SessionUser | null>(null);
 
   useEffect(() => {
@@ -82,19 +83,14 @@ export default function Header({
             <button onClick={onRefresh} disabled={isRefreshing} className="btn btn-primary">
               <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">
-                {isRefreshing ? 'Оновлення…' : 'Оновити'}
+                {isRefreshing ? t('nav.refreshingEllipsis') : t('common.refresh')}
               </span>
             </button>
           )}
 
-          <button
-            onClick={toggleTheme}
-            className="btn-icon"
-            title={theme === 'dark' ? 'Світла тема' : 'Темна тема'}
-            aria-label={theme === 'dark' ? 'Увімкнути світлу тему' : 'Увімкнути темну тему'}
-          >
-            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
+          <LanguageSwitcher />
+
+          <ThemeToggleButton />
 
           <div className="flex items-center gap-2 rounded-control border border-bdr-subtle bg-surface py-1 pl-1 pr-1">
             <span
@@ -105,8 +101,8 @@ export default function Header({
             </span>
             <button
               onClick={handleLogout}
-              title="Вийти з системи"
-              aria-label="Вийти з системи"
+              title={t('common.signOut')}
+              aria-label={t('common.signOut')}
               className="flex h-7 w-7 items-center justify-center rounded-lg text-txt-muted transition-colors hover:bg-danger/10 hover:text-danger"
             >
               <LogOut className="h-3.5 w-3.5" />

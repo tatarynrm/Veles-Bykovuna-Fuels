@@ -1,5 +1,11 @@
 'use client';
 
+/*
+ * `group` — це не підпис, а дискримінатор типу Group: за ним групуються й
+ * шукаються команди. Переклад ставиться в місці рендеру — {t(section.group)}.
+ * i18n-ignore-props: group, Group
+ */
+
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter, usePathname } from 'next/navigation';
@@ -14,6 +20,7 @@ import {
   LogOut,
   Radio,
   MapPin,
+  Monitor,
   Moon,
   PlusCircle,
   RefreshCw,
@@ -27,6 +34,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useTour } from '@/context/TourContext';
 import { signOut, useSessionUser } from '@/lib/useAuthGuard';
 import { cn } from '@/lib/cn';
+import { t } from '@/lib/i18n';
 
 /** Dispatch on `window` to open the palette from anywhere. */
 export const COMMAND_PALETTE_EVENT = 'veles:command-palette';
@@ -36,12 +44,12 @@ export const REFRESH_EVENT = 'veles:refresh';
 const RECENT_KEY = 'veles_palette_recent';
 const RECENT_MAX = 4;
 
-type Group = 'Нещодавні' | 'Навігація' | 'Дії' | 'Вигляд';
+type Group = 'nav.recent' | 'nav.navigation' | 'common.actions' | 'nav.appearance';
 
 interface Command {
   id: string;
   label: string;
-  group: Exclude<Group, 'Нещодавні'>;
+  group: Exclude<Group, 'nav.recent'>;
   icon: React.ElementType;
   /** Extra match text — latin aliases, synonyms. Never rendered. */
   keywords?: string;
@@ -105,7 +113,7 @@ function readRecent(): string[] {
 export default function CommandPalette() {
   const router = useRouter();
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
+  const { setPreference } = useTheme();
   const { startTour } = useTour();
   const { isGuest } = useSessionUser();
 
@@ -127,26 +135,26 @@ export default function CommandPalette() {
     const go = (href: string) => () => router.push(href);
 
     return [
-      { id: 'nav-overview', label: 'Панель керування', group: 'Навігація', icon: Fuel, hint: '/', keywords: 'dashboard golovna zvedennia', run: go('/') },
-      { id: 'nav-cards', label: 'Паливні картки', group: 'Навігація', icon: CreditCard, hint: '/cards', keywords: 'cards kartky palyvni', run: go('/cards') },
-      { id: 'nav-tx', label: 'Журнал транзакцій', group: 'Навігація', icon: History, hint: '/transactions', keywords: 'transactions zhurnal operacii cheky', run: go('/transactions') },
-      { id: 'nav-analytics', label: 'Аналітика палива', group: 'Навігація', icon: BarChart3, hint: '/analytics', keywords: 'analytics grafiky zvity statystyka', run: go('/analytics') },
-      { id: 'nav-merchants', label: 'Мережа АЗК', group: 'Навігація', icon: MapPin, hint: '/merchants', keywords: 'merchants azs stancii mapa', run: go('/merchants') },
-      { id: 'nav-fleet3d', label: 'Моніторинг 3D', group: 'Навігація', icon: Boxes, hint: '/fleet', keywords: 'fleet 3d diagnostyka truck', run: go('/fleet') },
-      { id: 'nav-ruptela-fleet', label: 'Мій автопарк — телематика', group: 'Навігація', icon: Truck, hint: '/ruptela/fleet', keywords: 'ruptela avtopark telematyka gps', run: go('/ruptela/fleet') },
-      { id: 'nav-live', label: 'Реальний час — спостереження за ТЗ', group: 'Навігація', icon: Radio, hint: '/ruptela/live', keywords: 'live realnyi chas track monitoring gps', run: go('/ruptela/live') },
+      { id: 'nav-overview', label: t('common.dashboard'), group: 'nav.navigation', icon: Fuel, hint: '/', keywords: 'dashboard golovna zvedennia', run: go('/') },
+      { id: 'nav-cards', label: t('common.fuelCards'), group: 'nav.navigation', icon: CreditCard, hint: '/cards', keywords: 'cards kartky palyvni', run: go('/cards') },
+      { id: 'nav-tx', label: t('common.transactionLog'), group: 'nav.navigation', icon: History, hint: '/transactions', keywords: 'transactions zhurnal operacii cheky', run: go('/transactions') },
+      { id: 'nav-analytics', label: t('common.fuelAnalytics'), group: 'nav.navigation', icon: BarChart3, hint: '/analytics', keywords: 'analytics grafiky zvity statystyka', run: go('/analytics') },
+      { id: 'nav-merchants', label: t('common.stationNetwork'), group: 'nav.navigation', icon: MapPin, hint: '/merchants', keywords: 'merchants azs stancii mapa', run: go('/merchants') },
+      { id: 'nav-fleet3d', label: t('nav.n3dMonitoring'), group: 'nav.navigation', icon: Boxes, hint: '/fleet', keywords: 'fleet 3d diagnostyka truck', run: go('/fleet') },
+      { id: 'nav-ruptela-fleet', label: t('nav.myFleetTelematics'), group: 'nav.navigation', icon: Truck, hint: '/ruptela/fleet', keywords: 'ruptela avtopark telematyka gps', run: go('/ruptela/fleet') },
+      { id: 'nav-live', label: t('nav.realTimeWatchingVehicle'), group: 'nav.navigation', icon: Radio, hint: '/ruptela/live', keywords: 'live realnyi chas track monitoring gps', run: go('/ruptela/live') },
       // Creating a trip writes to Ruptela — a guest would be rejected by the server.
       ...(isGuest
         ? []
-        : [{ id: 'nav-trip-new', label: 'Створити поїздку', group: 'Навігація' as const, icon: PlusCircle, hint: '/ruptela/create-trip', keywords: 'trip poizdka nova reis', run: go('/ruptela/create-trip') }]),
-      { id: 'nav-routes', label: 'Маршрут і завдання', group: 'Навігація', icon: Route, hint: '/ruptela/routes-tasks', keywords: 'routes marshrut zavdannia', run: go('/ruptela/routes-tasks') },
-      { id: 'nav-api', label: 'API Консоль', group: 'Навігація', icon: Terminal, hint: '/api-console', keywords: 'api konsol debug zapyty', run: go('/api-console') },
-      { id: 'nav-uikit', label: 'UI Kit — бібліотека компонентів', group: 'Навігація', icon: Boxes, hint: '/ui-kit', keywords: 'ui kit komponenty design system', run: go('/ui-kit') },
+        : [{ id: 'nav-trip-new', label: t('common.createATrip'), group: 'nav.navigation' as const, icon: PlusCircle, hint: '/ruptela/create-trip', keywords: 'trip poizdka nova reis', run: go('/ruptela/create-trip') }]),
+      { id: 'nav-routes', label: t('common.routesAndTasks'), group: 'nav.navigation', icon: Route, hint: '/ruptela/routes-tasks', keywords: 'routes marshrut zavdannia', run: go('/ruptela/routes-tasks') },
+      { id: 'nav-api', label: t('nav.apiConsole'), group: 'nav.navigation', icon: Terminal, hint: '/api-console', keywords: 'api konsol debug zapyty', run: go('/api-console') },
+      { id: 'nav-uikit', label: t('nav.uiKitComponentLibrary'), group: 'nav.navigation', icon: Boxes, hint: '/ui-kit', keywords: 'ui kit komponenty design system', run: go('/ui-kit') },
 
       {
         id: 'act-refresh',
-        label: 'Оновити дані сторінки',
-        group: 'Дії',
+        label: t('nav.refreshPageData'),
+        group: 'common.actions',
         icon: RefreshCw,
         keywords: 'refresh onovyty perezavantazhyty',
         hint: 'R',
@@ -154,8 +162,8 @@ export default function CommandPalette() {
       },
       {
         id: 'act-copy-link',
-        label: 'Скопіювати посилання на сторінку',
-        group: 'Дії',
+        label: t('nav.copyPageLink'),
+        group: 'common.actions',
         icon: Link2,
         keywords: 'copy link posylannia url',
         run: () => {
@@ -164,16 +172,16 @@ export default function CommandPalette() {
       },
       {
         id: 'act-tour',
-        label: 'Навчання — екскурсія інтерфейсом',
-        group: 'Дії',
+        label: t('nav.trainingTourInterface'),
+        group: 'common.actions',
         icon: GraduationCap,
         keywords: 'tour navchannia onboarding pidkazky help dopomoga',
         run: startTour,
       },
       {
         id: 'act-signout',
-        label: 'Вийти з системи',
-        group: 'Дії',
+        label: t('common.signOut'),
+        group: 'common.actions',
         icon: LogOut,
         keywords: 'logout vyity exit session',
         run: () => {
@@ -182,16 +190,34 @@ export default function CommandPalette() {
         },
       },
 
+      // Три режими — три окремі команди: у палітрі шукають конкретний режим
+      // («темна»), а не «наступний у циклі».
       {
-        id: 'view-theme',
-        label: theme === 'dark' ? 'Увімкнути світлу тему' : 'Увімкнути темну тему',
-        group: 'Вигляд',
-        icon: theme === 'dark' ? Sun : Moon,
-        keywords: 'theme tema svitla temna dark light',
-        run: () => setTheme(theme === 'dark' ? 'light' : 'dark'),
+        id: 'view-theme-light',
+        label: t('common.switchLightTheme'),
+        group: 'nav.appearance',
+        icon: Sun,
+        keywords: 'theme tema svitla light',
+        run: () => setPreference('light'),
+      },
+      {
+        id: 'view-theme-dark',
+        label: t('common.switchDarkTheme'),
+        group: 'nav.appearance',
+        icon: Moon,
+        keywords: 'theme tema temna dark',
+        run: () => setPreference('dark'),
+      },
+      {
+        id: 'view-theme-system',
+        label: t('common.switchSystemTheme'),
+        group: 'nav.appearance',
+        icon: Monitor,
+        keywords: 'theme tema systemna system auto',
+        run: () => setPreference('system'),
       },
     ];
-  }, [router, theme, setTheme, isGuest, startTour]);
+  }, [router, setPreference, isGuest, startTour]);
 
   /** Groups in display order, filtered and ranked against the query. */
   const sections = useMemo(() => {
@@ -204,13 +230,13 @@ export default function CommandPalette() {
         .filter((c): c is Command => Boolean(c));
 
       const rest = commands.filter((c) => !recent.includes(c.id));
-      const order: Group[] = ['Нещодавні', 'Навігація', 'Дії', 'Вигляд'];
+      const order: Group[] = ['nav.recent', 'nav.navigation', 'common.actions', 'nav.appearance'];
 
       return order
         .map((group) => ({
           group,
           items:
-            group === 'Нещодавні'
+            group === 'nav.recent'
               ? recentCmds
               : rest.filter((c) => c.group === group),
         }))
@@ -222,7 +248,7 @@ export default function CommandPalette() {
       .filter((s) => s.score >= 0)
       .sort((a, b) => b.score - a.score);
 
-    const order: Group[] = ['Навігація', 'Дії', 'Вигляд'];
+    const order: Group[] = ['nav.navigation', 'common.actions', 'nav.appearance'];
     return order
       .map((group) => ({ group, items: scored.filter((s) => s.c.group === group).map((s) => s.c) }))
       .filter((s) => s.items.length > 0);
@@ -259,7 +285,9 @@ export default function CommandPalette() {
   // ⌘K / Ctrl+K anywhere, plus an app-wide custom event for trigger buttons.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey)) {
+      // Автозаповнення менеджера паролів шле keydown без `key` — без цієї
+      // перевірки обробник падає на кожному вході в систему.
+      if (e.key?.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         setOpen((v) => !v);
       }
@@ -353,7 +381,7 @@ export default function CommandPalette() {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Командна палітра"
+        aria-label={t('common.commandPalette')}
         onKeyDown={onDialogKeyDown}
         className="cmd-panel w-full max-w-[560px] overflow-hidden"
       >
@@ -364,8 +392,8 @@ export default function CommandPalette() {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Куди прямуємо? Спробуйте «журнал» або «тема»…"
-            aria-label="Пошук команд"
+            placeholder={t('nav.whereTryLogThemeEllipsis')}
+            aria-label={t('nav.searchCommands')}
             role="combobox"
             aria-expanded="true"
             aria-controls="cmd-listbox"
@@ -374,7 +402,7 @@ export default function CommandPalette() {
             spellCheck={false}
             className="h-14 w-full bg-transparent text-sm text-txt-primary outline-none placeholder:text-txt-muted"
           />
-          <button type="button" onClick={close} className="kbd shrink-0" title="Закрити (Esc)">
+          <button type="button" onClick={close} className="kbd shrink-0" title={t('nav.closeEsc')}>
             ESC
           </button>
         </div>
@@ -384,23 +412,23 @@ export default function CommandPalette() {
           ref={listRef}
           id="cmd-listbox"
           role="listbox"
-          aria-label="Доступні команди"
+          aria-label={t('nav.availableCommands')}
           className="max-h-[52vh] overflow-y-auto overscroll-contain p-2"
         >
           {flat.length === 0 ? (
             <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
               <Search className="h-5 w-5 text-txt-muted" aria-hidden="true" />
               <p className="text-xs text-txt-secondary">
-                Нічого не знайдено за запитом «{query}»
+                {t('nav.nothingFoundFor')}{query}»
               </p>
               <p className="text-2xs text-txt-muted">
-                Спробуйте назву розділу — «картки», «АЗК», «аналітика».
+                {t('nav.trySectionNameCards')}
               </p>
             </div>
           ) : (
             sections.map((section) => (
               <div key={section.group} className="mb-1 last:mb-0">
-                <p className="micro-label px-3 pb-1 pt-2">{section.group}</p>
+                <p className="micro-label px-3 pb-1 pt-2">{t(section.group)}</p>
                 {section.items.map((cmd) => {
                   const i = indexOfRow.get(cmd.id) ?? 0;
                   const isActive = i === active;
@@ -436,11 +464,11 @@ export default function CommandPalette() {
           <span className="flex items-center gap-1.5 text-[10px] text-txt-muted">
             <span className="kbd">↑</span>
             <span className="kbd">↓</span>
-            навігація
+            {t('nav.navigationWord')}
           </span>
           <span className="flex items-center gap-1.5 text-[10px] text-txt-muted">
             <span className="kbd">⏎</span>
-            виконати
+            {t('nav.run')}
           </span>
           <span className="ml-auto text-[10px] text-txt-muted">VELES ERP</span>
         </div>
@@ -462,15 +490,15 @@ export function CommandPaletteTrigger({ className }: { className?: string }) {
     <button
       type="button"
       onClick={() => window.dispatchEvent(new CustomEvent(COMMAND_PALETTE_EVENT))}
-      aria-label="Відкрити командну палітру"
-      title="Командна палітра"
+      aria-label={t('nav.openCommandPalette')}
+      title={t('common.commandPalette')}
       className={cn(
         'group flex h-9 items-center gap-2 rounded-field border border-bdr-subtle bg-surface px-3 text-xs text-txt-muted transition-colors hover:border-bdr-strong hover:bg-surface-hover hover:text-txt-primary',
         className,
       )}
     >
       <Search className="h-3.5 w-3.5" aria-hidden="true" />
-      <span className="hidden sm:inline">Пошук…</span>
+      <span className="hidden sm:inline">{t('common.searchEllipsis')}</span>
       <span className="kbd ml-2 hidden sm:inline-flex" aria-hidden="true">
         {isMac ? '⌘' : 'Ctrl'} K
       </span>

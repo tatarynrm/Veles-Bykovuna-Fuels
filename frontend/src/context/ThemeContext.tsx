@@ -1,70 +1,136 @@
 'use client';
 
-import React, { createContext, useContext, useCallback, useEffect, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useState,
+} from 'react';
 
-type Theme = 'dark' | 'light';
+/** Що обрав користувач. `system` — слідувати за налаштуванням ОС. */
+export type ThemePreference = 'light' | 'dark' | 'system';
+/** Що зрештою намальовано. Саме це потрібно картам і графікам. */
+export type ResolvedTheme = 'light' | 'dark';
 
 interface ThemeContextType {
-  theme: Theme;
+  /** Обрана тема — те, що підсвічується в перемикачі. */
+  preference: ThemePreference;
+  /** Застосована тема. `system` тут уже розкрито у light/dark. */
+  theme: ResolvedTheme;
+  /** false до першого клієнтського ефекту. */
   mounted: boolean;
+  setPreference: (next: ThemePreference) => void;
+  /** Явно перемикає світлу ↔ темну (виходить із режиму «системна»). */
   toggleTheme: () => void;
-  setTheme: (theme: Theme) => void;
+  /** Сумісність зі старими викликами: setTheme('light'|'dark'|'system'). */
+  setTheme: (next: ThemePreference) => void;
 }
 
 const STORAGE_KEY = 'veles_theme';
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-function applyTheme(next: Theme) {
+const isPreference = (value: unknown): value is ThemePreference =>
+  value === 'light' || value === 'dark' || value === 'system';
+
+const systemTheme = (): ResolvedTheme =>
+  typeof window !== 'undefined' &&
+  window.matchMedia('(prefers-color-scheme: light)').matches
+    ? 'light'
+    : 'dark';
+
+const resolve = (preference: ThemePreference): ResolvedTheme =>
+  preference === 'system' ? systemTheme() : preference;
+
+/**
+ * Малює тему. Ті самі три дії робить інлайн-скрипт у layout.tsx до першого
+ * кадру — тому обидва місця треба міняти разом.
+ */
+function paint(theme: ResolvedTheme) {
   const root = document.documentElement;
-  root.classList.toggle('light-theme', next === 'light');
-  document.body.classList.toggle('light-theme', next === 'light');
-  root.dataset.theme = next;
+  root.classList.toggle('light-theme', theme === 'light');
+  document.body.classList.toggle('light-theme', theme === 'light');
+  root.dataset.theme = theme;
 }
 
+/**
+ * На сервері useLayoutEffect попереджає в консоль, але саме він потрібен на
+ * клієнті: стан треба синхронізувати ДО малювання, інакше компоненти, які
+ * читають `theme` (карти, графіки, іконка перемикача), встигають блимнути
+ * не тією темою.
+ */
+const useIsomorphicLayoutEffect =
+  typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('dark');
+  // Значення за замовчуванням — «системна»: до першого ефекту SSR і клієнт
+  // мають збігатися, тому тут не можна читати localStorage.
+  const [preference, setPreferenceState] = useState<ThemePreference>('system');
+  const [theme, setThemeState] = useState<ResolvedTheme>('dark');
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-
-    // Migrate the legacy key an older duplicate toggle used to write.
-    const legacy = localStorage.getItem('okko_theme');
-    if (legacy && !localStorage.getItem(STORAGE_KEY)) {
-      localStorage.setItem(STORAGE_KEY, legacy);
-      localStorage.removeItem('okko_theme');
+  useIsomorphicLayoutEffect(() => {
+    let initial: ThemePreference = 'system';
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (isPreference(saved)) initial = saved;
+      else if (saved) {
+        // Ключ колись зберігав лише light/dark — прибираємо сміття
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    } catch {
+      /* приватний режим — лишаємо системну */
     }
 
-    const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const initial: Theme =
-      saved === 'light' || saved === 'dark'
-        ? saved
-        : window.matchMedia('(prefers-color-scheme: light)').matches
-          ? 'light'
-          : 'dark';
-
-    setThemeState(initial);
-    applyTheme(initial);
+    setPreferenceState(initial);
+    const resolved = resolve(initial);
+    setThemeState(resolved);
+    paint(resolved);
+    setMounted(true);
   }, []);
 
-  const setTheme = useCallback((next: Theme) => {
-    setThemeState(next);
-    localStorage.setItem(STORAGE_KEY, next);
-    applyTheme(next);
+  // Стеження за темою ОС має сенс лише поки обрано «системна»
+  useEffect(() => {
+    if (preference !== 'system') return;
+    const media = window.matchMedia('(prefers-color-scheme: light)');
+    const onChange = () => {
+      const resolved = systemTheme();
+      setThemeState(resolved);
+      paint(resolved);
+    };
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+  }, [preference]);
+
+  const setPreference = useCallback((next: ThemePreference) => {
+    setPreferenceState(next);
+    try {
+      localStorage.setItem(STORAGE_KEY, next);
+    } catch {
+      /* без збереження — вибір діятиме до перезавантаження */
+    }
+    const resolved = resolve(next);
+    setThemeState(resolved);
+    paint(resolved);
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setThemeState((current) => {
-      const next: Theme = current === 'dark' ? 'light' : 'dark';
-      localStorage.setItem(STORAGE_KEY, next);
-      applyTheme(next);
-      return next;
-    });
-  }, []);
+    setPreference(resolve(preference) === 'dark' ? 'light' : 'dark');
+  }, [preference, setPreference]);
 
   return (
-    <ThemeContext.Provider value={{ theme, mounted, toggleTheme, setTheme }}>
+    <ThemeContext.Provider
+      value={{
+        preference,
+        theme,
+        mounted,
+        setPreference,
+        setTheme: setPreference,
+        toggleTheme,
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );

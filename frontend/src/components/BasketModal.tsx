@@ -5,6 +5,7 @@ import { ShoppingBag, X, Tag, PackageOpen } from 'lucide-react';
 import { apiList } from '@/lib/api';
 import { formatCurrency } from '@/lib/format';
 import { EmptyState } from './Skeletons';
+import { t } from '@/lib/i18n';
 
 interface BasketModalProps {
   transId: string | null;
@@ -54,7 +55,7 @@ export default function BasketModal({ transId, onClose }: BasketModalProps) {
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Вміст покупки"
+      aria-label={t('tx.purchaseContents')}
     >
       <div
         className="glass-float animate-pop w-full max-w-lg rounded-panel p-6"
@@ -66,11 +67,11 @@ export default function BasketModal({ transId, onClose }: BasketModalProps) {
               <ShoppingBag className="h-4 w-4" />
             </span>
             <div>
-              <h3 className="text-sm font-semibold text-txt-primary">Вміст покупки</h3>
-              <p className="font-mono text-2xs text-txt-muted">Транзакція #{transId}</p>
+              <h3 className="text-sm font-semibold text-txt-primary">{t('tx.purchaseContents')}</h3>
+              <p className="font-mono text-2xs text-txt-muted">{t('tx.transaction')}{transId}</p>
             </div>
           </div>
-          <button onClick={onClose} className="btn-icon h-8 w-8" aria-label="Закрити">
+          <button onClick={onClose} className="btn-icon h-8 w-8" aria-label={t('common.close')}>
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -84,8 +85,8 @@ export default function BasketModal({ transId, onClose }: BasketModalProps) {
         ) : basketItems.length === 0 ? (
           <EmptyState
             icon={PackageOpen}
-            title="Додаткових товарів немає"
-            hint="Транзакція містить лише заправку пальним — без покупок у магазині чи кафе."
+            title={t('tx.noAdditionalItems')}
+            hint={t('tx.transactionFuelOnlyNo')}
           />
         ) : (
           <div className="max-h-80 space-y-2 overflow-y-auto py-4 pr-1">
@@ -98,7 +99,7 @@ export default function BasketModal({ transId, onClose }: BasketModalProps) {
                   <Tag className="h-3.5 w-3.5 shrink-0 text-accent" />
                   <div className="min-w-0">
                     <p className="truncate text-xs font-medium text-txt-primary">
-                      {item.product_name || item.product_desc || 'Товар'}
+                      {item.product_name || item.product_desc || t('tx.item')}
                     </p>
                     <p className="font-mono text-micro text-txt-muted">
                       {item.product_id || '—'}
@@ -121,13 +122,13 @@ export default function BasketModal({ transId, onClose }: BasketModalProps) {
         <div className="hairline-t flex items-center justify-between gap-3 pt-4">
           {basketItems.length > 0 ? (
             <p className="text-2xs text-txt-muted">
-              Разом: <span className="stat text-xs text-txt-primary">{formatCurrency(total)}</span>
+              {t('common.totalColon')} <span className="stat text-xs text-txt-primary">{formatCurrency(total)}</span>
             </p>
           ) : (
             <span />
           )}
           <button onClick={onClose} className="btn btn-ghost">
-            Закрити
+            {t('common.close')}
           </button>
         </div>
       </div>

@@ -6,6 +6,7 @@ import PaginationBar from './PaginationBar';
 import ExportDropdown from './ExportDropdown';
 import { EmptyState } from './Skeletons';
 import { formatCurrency, formatNumber } from '@/lib/format';
+import { t } from '@/lib/i18n';
 
 interface CardLimit {
   limit_id: string;
@@ -65,10 +66,10 @@ export default function CardsTable({ cards, contracts }: CardsTableProps) {
           <div>
             <h2 className="flex items-center gap-2 text-base font-semibold text-txt-primary">
               <FileText className="h-4 w-4 text-accent" />
-              Договори компанії
+              {t('cards.companyContracts')}
             </h2>
             <p className="mt-0.5 text-2xs text-txt-muted">
-              ТОВ «Велес Буковина» · {formatNumber(contracts.length)} активних
+              {t('cards.velesBukovynaLLC')} {formatNumber(contracts.length)} {t('cards.active')}
             </p>
           </div>
 
@@ -76,29 +77,29 @@ export default function CardsTable({ cards, contracts }: CardsTableProps) {
             data={() => contracts}
             options={{
               filename: `contracts_${new Date().toISOString().slice(0, 10)}`,
-              title: 'Активні договори компанії',
-              subtitle: 'ТОВ «Велес Буковина»',
+              title: t('cards.activeCompanyContracts'),
+              subtitle: t('common.velesBukovynaLLC'),
               columns: [
-                { label: 'ID Договору', key: 'contract_id', type: 'string' },
-                { label: 'Номер договору', key: 'contract_number', type: 'string' },
-                { label: 'Назва договору', key: 'contract_name', type: 'string' },
-                { label: 'Клієнт', key: 'client_name', type: 'string' },
-                { label: 'Тип договору', key: 'contract_type', type: 'string' },
-                { label: 'Статус договору', key: 'contract_status', type: 'string' },
-                { label: 'Поточний баланс (₴)', key: 'balance', type: 'currency' },
-                { label: 'Кредитний ліміт (₴)', key: 'credit_limit', type: 'currency' },
-                { label: 'Валюта', key: 'currency', type: 'string' },
+                { label: t('cards.contractID'), key: 'contract_id', type: 'string' },
+                { label: t('cards.contractNumber'), key: 'contract_number', type: 'string' },
+                { label: t('cards.contractName'), key: 'contract_name', type: 'string' },
+                { label: t('cards.client'), key: 'client_name', type: 'string' },
+                { label: t('cards.contractType'), key: 'contract_type', type: 'string' },
+                { label: t('cards.contractStatus'), key: 'contract_status', type: 'string' },
+                { label: t('cards.currentBalanceUAH'), key: 'balance', type: 'currency' },
+                { label: t('cards.creditLimitUAH'), key: 'credit_limit', type: 'currency' },
+                { label: t('cards.currency'), key: 'currency', type: 'string' },
               ],
             }}
-            buttonText="Експорт"
+            buttonText={t('common.export')}
           />
         </div>
 
         {contracts.length === 0 ? (
           <EmptyState
             icon={FileText}
-            title="Договорів не знайдено"
-            hint="Шлюз OKKO не повернув жодного договору за поточними обліковими даними."
+            title={t('cards.noContractsFound')}
+            hint={t('cards.okkoGatewayReturnedNo')}
           />
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -125,14 +126,14 @@ export default function CardsTable({ cards, contracts }: CardsTableProps) {
                   <div className="mt-3 flex items-start gap-1.5">
                     <Tag className="mt-0.5 h-3 w-3 shrink-0 text-accent" />
                     <span className="text-micro text-txt-secondary">
-                      Схема знижок: всі дп 4 · бенз 4 · спбт 1
+                      {t('cards.discountSchemeAllDiesel')}
                     </span>
                   </div>
                 </div>
 
                 <div className="hairline-t mt-4 flex items-end justify-between pt-3">
                   <div>
-                    <p className="micro-label">Баланс</p>
+                    <p className="micro-label">{t('cards.balance')}</p>
                     <p className="stat mt-0.5 text-lg">{formatCurrency(c.balance)}</p>
                   </div>
                   <ShieldCheck className="h-5 w-5 text-accent/40" />
@@ -149,10 +150,10 @@ export default function CardsTable({ cards, contracts }: CardsTableProps) {
           <div>
             <h2 className="flex items-center gap-2 text-base font-semibold text-txt-primary">
               <CreditCard className="h-4 w-4 text-accent" />
-              Реєстр паливних карток
+              {t('cards.fuelCardRegistry')}
             </h2>
             <p className="mt-0.5 text-2xs text-txt-muted">
-              {formatNumber(totalItems)} карток OKKO Smart Card та Shell Mobility
+              {formatNumber(totalItems)} {t('cards.okkoSmartCardShell')}
             </p>
           </div>
 
@@ -162,39 +163,39 @@ export default function CardsTable({ cards, contracts }: CardsTableProps) {
                 const limit = c.limits?.[0];
                 return {
                   ...c,
-                  owner_name: `${c.card_owner_f_name || 'Водій'} ${c.card_owner_l_name || ''}`.trim(),
+                  owner_name: `${c.card_owner_f_name || t('common.driver')} ${c.card_owner_l_name || ''}`.trim(),
                   network_name: c.is_shell ? 'Shell Mobility' : 'OKKO Smart Card',
                   limit_val: limit?.limit_value ?? 0,
                   limit_rem: limit?.limit_remains ?? 0,
-                  limit_cycle: limit?.cycle_type_desc ?? 'доба',
+                  limit_cycle: limit?.cycle_type_desc ?? t('cards.day'),
                 };
               })
             }
             options={{
               filename: `fuel_cards_${new Date().toISOString().slice(0, 10)}`,
-              title: 'Реєстр паливних карток',
-              subtitle: 'ТОВ «Велес Буковина»',
+              title: t('cards.fuelCardRegistry'),
+              subtitle: t('common.velesBukovynaLLC'),
               columns: [
-                { label: 'Номер картки (PAN)', key: 'card_num', type: 'string' },
-                { label: 'ID Договору', key: 'contract_id', type: 'string' },
-                { label: 'Водій / Власник', key: 'owner_name', type: 'string' },
-                { label: 'Мережа АЗК', key: 'network_name', type: 'string' },
-                { label: 'Термін дії', key: 'exp_date', type: 'string' },
-                { label: 'Добовий ліміт (₴)', key: 'limit_val', type: 'currency' },
-                { label: 'Залишок ліміту (₴)', key: 'limit_rem', type: 'currency' },
-                { label: 'Цикл ліміту', key: 'limit_cycle', type: 'string' },
-                { label: 'Статус картки', key: 'status_desc', type: 'string' },
+                { label: t('cards.cardNumberPAN'), key: 'card_num', type: 'string' },
+                { label: t('cards.contractID'), key: 'contract_id', type: 'string' },
+                { label: t('cards.driverHolder'), key: 'owner_name', type: 'string' },
+                { label: t('common.stationNetwork'), key: 'network_name', type: 'string' },
+                { label: t('cards.validUntil'), key: 'exp_date', type: 'string' },
+                { label: t('cards.dailyLimitUAH'), key: 'limit_val', type: 'currency' },
+                { label: t('cards.limitRemainingUAH'), key: 'limit_rem', type: 'currency' },
+                { label: t('cards.limitCycle'), key: 'limit_cycle', type: 'string' },
+                { label: t('cards.cardStatus'), key: 'status_desc', type: 'string' },
               ],
             }}
-            buttonText="Експорт"
+            buttonText={t('common.export')}
           />
         </div>
 
         {paginated.length === 0 ? (
           <EmptyState
             icon={WalletCards}
-            title="Карток не знайдено"
-            hint="За обраною мережею немає активних карток, або шлюз постачальника не відповів."
+            title={t('cards.noCardsFound')}
+            hint={t('cards.selectedNetworkHasNo')}
           />
         ) : (
           <>
@@ -202,13 +203,13 @@ export default function CardsTable({ cards, contracts }: CardsTableProps) {
               <table className="data-table min-w-[820px]">
                 <thead>
                   <tr>
-                    <th>Картка</th>
-                    <th>Власник</th>
-                    <th>Мережа</th>
-                    <th>Термін дії</th>
-                    <th className="num">Ліміт</th>
-                    <th className="num">Залишок</th>
-                    <th className="text-center">Статус</th>
+                    <th>{t('cards.card')}</th>
+                    <th>{t('cards.holder')}</th>
+                    <th>{t('cards.network')}</th>
+                    <th>{t('cards.validUntil')}</th>
+                    <th className="num">{t('cards.limit')}</th>
+                    <th className="num">{t('cards.remaining')}</th>
+                    <th className="text-center">{t('common.status')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -238,12 +239,12 @@ export default function CardsTable({ cards, contracts }: CardsTableProps) {
                             )}
                           </div>
                           <p className="mt-0.5 text-micro text-txt-muted">
-                            Договір #{c.contract_id}
+                            {t('cards.contract')}{c.contract_id}
                           </p>
                         </td>
 
                         <td className="text-2xs text-txt-primary">
-                          {`${c.card_owner_f_name || 'Водій'} ${c.card_owner_l_name || ''}`.trim()}
+                          {`${c.card_owner_f_name || t('common.driver')} ${c.card_owner_l_name || ''}`.trim()}
                         </td>
 
                         <td>
@@ -301,7 +302,7 @@ export default function CardsTable({ cards, contracts }: CardsTableProps) {
                             title={c.status}
                           >
                             <span className="badge-dot" />
-                            {c.status_desc || (isActive ? 'Активна' : 'Блокована')}
+                            {c.status_desc || (isActive ? t('cards.statusActive') : t('cards.blocked'))}
                           </span>
                         </td>
                       </tr>

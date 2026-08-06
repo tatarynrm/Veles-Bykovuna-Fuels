@@ -6,10 +6,12 @@ import CardsTable from '@/components/CardsTable';
 import { DateRange } from '@/components/DateRangePicker';
 import { SkeletonTable } from '@/components/Skeletons';
 import { useAuthGuard } from '@/lib/useAuthGuard';
-import { apiList } from '@/lib/api';
+import { cachedList, hasFreshEnough, useApiRefreshing } from '@/lib/apiCache';
+import { t } from '@/lib/i18n';
 
 export default function CardsPage() {
   const { authenticated } = useAuthGuard();
+  const revalidating = useApiRefreshing();
 
   const [activeBrand, setActiveBrand] = useState('ALL');
   const [dateRange, setDateRange] = useState<DateRange>({
@@ -23,14 +25,18 @@ export default function CardsPage() {
   const [cards, setCards] = useState<any[]>([]);
   const [contracts, setContracts] = useState<any[]>([]);
 
-  const loadData = useCallback(async (brand: string) => {
+  const loadData = useCallback(async (brand: string, force = false) => {
     setIsRefreshing(true);
+    const cardParams = { brand, size: 200 };
+    const opts = { force };
+
+    if (!hasFreshEnough('/api/cards', cardParams)) setLoading(true);
 
     // /api/cards returns a paginated envelope, /api/contracts a bare array —
-    // apiList unwraps both, which the old `Array.isArray` check did not.
+    // cachedList unwraps both, which the old `Array.isArray` check did not.
     const [cardsRes, contractsRes] = await Promise.all([
-      apiList<any>('/api/cards', { brand, size: 200 }),
-      apiList<any>('/api/contracts', { brand }),
+      cachedList<any>('/api/cards', cardParams, setCards, opts),
+      cachedList<any>('/api/contracts', { brand }, setContracts, opts),
     ]);
 
     setCards(cardsRes);
@@ -47,10 +53,10 @@ export default function CardsPage() {
 
   return (
     <PageShell
-      title="Паливні картки"
-      subtitle="Ліміти, договори та баланс активних карток автопарку"
-      onRefresh={() => loadData(activeBrand)}
-      isRefreshing={isRefreshing}
+      title={t('common.fuelCards')}
+      subtitle={t('cards.limitsContractsBalanceFleet')}
+      onRefresh={() => loadData(activeBrand, true)}
+      isRefreshing={isRefreshing || revalidating}
       currentRange={dateRange}
       onDateChange={setDateRange}
       activeBrand={activeBrand}

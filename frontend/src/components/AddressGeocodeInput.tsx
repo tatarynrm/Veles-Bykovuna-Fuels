@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader2, MapPin, SearchX } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { t } from '@/lib/i18n';
 
 /** What a picked suggestion resolves to. Coordinates are strings, 6 decimals. */
 export interface GeocodeResult {
@@ -50,7 +51,7 @@ export default function AddressGeocodeInput({
   value,
   onChange,
   onResolve,
-  placeholder = 'м. Чернівці, вул. Заводська, 12',
+  placeholder = t('trip.chernivtsi12ZavodskaSt'),
   ariaLabel,
   className,
 }: AddressGeocodeInputProps) {
@@ -200,18 +201,18 @@ export default function AddressGeocodeInput({
       {open && (
         <div
           role="listbox"
-          aria-label="Знайдені адреси"
+          aria-label={t('trip.matchingAddresses')}
           className="glass-float animate-pop absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-card p-1.5"
         >
           {failed ? (
             <p className="flex items-center gap-2 px-3 py-2.5 text-2xs text-txt-muted">
               <SearchX className="h-3.5 w-3.5 shrink-0" />
-              Сервіс геокодування недоступний — введіть координати вручну
+              {t('trip.geocodingServiceUnavailableEnter')}
             </p>
           ) : items.length === 0 ? (
             <p className="flex items-center gap-2 px-3 py-2.5 text-2xs text-txt-muted">
               <SearchX className="h-3.5 w-3.5 shrink-0" />
-              Адресу не знайдено — уточніть запит або введіть координати
+              {t('trip.addressNotFoundRefine')}
             </p>
           ) : (
             items.map((s, i) => (
@@ -238,7 +239,7 @@ export default function AddressGeocodeInput({
             ))
           )}
           <p className="border-t border-bdr-subtle px-3 pb-1 pt-1.5 text-[9px] text-txt-muted">
-            Пошук: Nominatim · дані © OpenStreetMap contributors
+            {t('trip.searchNominatimDataOpenstreetmap')}
           </p>
         </div>
       )}

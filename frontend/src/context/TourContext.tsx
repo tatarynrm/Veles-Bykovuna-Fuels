@@ -10,6 +10,7 @@ import React, {
 } from 'react';
 import { usePathname } from 'next/navigation';
 import { isGuestUser, readSessionUser } from '@/lib/useAuthGuard';
+import { t } from '@/lib/i18n';
 
 export interface TourStep {
   id: string;
@@ -30,88 +31,88 @@ export interface TourStep {
 const STEPS: TourStep[] = [
   {
     id: 'welcome',
-    title: 'Вітаємо у VELES ERP',
-    body: 'Коротка екскурсія меню: 30 секунд, і ви знатимете, де що лежить. Ліворуч — навігація, вона однакова на всіх сторінках.',
+    title: 'tour.welcomeVELESERP',
+    body: 'tour.shortTourMenu30',
     target: '[data-tour="brand"]',
   },
   {
     id: 'overview',
-    title: 'Панель керування',
-    body: 'Зведення по паливу: витрати, обсяги та ключові показники за обраний період і бренд (ОККО, Shell або разом).',
+    title: 'common.dashboard',
+    body: 'tour.fuelSummarySpendingVolumes',
     target: '[data-tour="nav-overview"]',
   },
   {
     id: 'cards',
-    title: 'Паливні картки',
-    body: 'Усі картки ОККО та Shell в одному списку: статус, ліміти, привʼязка до транспорту.',
+    title: 'common.fuelCards',
+    body: 'tour.everyOKKOShellCard',
     target: '[data-tour="nav-cards"]',
   },
   {
     id: 'transactions',
-    title: 'Журнал транзакцій',
-    body: 'Кожна заправка: АЗК, картка, обсяг, сума. Фільтри за датою й брендом, експорт в Excel і PDF.',
+    title: 'common.transactionLog',
+    body: 'tour.everyRefuellingStationCard',
     target: '[data-tour="nav-transactions"]',
   },
   {
     id: 'analytics',
-    title: 'Аналітика палива',
-    body: 'Графіки динаміки витрат, порівняння брендів і топ АЗК. Тут видно тенденції, яких не помітно в журналі.',
+    title: 'common.fuelAnalytics',
+    body: 'tour.spendingTrendChartsBrand',
     target: '[data-tour="nav-analytics"]',
   },
   {
     id: 'merchants',
-    title: 'Мережа АЗК',
-    body: 'Карта та довідник заправок, доступних за вашими картками.',
+    title: 'common.stationNetwork',
+    body: 'tour.mapDirectoryStationsYour',
     target: '[data-tour="nav-merchants"]',
   },
   {
     id: 'ruptela',
-    title: 'Ruptela FMS — телематика',
-    body: 'Розділ живих даних з трекерів: місце, пальне, CAN-показники, поїздки. Виділений бурштиновим кольором, щоб не плутати з паливними картками.',
+    title: 'tour.ruptelaFMSTelematics',
+    body: 'tour.liveTrackerSectionPosition',
     target: '[data-tour="nav-ruptela"]',
   },
   {
     id: 'ruptela-fleet',
-    title: 'Мій автопарк',
-    body: 'Карта всього автопарку з останніми GPS-фіксами та телеметрією обраного тягача.',
+    title: 'common.myFleet',
+    body: 'tour.mapWholeFleetLatest',
     target: '[data-tour="nav-ruptela-fleet"]',
   },
   {
     id: 'live',
-    title: 'Реальний час',
-    body: 'Спостереження за одним автомобілем: трек оновлюється кожні 5 секунд, поруч — швидкість, пальне, оберти й журнал записів пристрою.',
+    title: 'common.realTime',
+    body: 'tour.watchingSingleVehicleTrack',
     target: '[data-tour="nav-live"]',
   },
   {
     id: 'create-trip',
-    title: 'Створити поїздку',
-    body: 'Маршрут із точками й завданнями, який зберігається напряму в Ruptela і може бути надісланий водієві.',
+    title: 'common.createATrip',
+    body: 'tour.routeStopsTasksSaved',
     target: '[data-tour="nav-create-trip"]',
     staffOnly: true,
   },
   {
     id: 'guest-limits',
-    title: 'Гостьовий режим',
-    body: 'Ви увійшли як гість: усі дані доступні для перегляду, але створення та редагування маршрутів вимкнено — щоб випадково не надіслати завдання реальному водієві.',
+    title: 'tour.guestMode',
+    body: 'tour.youSignedGuestAll',
     target: '[data-tour="role"]',
     guestOnly: true,
   },
   {
     id: 'routes',
-    title: 'Маршрут і завдання',
-    body: 'Активні та архівні поїздки, точки маршруту, статуси й чек-листи завдань.',
+    title: 'common.routesAndTasks',
+    body: 'tour.activeArchivedTripsWaypoints',
     target: '[data-tour="nav-routes"]',
   },
   {
     id: 'theme',
-    title: 'Тема оформлення',
-    body: 'Світла й темна теми перемикаються тут або клавішами ⌘K → «Тема». Вибір зберігається між сеансами.',
+    title: 'tour.theme',
+    body: 'tour.lightDarkThemesSwitch',
     target: '[data-tour="theme"]',
   },
   {
     id: 'restart',
-    title: 'Навчання завжди поруч',
-    body: 'Кнопка «Навчання» залишається в лівому меню — натисніть будь-коли, щоб пройти екскурсію ще раз.',
+    title: 'tour.trainingAlwaysHand',
+    body: 'tour.trainingButtonStaysLeft',
     target: '[data-tour="tour-button"]',
   },
 ];
@@ -139,7 +140,7 @@ const TourContext = createContext<TourContextValue | null>(null);
 export function useTour(): TourContextValue {
   const ctx = useContext(TourContext);
   if (!ctx) {
-    throw new Error('useTour має викликатись усередині <TourProvider>');
+    throw new Error(t('tour.usetourMustCalledInside'));
   }
   return ctx;
 }

@@ -7,10 +7,12 @@ import KpiCards from '@/components/KpiCards';
 import { DateRange } from '@/components/DateRangePicker';
 import { SkeletonChart, SkeletonKpi } from '@/components/Skeletons';
 import { useAuthGuard } from '@/lib/useAuthGuard';
-import { apiList, apiObject } from '@/lib/api';
+import { cachedList, cachedObject, hasFreshEnough, useApiRefreshing } from '@/lib/apiCache';
+import { t } from '@/lib/i18n';
 
 export default function AnalyticsPage() {
   const { authenticated } = useAuthGuard();
+  const revalidating = useApiRefreshing();
 
   const [activeBrand, setActiveBrand] = useState('ALL');
   const [dateRange, setDateRange] = useState<DateRange>({
@@ -25,14 +27,17 @@ export default function AnalyticsPage() {
   const [fuelBreakdown, setFuelBreakdown] = useState<any[]>([]);
   const [spendingTrends, setSpendingTrends] = useState<any[]>([]);
 
-  const loadData = useCallback(async (brand: string, range: DateRange) => {
+  const loadData = useCallback(async (brand: string, range: DateRange, force = false) => {
     setIsRefreshing(true);
     const params = { date_from: range.dateFrom, date_to: range.dateTo, brand };
+    const opts = { force };
+
+    if (!hasFreshEnough('/api/analytics/summary', params)) setLoading(true);
 
     const [sum, breakdown, trends] = await Promise.all([
-      apiObject<any>('/api/analytics/summary', params),
-      apiList<any>('/api/analytics/fuel-breakdown', params),
-      apiList<any>('/api/analytics/spending-trends', params),
+      cachedObject<any>('/api/analytics/summary', params, setSummary, opts),
+      cachedList<any>('/api/analytics/fuel-breakdown', params, setFuelBreakdown, opts),
+      cachedList<any>('/api/analytics/spending-trends', params, setSpendingTrends, opts),
     ]);
 
     setSummary(sum);
@@ -50,10 +55,10 @@ export default function AnalyticsPage() {
 
   return (
     <PageShell
-      title="Аналітика палива"
-      subtitle="Візуалізація витрат, споживання та структури заправок"
-      onRefresh={() => loadData(activeBrand, dateRange)}
-      isRefreshing={isRefreshing}
+      title={t('common.fuelAnalytics')}
+      subtitle={t('analytics.visualisingSpendingConsumptionRefuelling')}
+      onRefresh={() => loadData(activeBrand, dateRange, true)}
+      isRefreshing={isRefreshing || revalidating}
       currentRange={dateRange}
       onDateChange={setDateRange}
       activeBrand={activeBrand}

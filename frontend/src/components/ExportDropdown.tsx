@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Download, FileSpreadsheet, FileText, Loader2 } from 'lucide-react';
 import { ExportManager, ExportOptions } from '@/utils/exportManager';
+import { t } from '@/lib/i18n';
 
 interface ExportDropdownProps {
   /**
@@ -42,6 +43,7 @@ function showFullScreenSpinner() {
     'animation:fade .2s ease-out both',
   ].join(';');
 
+  // Розмітка лишається розміткою — перекладаються лише два підписи всередині.
   overlay.innerHTML = `
     <div style="
       width:38px;height:38px;border-radius:9999px;
@@ -49,11 +51,10 @@ function showFullScreenSpinner() {
       border-left-color:var(--accent);
       animation:exportSpin .8s linear infinite;"></div>
     <div style="text-align:center">
-      <div style="font-size:13px;font-weight:600;letter-spacing:-0.01em;">Формування звіту</div>
-      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Обробка даних…</div>
+      <div style="font-size:13px;font-weight:600;letter-spacing:-0.01em;">${t('export.buildingTheReport')}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${t('export.processingDataEllipsis')}</div>
     </div>
-    <style>@keyframes exportSpin{to{transform:rotate(360deg)}}</style>
-  `;
+    <style>@keyframes exportSpin{to{transform:rotate(360deg)}}</style>`;
 
   document.body.appendChild(overlay);
 }
@@ -71,7 +72,7 @@ export default function ExportDropdown({
   data,
   options = {},
   className = '',
-  buttonText = 'Експорт',
+  buttonText = t('common.export'),
 }: ExportDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -102,7 +103,7 @@ export default function ExportDropdown({
       const resolvedData = typeof data === 'function' ? data() : data;
       const shared = {
         filename: options.filename || 'export',
-        title: options.title || 'Експорт даних',
+        title: options.title || t('export.dataExport'),
         subtitle: options.subtitle || 'VELES ERP',
         columns: options.columns,
       };
@@ -110,7 +111,7 @@ export default function ExportDropdown({
       if (format === 'xlsx') {
         await ExportManager.toExcel(resolvedData, {
           ...shared,
-          sheetName: options.sheetName || 'Дані',
+          sheetName: options.sheetName || t('common.data'),
         });
       } else {
         await ExportManager.toPDF(resolvedData, {
@@ -119,8 +120,8 @@ export default function ExportDropdown({
         });
       }
     } catch (error: any) {
-      console.error('Помилка при експорті:', error);
-      alert(`Помилка експорту: ${error?.message || error}`);
+      console.error(t('export.exportFailedColon'), error);
+      alert(t('export.exportError', { v0: error?.message || error }));
     } finally {
       setIsExporting(false);
       hideFullScreenSpinner();
@@ -135,14 +136,14 @@ export default function ExportDropdown({
         aria-haspopup="menu"
         aria-expanded={isOpen}
         className="btn btn-ghost"
-        title="Експортувати дані"
+        title={t('export.exportData')}
       >
         {isExporting ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
         ) : (
           <Download className="h-3.5 w-3.5 text-accent" />
         )}
-        <span>{isExporting ? 'Експорт…' : buttonText}</span>
+        <span>{isExporting ? t('export.exportingEllipsis') : buttonText}</span>
       </button>
 
       {isOpen && (

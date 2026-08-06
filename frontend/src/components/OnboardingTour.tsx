@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Check, GraduationCap, X } from 'lucide-react';
 import { useTour } from '@/context/TourContext';
+import { t } from '@/lib/i18n';
 
 interface Rect {
   top: number;
@@ -126,19 +127,18 @@ export default function OnboardingTour() {
             <GraduationCap className="h-5 w-5" />
           </span>
           <h2 id="tour-invite-title" className="text-base font-semibold text-txt-primary">
-            Показати, як користуватись?
+            {t('tour.showMeHowWorksQuestion')}
           </h2>
           <p className="mt-2 text-2xs leading-relaxed text-txt-secondary">
-            Коротка екскурсія меню — приблизно 30 секунд. Можна пропустити: кнопка
-            «Навчання» завжди залишається в лівому меню.
+            {t('tour.shortTourMenuAbout')}
           </p>
 
           <div className="mt-5 grid grid-cols-2 gap-2">
             <button onClick={declinePrompt} className="btn btn-ghost justify-center">
-              Не зараз
+              {t('tour.notNow')}
             </button>
             <button onClick={acceptPrompt} className="btn btn-primary justify-center">
-              Почати навчання
+              {t('tour.startTheTour')}
               <ArrowRight className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -199,7 +199,7 @@ export default function OnboardingTour() {
       {/* Click-away ends the tour, matching the modal convention elsewhere. */}
       <button
         type="button"
-        aria-label="Завершити навчання"
+        aria-label={t('tour.finishTheTour')}
         onClick={endTour}
         className="absolute inset-0 h-full w-full cursor-default"
         tabIndex={-1}
@@ -214,7 +214,7 @@ export default function OnboardingTour() {
         <div className="mb-2 flex items-center justify-between gap-2">
           <span className="badge badge-accent">
             <GraduationCap className="h-3 w-3" />
-            Навчання
+            {t('common.training')}
           </span>
           <div className="flex items-center gap-2">
             <span className="tabular font-mono text-micro text-txt-muted">
@@ -223,16 +223,16 @@ export default function OnboardingTour() {
             <button
               onClick={endTour}
               className="btn-icon h-7 w-7"
-              title="Завершити навчання"
-              aria-label="Завершити навчання"
+              title={t('tour.finishTheTour')}
+              aria-label={t('tour.finishTheTour')}
             >
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
 
-        <h3 className="text-sm font-semibold text-txt-primary">{step.title}</h3>
-        <p className="mt-1.5 text-2xs leading-relaxed text-txt-secondary">{step.body}</p>
+        <h3 className="text-sm font-semibold text-txt-primary">{t(step.title)}</h3>
+        <p className="mt-1.5 text-2xs leading-relaxed text-txt-secondary">{t(step.body)}</p>
 
         <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-surface-hover">
           <div
@@ -243,26 +243,26 @@ export default function OnboardingTour() {
 
         <div className="mt-3 flex items-center justify-between gap-2">
           <button onClick={endTour} className="btn btn-ghost px-2 text-micro">
-            Пропустити
+            {t('tour.skip')}
           </button>
           <div className="flex items-center gap-2">
             <button
               onClick={prevStep}
               disabled={stepIndex === 0}
               className="btn btn-ghost px-2"
-              aria-label="Попередній крок"
+              aria-label={t('tour.previousStep')}
             >
               <ArrowLeft className="h-3.5 w-3.5" />
             </button>
             <button onClick={nextStep} className="btn btn-primary">
               {isLast ? (
                 <>
-                  Завершити
+                  {t('tour.finish')}
                   <Check className="h-3.5 w-3.5" />
                 </>
               ) : (
                 <>
-                  Далі
+                  {t('tour.next')}
                   <ArrowRight className="h-3.5 w-3.5" />
                 </>
               )}

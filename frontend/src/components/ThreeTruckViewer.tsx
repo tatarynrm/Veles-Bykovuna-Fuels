@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect, useMemo, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, Html } from '@react-three/drei';
 import * as THREE from 'three';
+import { t } from '@/lib/i18n';
 
 // Map GLTF nodes to truck components
 const getNodeSystem = (nodeName: string): string => {
@@ -116,60 +117,60 @@ const subFaultCameraTargets: Record<string, { target: [number, number, number]; 
 // Structured array of ALL hotspots
 const allHotspots = [
   // 1. Reefer Unit
-  { id: 'reefer_engine_failure', system: 'refrigerator', label: 'Двигун установки', pos: [0.35, 1.5, -2.1] as [number, number, number], status: 'damaged' },
-  { id: 'reefer_belt_snapped', system: 'refrigerator', label: 'Приводний ремінь', pos: [0.35, 1.35, -2.1] as [number, number, number], status: 'damaged' },
-  { id: 'reefer_starter_fault', system: 'refrigerator', label: 'Стартер рефрижератора', pos: [0.35, 1.1, -2.1] as [number, number, number], status: 'warning' },
-  { id: 'reefer_alternator_fault', system: 'refrigerator', label: 'Генератор установки', pos: [-0.35, 1.5, -2.1] as [number, number, number], status: 'warning' },
-  { id: 'reefer_battery_dead', system: 'refrigerator', label: 'Акумулятор рефа', pos: [-0.35, 1.2, -2.1] as [number, number, number], status: 'warning' },
-  { id: 'compressor_failure', system: 'refrigerator', label: 'Компресор рефа', pos: [0.0, 1.4, -2.3] as [number, number, number], status: 'damaged' },
-  { id: 'freon_leak', system: 'refrigerator', label: 'Витік фреону', pos: [0.0, 1.1, -2.3] as [number, number, number], status: 'damaged' },
-  { id: 'condenser_fan_broken', system: 'refrigerator', label: 'Вентилятор конденсера', pos: [0.0, 1.7, -2.0] as [number, number, number], status: 'damaged' },
-  { id: 'evaporator_fan_broken', system: 'refrigerator', label: 'Вентилятор випарника', pos: [0.0, 1.8, -3.2] as [number, number, number], status: 'damaged' },
-  { id: 'evaporator_icing', system: 'refrigerator', label: 'Обмерзання випарника', pos: [0.0, 1.6, -3.2] as [number, number, number], status: 'warning' },
-  { id: 'reefer_controller_error', system: 'refrigerator', label: 'Пульт рефрижератора', pos: [-0.5, 1.3, -2.0] as [number, number, number], status: 'warning' },
-  { id: 'temp_sensor_fault', system: 'refrigerator', label: 'Датчик температури', pos: [0.0, 1.4, -2.5] as [number, number, number], status: 'warning' },
-  { id: 'reefer_fuel_filter_clogged', system: 'refrigerator', label: 'Паливний фільтр рефа', pos: [0.4, 0.8, -2.2] as [number, number, number], status: 'warning' },
-  { id: 'reefer_fuel_tank_leak', system: 'refrigerator', label: 'Витік бака рефа', pos: [0.0, 0.5, -3.0] as [number, number, number], status: 'damaged' },
+  { id: 'reefer_engine_failure', system: 'refrigerator', label: 'diag.unitEngine', pos: [0.35, 1.5, -2.1] as [number, number, number], status: 'damaged' },
+  { id: 'reefer_belt_snapped', system: 'refrigerator', label: 'diag.driveBelt', pos: [0.35, 1.35, -2.1] as [number, number, number], status: 'damaged' },
+  { id: 'reefer_starter_fault', system: 'refrigerator', label: 'diag.reeferStarter', pos: [0.35, 1.1, -2.1] as [number, number, number], status: 'warning' },
+  { id: 'reefer_alternator_fault', system: 'refrigerator', label: 'diag.unitAlternator', pos: [-0.35, 1.5, -2.1] as [number, number, number], status: 'warning' },
+  { id: 'reefer_battery_dead', system: 'refrigerator', label: 'diag.reeferBattery', pos: [-0.35, 1.2, -2.1] as [number, number, number], status: 'warning' },
+  { id: 'compressor_failure', system: 'refrigerator', label: 'diag.reeferCompressor', pos: [0.0, 1.4, -2.3] as [number, number, number], status: 'damaged' },
+  { id: 'freon_leak', system: 'refrigerator', label: 'diag.refrigerantLeak2', pos: [0.0, 1.1, -2.3] as [number, number, number], status: 'damaged' },
+  { id: 'condenser_fan_broken', system: 'refrigerator', label: 'diag.condenserFan', pos: [0.0, 1.7, -2.0] as [number, number, number], status: 'damaged' },
+  { id: 'evaporator_fan_broken', system: 'refrigerator', label: 'diag.evaporatorFan', pos: [0.0, 1.8, -3.2] as [number, number, number], status: 'damaged' },
+  { id: 'evaporator_icing', system: 'refrigerator', label: 'diag.evaporatorIcing', pos: [0.0, 1.6, -3.2] as [number, number, number], status: 'warning' },
+  { id: 'reefer_controller_error', system: 'refrigerator', label: 'diag.reeferControlPanel', pos: [-0.5, 1.3, -2.0] as [number, number, number], status: 'warning' },
+  { id: 'temp_sensor_fault', system: 'refrigerator', label: 'diag.temperatureSensor', pos: [0.0, 1.4, -2.5] as [number, number, number], status: 'warning' },
+  { id: 'reefer_fuel_filter_clogged', system: 'refrigerator', label: 'diag.reeferFuelFilter', pos: [0.4, 0.8, -2.2] as [number, number, number], status: 'warning' },
+  { id: 'reefer_fuel_tank_leak', system: 'refrigerator', label: 'diag.reeferTankLeak', pos: [0.0, 0.5, -3.0] as [number, number, number], status: 'damaged' },
 
   // 2. Trailer Body & Insulation
-  { id: 'door_seal_damage', system: 'cabin', label: 'Ущільнювач дверей', pos: [0.0, 1.5, -7.5] as [number, number, number], status: 'damaged' },
-  { id: 'door_latch_broken', system: 'cabin', label: 'Запірний механізм', pos: [0.6, 1.4, -7.5] as [number, number, number], status: 'warning' },
-  { id: 'wall_panel_damage', system: 'cabin', label: 'Сендвіч-панель', pos: [1.3, 1.5, -5.0] as [number, number, number], status: 'warning' },
-  { id: 'roof_leak', system: 'cabin', label: 'Протікання даху', pos: [0.0, 2.2, -5.0] as [number, number, number], status: 'warning' },
-  { id: 'air_chute_detached', system: 'cabin', label: 'Повітропровідний рукав', pos: [0.0, 1.9, -4.8] as [number, number, number], status: 'warning' },
-  { id: 'drain_hole_clogged', system: 'cabin', label: 'Засмічення дренажу', pos: [1.1, 0.4, -7.2] as [number, number, number], status: 'warning' },
-  { id: 'floor_damage', system: 'cabin', label: 'Пошкодження підлоги', pos: [0.0, 0.4, -5.5] as [number, number, number], status: 'warning' },
+  { id: 'door_seal_damage', system: 'cabin', label: 'diag.doorSeal', pos: [0.0, 1.5, -7.5] as [number, number, number], status: 'damaged' },
+  { id: 'door_latch_broken', system: 'cabin', label: 'diag.lockingMechanism', pos: [0.6, 1.4, -7.5] as [number, number, number], status: 'warning' },
+  { id: 'wall_panel_damage', system: 'cabin', label: 'diag.sandwichPanel', pos: [1.3, 1.5, -5.0] as [number, number, number], status: 'warning' },
+  { id: 'roof_leak', system: 'cabin', label: 'diag.roofLeak', pos: [0.0, 2.2, -5.0] as [number, number, number], status: 'warning' },
+  { id: 'air_chute_detached', system: 'cabin', label: 'diag.airChute', pos: [0.0, 1.9, -4.8] as [number, number, number], status: 'warning' },
+  { id: 'drain_hole_clogged', system: 'cabin', label: 'diag.drainBlocked', pos: [1.1, 0.4, -7.2] as [number, number, number], status: 'warning' },
+  { id: 'floor_damage', system: 'cabin', label: 'diag.floorDamage', pos: [0.0, 0.4, -5.5] as [number, number, number], status: 'warning' },
 
   // 3. Trailer Chassis / Wheels
-  { id: 'tire_blowout', system: 'wheels', label: 'Пробій шини причепа', pos: [-1.2, 0.5, -6.0] as [number, number, number], status: 'damaged' },
-  { id: 'tire_wear_uneven', system: 'wheels', label: 'Знос шин причепа', pos: [1.2, 0.5, -6.0] as [number, number, number], status: 'warning' },
-  { id: 'brake_pad_wear', system: 'wheels', label: 'Гальмівні колодки причепа', pos: [-0.8, 0.5, -5.8] as [number, number, number], status: 'warning' },
-  { id: 'air_bag_puncture', system: 'wheels', label: 'Пневмоподушка причепа', pos: [-0.9, 0.7, -6.2] as [number, number, number], status: 'damaged' },
-  { id: 'brake_air_line_leak', system: 'wheels', label: 'Витік гальмівної магістралі', pos: [0.0, 0.4, -4.8] as [number, number, number], status: 'damaged' },
-  { id: 'wheel_bearing_overheat', system: 'wheels', label: 'Перегрів підшипника', pos: [-1.2, 0.5, -5.6] as [number, number, number], status: 'damaged' },
-  { id: 'landing_gear_broken', system: 'wheels', label: 'Опорні лапи причепа', pos: [-1.0, 0.4, -3.2] as [number, number, number], status: 'warning' },
-  { id: 'kingpin_damage', system: 'wheels', label: 'Зчіпний шкворень (Kingpin)', pos: [0.0, 0.8, -1.2] as [number, number, number], status: 'warning' },
+  { id: 'tire_blowout', system: 'wheels', label: 'diag.trailerTyrePuncture', pos: [-1.2, 0.5, -6.0] as [number, number, number], status: 'damaged' },
+  { id: 'tire_wear_uneven', system: 'wheels', label: 'diag.trailerTyreWear', pos: [1.2, 0.5, -6.0] as [number, number, number], status: 'warning' },
+  { id: 'brake_pad_wear', system: 'wheels', label: 'diag.trailerBrakePads', pos: [-0.8, 0.5, -5.8] as [number, number, number], status: 'warning' },
+  { id: 'air_bag_puncture', system: 'wheels', label: 'diag.trailerAirSpring', pos: [-0.9, 0.7, -6.2] as [number, number, number], status: 'damaged' },
+  { id: 'brake_air_line_leak', system: 'wheels', label: 'diag.brakeLineLeak', pos: [0.0, 0.4, -4.8] as [number, number, number], status: 'damaged' },
+  { id: 'wheel_bearing_overheat', system: 'wheels', label: 'diag.bearingOverheating', pos: [-1.2, 0.5, -5.6] as [number, number, number], status: 'damaged' },
+  { id: 'landing_gear_broken', system: 'wheels', label: 'diag.trailerLandingLegs', pos: [-1.0, 0.4, -3.2] as [number, number, number], status: 'warning' },
+  { id: 'kingpin_damage', system: 'wheels', label: 'diag.kingpin', pos: [0.0, 0.8, -1.2] as [number, number, number], status: 'warning' },
 
   // 4. Truck Tractor (Engine)
-  { id: 'engine_overheat', system: 'engine', label: 'Перегрів двигуна', pos: [0.0, 0.7, 3.2] as [number, number, number], status: 'damaged' },
-  { id: 'engine_oil_leak', system: 'engine', label: 'Витік моторної оливи', pos: [0.0, 0.4, 3.2] as [number, number, number], status: 'damaged' },
-  { id: 'turbo_failure', system: 'engine', label: 'Турбокомпресор тягача', pos: [0.3, 0.8, 3.0] as [number, number, number], status: 'damaged' },
-  { id: 'transmission_fault', system: 'engine', label: 'Несправність трансмісії', pos: [0.0, 0.5, 1.0] as [number, number, number], status: 'warning' },
-  { id: 'driveshaft_issue', system: 'engine', label: 'Карданний вал тягача', pos: [0.0, 0.5, 0.0] as [number, number, number], status: 'warning' },
-  { id: 'main_battery_dead', system: 'engine', label: 'АКБ тягача', pos: [-0.8, 0.6, 1.8] as [number, number, number], status: 'warning' },
-  { id: 'truck_alternator_fault', system: 'engine', label: 'Генератор тягача', pos: [-0.4, 0.8, 3.1] as [number, number, number], status: 'warning' },
-  { id: 'air_compressor_failure', system: 'engine', label: 'Пневмокомпресор тягача', pos: [0.4, 0.6, 2.8] as [number, number, number], status: 'warning' },
-  { id: 'gladhand_leak', system: 'engine', label: 'Головка зчеплення (Gladhand)', pos: [0.0, 1.1, 0.6] as [number, number, number], status: 'damaged' },
-  { id: 'seven_way_cable_damage', system: 'engine', label: '7-жильний кабель', pos: [0.0, 1.2, 0.5] as [number, number, number], status: 'warning' },
-  { id: 'dpf_clogged', system: 'engine', label: 'Сажовий фільтр (DPF)', pos: [0.8, 0.6, 1.5] as [number, number, number], status: 'warning' },
-  { id: 'egr_valve_fault', system: 'engine', label: 'Клапан EGR', pos: [0.2, 0.9, 2.9] as [number, number, number], status: 'warning' },
-  { id: 'def_adblue_leak', system: 'engine', label: 'Витік AdBlue / DEF', pos: [0.8, 0.5, 0.8] as [number, number, number], status: 'warning' },
+  { id: 'engine_overheat', system: 'engine', label: 'diag.engineOverheating', pos: [0.0, 0.7, 3.2] as [number, number, number], status: 'damaged' },
+  { id: 'engine_oil_leak', system: 'engine', label: 'diag.engineOilLeak', pos: [0.0, 0.4, 3.2] as [number, number, number], status: 'damaged' },
+  { id: 'turbo_failure', system: 'engine', label: 'diag.tractorTurbocharger', pos: [0.3, 0.8, 3.0] as [number, number, number], status: 'damaged' },
+  { id: 'transmission_fault', system: 'engine', label: 'diag.drivetrainFault', pos: [0.0, 0.5, 1.0] as [number, number, number], status: 'warning' },
+  { id: 'driveshaft_issue', system: 'engine', label: 'diag.tractorPropshaft', pos: [0.0, 0.5, 0.0] as [number, number, number], status: 'warning' },
+  { id: 'main_battery_dead', system: 'engine', label: 'diag.tractorBattery', pos: [-0.8, 0.6, 1.8] as [number, number, number], status: 'warning' },
+  { id: 'truck_alternator_fault', system: 'engine', label: 'diag.tractorAlternator', pos: [-0.4, 0.8, 3.1] as [number, number, number], status: 'warning' },
+  { id: 'air_compressor_failure', system: 'engine', label: 'diag.tractorAirCompressor', pos: [0.4, 0.6, 2.8] as [number, number, number], status: 'warning' },
+  { id: 'gladhand_leak', system: 'engine', label: 'diag.couplingHeadGladhand', pos: [0.0, 1.1, 0.6] as [number, number, number], status: 'damaged' },
+  { id: 'seven_way_cable_damage', system: 'engine', label: 'diag.n7CoreCable', pos: [0.0, 1.2, 0.5] as [number, number, number], status: 'warning' },
+  { id: 'dpf_clogged', system: 'engine', label: 'diag.dieselParticulateFilterDPF', pos: [0.8, 0.6, 1.5] as [number, number, number], status: 'warning' },
+  { id: 'egr_valve_fault', system: 'engine', label: 'diag.egrValve', pos: [0.2, 0.9, 2.9] as [number, number, number], status: 'warning' },
+  { id: 'def_adblue_leak', system: 'engine', label: 'diag.adblueDEFLeak', pos: [0.8, 0.5, 0.8] as [number, number, number], status: 'warning' },
 
   // 5. Optics / Lights
-  { id: 'tail_light_broken', system: 'lights', label: 'Задні ліхтарі причепа', pos: [0.8, 0.8, -7.8] as [number, number, number], status: 'damaged' },
-  { id: 'side_marker_fault', system: 'lights', label: 'Габаритні вогні причепа', pos: [-1.3, 1.2, -4.0] as [number, number, number], status: 'warning' },
-  { id: 'abs_sensor_fault', system: 'lights', label: 'Датчик ABS причепа', pos: [-1.2, 0.5, -5.8] as [number, number, number], status: 'warning' },
-  { id: 'tpms_sensor_fault', system: 'lights', label: 'Датчик тиску TPMS', pos: [-1.2, 0.5, -6.2] as [number, number, number], status: 'warning' },
+  { id: 'tail_light_broken', system: 'lights', label: 'diag.trailerRearLights', pos: [0.8, 0.8, -7.8] as [number, number, number], status: 'damaged' },
+  { id: 'side_marker_fault', system: 'lights', label: 'diag.trailerMarkerLights', pos: [-1.3, 1.2, -4.0] as [number, number, number], status: 'warning' },
+  { id: 'abs_sensor_fault', system: 'lights', label: 'diag.trailerABSSensor', pos: [-1.2, 0.5, -5.8] as [number, number, number], status: 'warning' },
+  { id: 'tpms_sensor_fault', system: 'lights', label: 'diag.tpmsPressureSensor', pos: [-1.2, 0.5, -6.2] as [number, number, number], status: 'warning' },
 ];
 
 interface ModelProps {
@@ -326,7 +327,7 @@ function CanvasLoader() {
     <Html center>
       <div className="flex flex-col items-center justify-center bg-surface-inset border border-bdr-subtle px-6 py-4 rounded-card backdrop-blur-md shadow-apple-md text-center w-64">
         <div className="w-10 h-10 border-4 border-bdr-highlight border-t-okko-emerald rounded-full animate-spin mb-3"></div>
-        <p className="text-txt-primary text-sm font-bold tracking-wide font-sans">Завантаження 3D моделі...</p>
+        <p className="text-txt-primary text-sm font-bold tracking-wide font-sans">{t('diag.loading3DModelEllipsis')}</p>
         <p className="text-txt-secondary text-[10px] font-semibold mt-1 font-sans">Refridge-Truck.glb (~1.1 MB)</p>
       </div>
     </Html>
@@ -410,10 +411,10 @@ export default function ThreeTruckViewer({
       {/* Instructions */}
       <div className="absolute top-4 left-4 z-10 pointer-events-none transition-opacity duration-300 group-hover:opacity-100 opacity-60">
         <div className="bg-surface-inset backdrop-blur-md border border-bdr-subtle rounded-xl px-3 py-2 text-[10px] text-txt-secondary font-semibold space-y-1 shadow-md font-sans">
-          <p className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-accent"></span> Ліва кнопка миші — обертання</p>
-          <p className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-accent"></span> Права кнопка миші / Shift — зсув</p>
-          <p className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-accent"></span> Скрол — масштабування</p>
-          <p className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-accent"></span> Клік на деталь — наближення</p>
+          <p className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-accent"></span> {t('diag.leftMouseButtonRotate')}</p>
+          <p className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-accent"></span> {t('diag.rightMouseButtonShift')}</p>
+          <p className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-accent"></span> {t('diag.scrollZoom')}</p>
+          <p className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-accent"></span> {t('diag.clickPartZoom')}</p>
         </div>
       </div>
 
@@ -424,13 +425,13 @@ export default function ThreeTruckViewer({
             <span className={`w-2 h-2 rounded-full animate-pulse ${
               partStatuses[hoveredPart] === 'damaged' ? 'bg-okko-red' : partStatuses[hoveredPart] === 'warning' ? 'bg-okko-accent' : 'bg-accent'
             }`}></span>
-            {hoveredPart === 'refrigerator' && 'ХОЛОДИЛЬНО-ОБІГРІВАЛЬНА УСТАНОВКА (REEFER)'}
-            {hoveredPart === 'cabin' && 'КАБІНА & КЛІМАТ ТЯГАЧА / ПРИЧІП'}
-            {hoveredPart === 'engine' && 'ДВИГУН & ТРАНСМІСІЯ'}
-            {hoveredPart === 'wheels' && 'ХОДОВА ЧАСТИНА & ШИНИ'}
-            {hoveredPart === 'lights' && 'СВІТЛОВА СИСТЕМА & ЕЛЕКТРОНІКА'}
+            {hoveredPart === 'refrigerator' && t('diag.refrigerationUNITReefer')}
+            {hoveredPart === 'cabin' && t('diag.cabClimateTrailer')}
+            {hoveredPart === 'engine' && t('diag.engineDrivetrain')}
+            {hoveredPart === 'wheels' && t('diag.chassisTYRES')}
+            {hoveredPart === 'lights' && t('diag.lightingElectronics')}
             <span className="text-[9px] text-txt-secondary font-bold uppercase ml-1">
-              ({partStatuses[hoveredPart] === 'damaged' ? 'Пошкоджено' : partStatuses[hoveredPart] === 'warning' ? 'Увага' : 'Норма'})
+              ({partStatuses[hoveredPart] === 'damaged' ? t('diag.damaged') : partStatuses[hoveredPart] === 'warning' ? t('diag.warning') : t('diag.normal')})
             </span>
           </div>
         </div>
@@ -484,7 +485,7 @@ export default function ThreeTruckViewer({
                   }`}>
                     <div className="flex items-center gap-1.5">
                       <span className={`w-1.5 h-1.5 rounded-full ${h.status === 'damaged' ? 'bg-danger animate-pulse' : 'bg-warn'}`} />
-                      {h.label}
+                      {t(h.label)}
                     </div>
                   </div>
                 </div>

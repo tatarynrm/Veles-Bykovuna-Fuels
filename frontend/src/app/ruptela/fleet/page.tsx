@@ -36,13 +36,14 @@ import {
   Route,
   Radio,
 } from 'lucide-react';
+import { t, intlLocale } from '@/lib/i18n';
 
 const RuptelaFleetMap = dynamic(() => import('@/components/RuptelaFleetMap'), {
   ssr: false,
   loading: () => (
     <div className="flex h-[400px] w-full flex-col items-center justify-center gap-2 rounded-card border border-bdr-subtle bg-surface-inset">
       <span className="h-6 w-6 animate-spin rounded-full border-2 border-bdr-strong border-t-warn" />
-      <p className="text-2xs text-txt-muted">Ініціалізація карти Ruptela GPS…</p>
+      <p className="text-2xs text-txt-muted">{t('telematics.initialisingRuptelaGPSMapEllipsis')}</p>
     </div>
   ),
 });
@@ -135,34 +136,34 @@ export default function RuptelaFleetPage() {
 
   const kpis = [
     {
-      label: "Обʼєкти в Ruptela",
+      label: t('telematics.objectsInRuptela'),
       value: metric(vehicles.length),
-      unit: 'ТЗ',
-      meta: apiStatus?.isLiveConnected === false ? 'Немає звʼязку з API' : 'fm-track підключено',
+      unit: t('common.vehicleShort'),
+      meta: apiStatus?.isLiveConnected === false ? t('telematics.noConnectionAPI') : t('telematics.fmTrackConnected'),
       icon: Truck,
       tone: 'warn' as const,
     },
     {
-      label: 'В русі',
+      label: t('telematics.moving'),
       value: metric(countBy('moving')),
-      unit: 'авто',
-      meta: `Опитування кожні ${pollIntervalMs / 1000}с`,
+      unit: t('telematics.vehicles'),
+      meta: t('telematics.pollingEveryS', { v0: pollIntervalMs / 1000 }),
       icon: Activity,
       tone: 'accent' as const,
     },
     {
-      label: 'Холостий хід / стоянка',
+      label: t('telematics.idlingStanding'),
       value: metric(countBy('idle') + countBy('stopped')),
-      unit: 'авто',
-      meta: `${countBy('idle')} ХХ · ${countBy('stopped')} заглушено · ${countBy('offline')} без звʼязку`,
+      unit: t('telematics.vehicles'),
+      meta: t('telematics.idlingStoppedOffline', { v0: countBy('idle'), v1: countBy('stopped'), v2: countBy('offline') }),
       icon: Compass,
       tone: 'muted' as const,
     },
     {
-      label: 'Запас пального у баках',
+      label: t('telematics.fuelInTanks'),
       value: metric(Math.round(totalFuelLiters)),
-      unit: 'л',
-      meta: `CAN-дані з ${fuelReadings.length} із ${vehicles.length} ТЗ`,
+      unit: t('unit.litre'),
+      meta: t('telematics.canDataVehicles', { v0: fuelReadings.length, v1: vehicles.length }),
       icon: Fuel,
       tone: 'accent' as const,
     },
@@ -185,28 +186,28 @@ export default function RuptelaFleetPage() {
 
   return (
     <RuptelaShell
-      title="Мій автопарк"
-      subtitle="Пряма телеметрія Ruptela GPS · api.fm-track.com"
+      title={t('common.myFleet')}
+      subtitle={t('telematics.directRuptelaGPSTelemetry')}
       status={
         isAnyMoving ? (
           <span className="badge badge-success">
             <span className="live-dot" />
-            Оновлення 5с
+            {t('telematics.refresh5S')}
           </span>
         ) : (
-          <span className="badge badge-neutral">Оновлення 15с</span>
+          <span className="badge badge-neutral">{t('telematics.refresh15S')}</span>
         )
       }
       actions={
         <>
           <button onClick={fetchVehicles} className="btn btn-ghost">
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin text-warn' : ''}`} />
-            <span className="hidden sm:inline">Оновити</span>
+            <span className="hidden sm:inline">{t('common.refresh')}</span>
           </button>
           {!isGuest && (
             <Link href="/ruptela/create-trip" className="btn btn-warn">
               <PlusCircle className="h-3.5 w-3.5" />
-              <span>Нова поїздка</span>
+              <span>{t('common.newTrip')}</span>
             </Link>
           )}
         </>
@@ -248,10 +249,10 @@ export default function RuptelaFleetPage() {
               <div>
                 <h3 className="flex items-center gap-2 text-sm font-semibold text-txt-primary">
                   <MapPin className="h-4 w-4 text-warn" />
-                  <span>Карта дислокації транспорту</span>
+                  <span>{t('telematics.vehicleLocationMap')}</span>
                 </h3>
                 <p className="text-micro text-txt-secondary">
-                  Позиції {filteredVehicles.length} ТЗ за останнім GPS-фіксом
+                  {t('telematics.positions')} {filteredVehicles.length} {t('telematics.vehiclesLastGPSFix')}
                 </p>
               </div>
               <span className="badge badge-neutral">
@@ -269,7 +270,7 @@ export default function RuptelaFleetPage() {
             />
 
             <p className="mt-3 text-micro text-txt-secondary">
-              Натисніть маркер авто для детальної телеметрії CAN
+              {t('telematics.clickVehicleMarkerDetailed')}
             </p>
           </div>
 
@@ -302,10 +303,10 @@ export default function RuptelaFleetPage() {
                     </span>
                     <div className="min-w-0">
                       <div className="truncate text-xs font-semibold text-txt-primary">
-                        {selectedVehicle.driver_name ?? 'Водія не призначено'}
+                        {selectedVehicle.driver_name ?? t('telematics.noDriverAssigned')}
                       </div>
                       <div className="text-2xs text-txt-secondary">
-                        Тахограф: {driverStateLabel(selectedVehicle.driver_state)}
+                        {t('telematics.tachographColon')} {driverStateLabel(selectedVehicle.driver_state)}
                       </div>
                     </div>
                   </div>
@@ -316,22 +317,22 @@ export default function RuptelaFleetPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <MetricTile
-                    label="Швидкість GPS"
+                    label={t('telematics.gpsSpeed')}
                     icon={<Gauge className="h-3.5 w-3.5 text-warn" />}
-                    value={metric(selectedVehicle.telemetry.speed, { unit: 'км/год' })}
-                    sub={`Оберти: ${metric(selectedVehicle.telemetry.engine_rpm, { unit: 'об/хв' })}`}
+                    value={metric(selectedVehicle.telemetry.speed, { unit: t('unit.kmh') })}
+                    sub={t('common.revs', { v0: metric(selectedVehicle.telemetry.engine_rpm, { unit: t('common.rpm') }) })}
                   />
 
                   <div className="glass-inset rounded-card p-3">
                     <div className="micro-label mb-1 flex items-center justify-between">
-                      <span>Рівень пального</span>
+                      <span>{t('common.fuelLevel')}</span>
                       <Fuel className="h-3.5 w-3.5 text-accent" />
                     </div>
                     <div className="tabular text-lg font-semibold text-accent">
                       {metric(selectedVehicle.telemetry.fuel_level_percent, { unit: '%', digits: 1 })}
                     </div>
                     <div className="tabular mt-0.5 text-2xs text-txt-muted">
-                      {metric(selectedVehicle.telemetry.fuel_level_liters, { unit: 'л', digits: 1 })}
+                      {metric(selectedVehicle.telemetry.fuel_level_liters, { unit: t('unit.litre'), digits: 1 })}
                     </div>
                     {selectedVehicle.telemetry.fuel_level_percent !== null && (
                       <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-surface-hover">
@@ -344,43 +345,43 @@ export default function RuptelaFleetPage() {
                   </div>
 
                   <MetricTile
-                    label="Пробіг CAN"
+                    label={t('common.canMileage')}
                     icon={<Route className="h-3.5 w-3.5 text-txt-secondary" />}
-                    value={metric(selectedVehicle.telemetry.odometer_km, { unit: 'км' })}
-                    sub={`Мотогодини: ${metric(selectedVehicle.telemetry.engine_hours, { unit: 'год' })}`}
+                    value={metric(selectedVehicle.telemetry.odometer_km, { unit: t('common.km') })}
+                    sub={t('common.engineHours', { v0: metric(selectedVehicle.telemetry.engine_hours, { unit: t('common.h') }) })}
                   />
 
                   <MetricTile
-                    label="Бортова напруга"
+                    label={t('common.onBoardVoltage')}
                     icon={<Zap className="h-3.5 w-3.5 text-warn" />}
                     value={metric(selectedVehicle.telemetry.power_supply_voltage, {
-                      unit: 'В',
+                      unit: t('common.v'),
                       digits: 2,
                     })}
                     sub={
                       selectedVehicle.telemetry.ignition === null
-                        ? 'Запалювання: немає даних'
+                        ? t('telematics.ignitionNoData')
                         : selectedVehicle.telemetry.ignition
-                          ? 'Запалювання УВІМК'
-                          : 'Запалювання ВИМК'
+                          ? t('telematics.ignitionON')
+                          : t('telematics.ignitionOFF')
                     }
                   />
 
                   <MetricTile
-                    label="Температура ОЖ"
+                    label={t('common.coolantTemperature')}
                     icon={<Thermometer className="h-3.5 w-3.5 text-info" />}
                     value={metric(selectedVehicle.telemetry.coolant_temp, { unit: '°C' })}
                     sub={
                       selectedVehicle.telemetry.coolant_temp === null
-                        ? 'Двигун заглушено — датчик мовчить'
-                        : `Витрата: ${metric(selectedVehicle.telemetry.fuel_rate_lph, { unit: 'л/год', digits: 1 })}`
+                        ? t('common.engineOffSensorSilent')
+                        : t('common.consumption', { v0: metric(selectedVehicle.telemetry.fuel_rate_lph, { unit: t('common.lH'), digits: 1 }) })
                     }
                   />
 
                   <MetricTile
-                    label="Якість звʼязку"
+                    label={t('common.signalQuality')}
                     icon={<Satellite className="h-3.5 w-3.5 text-txt-secondary" />}
-                    value={`${metric(selectedVehicle.telemetry.satellites)} супут.`}
+                    value={t('common.sats', { v0: metric(selectedVehicle.telemetry.satellites) })}
                     sub={`HDOP ${metric(selectedVehicle.telemetry.hdop, { digits: 1 })} · GSM ${metric(selectedVehicle.telemetry.gsm_signal)}`}
                   />
                 </div>
@@ -392,19 +393,19 @@ export default function RuptelaFleetPage() {
                     <dd className="tabular font-mono text-txt-secondary">{selectedVehicle.vin ?? NO_DATA}</dd>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <dt className="text-txt-muted">IMEI трекера</dt>
+                    <dt className="text-txt-muted">{t('common.trackerIMEI')}</dt>
                     <dd className="tabular font-mono text-txt-secondary">
                       {selectedVehicle.device_imei || NO_DATA}
                     </dd>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <dt className="text-txt-muted">Останній GPS-фікс</dt>
+                    <dt className="text-txt-muted">{t('telematics.lastGPSFix')}</dt>
                     <dd className="text-txt-secondary">
                       {relativeAge(selectedVehicle.telemetry.gps_datetime)}
                     </dd>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <dt className="text-txt-muted">Останній CAN-запис</dt>
+                    <dt className="text-txt-muted">{t('telematics.lastCANRecord')}</dt>
                     <dd className="text-txt-secondary">
                       {relativeAge(selectedVehicle.telemetry.can_datetime)}
                     </dd>
@@ -416,13 +417,13 @@ export default function RuptelaFleetPage() {
                   className="btn btn-warn w-full"
                 >
                   <Radio className="h-4 w-4" />
-                  <span>Спостерігати в реальному часі</span>
+                  <span>{t('telematics.watchRealTime')}</span>
                 </Link>
 
                 <div className={`grid gap-2 ${isGuest ? 'grid-cols-1' : 'grid-cols-2'}`}>
                   <button onClick={() => handleOpenHistory(selectedVehicle)} className="btn btn-ghost">
                     <History className="h-4 w-4" />
-                    <span>Історія поїздок</span>
+                    <span>{t('telematics.tripHistory')}</span>
                   </button>
                   {!isGuest && (
                     <button
@@ -430,14 +431,14 @@ export default function RuptelaFleetPage() {
                       className="btn btn-ghost"
                     >
                       <PlusCircle className="h-4 w-4" />
-                      <span>Створити поїздку</span>
+                      <span>{t('common.createATrip')}</span>
                     </button>
                   )}
                 </div>
               </div>
             ) : (
               <div className="py-12 text-center text-sm text-txt-muted">
-                {loading ? 'Завантаження телеметрії…' : 'Дані з Ruptela API не отримано'}
+                {loading ? t('telematics.loadingTelemetryEllipsis') : t('telematics.noDataReceivedRuptela')}
               </div>
             )}
           </div>
@@ -449,12 +450,12 @@ export default function RuptelaFleetPage() {
             <div>
               <h3 className="flex items-center gap-2 text-sm font-semibold text-txt-primary">
                 <Truck className="h-4 w-4 text-warn" />
-                <span>Перелік обʼєктів автопарку ({filteredVehicles.length})</span>
+                <span>{t('telematics.fleetObjectList')}{filteredVehicles.length})</span>
               </h3>
               <p className="text-micro text-txt-secondary">
                 {apiStatus?.driversResolved !== undefined
-                  ? `Водіїв визначено за останніми поїздками: ${apiStatus.driversResolved}`
-                  : 'Пряме підключення до api.fm-track.com'}
+                  ? t('telematics.driversResolvedRecentTrips', { v0: apiStatus.driversResolved })
+                  : t('telematics.directConnectionApiFm')}
               </p>
             </div>
 
@@ -465,7 +466,7 @@ export default function RuptelaFleetPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Пошук авто / водія / картки…"
+                  placeholder={t('telematics.searchVehicleDriverCardEllipsis')}
                   className="field w-48 pl-8 sm:w-60"
                 />
               </div>
@@ -475,11 +476,11 @@ export default function RuptelaFleetPage() {
                 onChange={(e) => setStatusFilter(e.target.value as 'all' | RuptelaStatus)}
                 className="field"
               >
-                <option value="all">Усі статуси</option>
-                <option value="moving">В русі</option>
-                <option value="idle">Холостий хід</option>
-                <option value="stopped">Заглушено</option>
-                <option value="offline">Немає звʼязку</option>
+                <option value="all">{t('telematics.allStatuses')}</option>
+                <option value="moving">{t('telematics.moving')}</option>
+                <option value="idle">{t('common.idling')}</option>
+                <option value="stopped">{t('telematics.stopped')}</option>
+                <option value="offline">{t('common.offline')}</option>
               </select>
             </div>
           </div>
@@ -488,14 +489,14 @@ export default function RuptelaFleetPage() {
             <table className="data-table w-full text-left">
               <thead>
                 <tr>
-                  <th>Транспортний засіб</th>
-                  <th>Держ. номер</th>
-                  <th>Водій</th>
-                  <th>Статус</th>
-                  <th className="text-right">Швидкість</th>
-                  <th className="text-right">Паливо (CAN)</th>
-                  <th className="text-right">Пробіг</th>
-                  <th className="text-right">Дії</th>
+                  <th>{t('common.vehicle')}</th>
+                  <th>{t('telematics.plate')}</th>
+                  <th>{t('common.driver')}</th>
+                  <th>{t('common.status')}</th>
+                  <th className="text-right">{t('common.speed')}</th>
+                  <th className="text-right">{t('telematics.fuelCAN')}</th>
+                  <th className="text-right">{t('common.mileage')}</th>
+                  <th className="text-right">{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -528,18 +529,18 @@ export default function RuptelaFleetPage() {
                       </span>
                     </td>
                     <td className="tabular text-right text-txt-primary">
-                      {metric(v.telemetry.speed, { unit: 'км/год' })}
+                      {metric(v.telemetry.speed, { unit: t('unit.kmh') })}
                     </td>
                     <td className="tabular text-right">
                       <div className="font-medium text-accent">
                         {metric(v.telemetry.fuel_level_percent, { unit: '%', digits: 1 })}
                       </div>
                       <div className="text-2xs text-txt-muted">
-                        {metric(v.telemetry.fuel_level_liters, { unit: 'л', digits: 0 })}
+                        {metric(v.telemetry.fuel_level_liters, { unit: t('unit.litre'), digits: 0 })}
                       </div>
                     </td>
                     <td className="tabular text-right text-txt-secondary">
-                      {metric(v.telemetry.odometer_km, { unit: 'км' })}
+                      {metric(v.telemetry.odometer_km, { unit: t('common.km') })}
                     </td>
                     <td className="space-x-1 text-right">
                       <button
@@ -549,7 +550,7 @@ export default function RuptelaFleetPage() {
                         }}
                         className="btn btn-ghost btn-sm"
                       >
-                        Історія
+                        {t('telematics.history')}
                       </button>
                       {!isGuest && (
                         <button
@@ -559,7 +560,7 @@ export default function RuptelaFleetPage() {
                           }}
                           className="btn btn-warn btn-sm"
                         >
-                          + Поїздка
+                          {t('telematics.trip')}
                         </button>
                       )}
                     </td>
@@ -570,7 +571,7 @@ export default function RuptelaFleetPage() {
 
             {filteredVehicles.length === 0 && (
               <p className="py-10 text-center text-sm text-txt-muted">
-                {loading ? 'Завантаження…' : 'Жодного ТЗ не знайдено за цим фільтром'}
+                {loading ? t('telematics.loadingEllipsis') : t('telematics.noVehiclesMatchFilter')}
               </p>
             )}
           </div>
@@ -593,10 +594,10 @@ export default function RuptelaFleetPage() {
               <div>
                 <span className="badge badge-warn font-mono">{historyVehicle.plate}</span>
                 <h3 className="mt-1 text-base font-semibold text-txt-primary">
-                  Історія поїздок: {historyVehicle.name}
+                  {t('telematics.tripHistoryColon')} {historyVehicle.name}
                 </h3>
                 <p className="text-micro text-txt-secondary">
-                  Дані Ruptela за останні 14 днів
+                  {t('telematics.ruptelaDataLast14')}
                 </p>
               </div>
               <button onClick={() => setHistoryVehicle(null)} className="btn btn-icon btn-ghost">
@@ -608,11 +609,11 @@ export default function RuptelaFleetPage() {
               {loadingHistory ? (
                 <div className="flex flex-col items-center justify-center py-12 text-sm text-txt-secondary">
                   <span className="mb-2 h-8 w-8 animate-spin rounded-full border-2 border-bdr-strong border-t-warn" />
-                  <span>Завантаження історії поїздок…</span>
+                  <span>{t('telematics.loadingTripHistoryEllipsis')}</span>
                 </div>
               ) : tripHistory.length === 0 ? (
                 <p className="py-12 text-center text-sm text-txt-muted">
-                  Історії поїздок за останні 14 днів не знайдено для цього ТЗ.
+                  {t('telematics.noTripHistoryLast')}
                 </p>
               ) : (
                 tripHistory.map((trip) => (
@@ -621,21 +622,21 @@ export default function RuptelaFleetPage() {
                       <span className="badge badge-warn font-mono">{trip.trip_type}</span>
                       <div className="tabular flex flex-wrap items-center gap-3 text-2xs text-txt-secondary">
                         <span>
-                          Тривалість:{' '}
+                          {t('telematics.durationColon')}{' '}
                           <strong className="text-txt-primary">
-                            {metric(trip.duration_minutes, { unit: 'хв' })}
+                            {metric(trip.duration_minutes, { unit: t('telematics.min') })}
                           </strong>
                         </span>
                         <span>
-                          Пробіг:{' '}
+                          {t('telematics.mileageColon')}{' '}
                           <strong className="text-txt-primary">
-                            {metric(trip.mileage_km, { unit: 'км', digits: 1 })}
+                            {metric(trip.mileage_km, { unit: t('common.km'), digits: 1 })}
                           </strong>
                         </span>
                         <span>
-                          Пальне:{' '}
+                          {t('telematics.fuelColon')}{' '}
                           <strong className="text-accent">
-                            {metric(trip.fuel_consumed_liters, { unit: 'л', digits: 1 })}
+                            {metric(trip.fuel_consumed_liters, { unit: t('unit.litre'), digits: 1 })}
                           </strong>
                         </span>
                       </div>
@@ -643,18 +644,18 @@ export default function RuptelaFleetPage() {
 
                     <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2">
                       <div className="rounded-control border border-bdr-subtle p-2.5">
-                        <div className="micro-label mb-0.5 text-warn">Початок</div>
+                        <div className="micro-label mb-0.5 text-warn">{t('common.start')}</div>
                         <div className="text-xs font-medium text-txt-primary">{trip.start_address}</div>
                         <div className="tabular mt-1 text-2xs text-txt-secondary">
-                          {trip.start_time ? new Date(trip.start_time).toLocaleString('uk-UA') : NO_DATA}
+                          {trip.start_time ? new Date(trip.start_time).toLocaleString(intlLocale()) : NO_DATA}
                         </div>
                       </div>
 
                       <div className="rounded-control border border-bdr-subtle p-2.5">
-                        <div className="micro-label mb-0.5 text-accent">Кінець</div>
+                        <div className="micro-label mb-0.5 text-accent">{t('common.end')}</div>
                         <div className="text-xs font-medium text-txt-primary">{trip.end_address}</div>
                         <div className="tabular mt-1 text-2xs text-txt-secondary">
-                          {trip.end_time ? new Date(trip.end_time).toLocaleString('uk-UA') : NO_DATA}
+                          {trip.end_time ? new Date(trip.end_time).toLocaleString(intlLocale()) : NO_DATA}
                         </div>
                       </div>
                     </div>
@@ -665,7 +666,7 @@ export default function RuptelaFleetPage() {
 
             <div className="hairline-t flex justify-end pt-3">
               <button onClick={() => setHistoryVehicle(null)} className="btn btn-ghost">
-                Закрити
+                {t('common.close')}
               </button>
             </div>
           </div>

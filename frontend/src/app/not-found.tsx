@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Compass, ArrowLeft } from 'lucide-react';
+import { t } from '@/lib/i18n';
 
 export default function NotFound() {
   return (
@@ -11,13 +12,13 @@ export default function NotFound() {
           <Compass className="h-5 w-5" />
         </div>
         <p className="stat text-3xl">404</p>
-        <h2 className="mt-2 text-base font-semibold text-txt-primary">Сторінку не знайдено</h2>
+        <h2 className="mt-2 text-base font-semibold text-txt-primary">{t('error.pageNotFound')}</h2>
         <p className="mt-1.5 text-2xs text-txt-muted">
-          Запитаний розділ не існує або був переміщений.
+          {t('error.requestedSectionDoesNot')}
         </p>
         <Link href="/" className="btn btn-primary mt-6 w-full py-2.5">
           <ArrowLeft className="h-3.5 w-3.5" />
-          На головну панель
+          {t('error.toTheDashboard')}
         </Link>
       </div>
     </div>

@@ -35,13 +35,14 @@ import {
   Truck,
   Zap,
 } from 'lucide-react';
+import { t } from '@/lib/i18n';
 
 const RuptelaLiveTrackMap = dynamic(() => import('@/components/RuptelaLiveTrackMap'), {
   ssr: false,
   loading: () => (
     <div className="flex h-[420px] w-full flex-col items-center justify-center gap-2 rounded-card border border-bdr-subtle bg-surface-inset lg:h-[520px]">
       <span className="h-6 w-6 animate-spin rounded-full border-2 border-bdr-strong border-t-warn" />
-      <p className="text-2xs text-txt-muted">Ініціалізація карти треку…</p>
+      <p className="text-2xs text-txt-muted">{t('live.initialisingTrackMapEllipsis')}</p>
     </div>
   ),
 });
@@ -51,10 +52,10 @@ const INTERVALS = [3, 5, 10, 30] as const;
 
 /** How far back the track is drawn. */
 const WINDOWS = [
-  { minutes: 15, label: '15 хв' },
-  { minutes: 30, label: '30 хв' },
-  { minutes: 60, label: '1 год' },
-  { minutes: 180, label: '3 год' },
+  { minutes: 15, label: 'live.n15Min' },
+  { minutes: 30, label: 'live.n30Min' },
+  { minutes: 60, label: 'live.n1H' },
+  { minutes: 180, label: 'live.n3H' },
 ] as const;
 
 /** Fallback window used when the vehicle reported nothing inside the chosen one. */
@@ -240,7 +241,7 @@ function LiveWatchView() {
         pointsRef.current = next;
         setPoints(next);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Не вдалося отримати дані');
+        setError(err instanceof Error ? err.message : t('live.couldNotFetchData'));
       } finally {
         inFlightRef.current = false;
         setLoading(false);
@@ -310,38 +311,42 @@ function LiveWatchView() {
 
   const windowLabel =
     activeWindowRef.current === WIDE_WINDOW_MINUTES
-      ? '24 год'
-      : (WINDOWS.find((w) => w.minutes === windowMinutes)?.label ?? `${windowMinutes} хв`);
+      ? t('live.n24H')
+      : (() => {
+          const preset = WINDOWS.find((w) => w.minutes === windowMinutes);
+          // WINDOWS тримає ключі, а не текст — перекладаємо тут
+          return preset ? t(preset.label) : t('common.min', { v0: windowMinutes });
+        })();
 
   const kpis = [
     {
-      label: 'Швидкість зараз',
-      value: metric(latest?.speed ?? null, { unit: 'км/год' }),
-      meta: `Макс. за ${windowLabel}: ${metric(stats.maxSpeed, { unit: 'км/год' })}`,
+      label: t('live.speedNow'),
+      value: metric(latest?.speed ?? null, { unit: t('unit.kmh') }),
+      meta: t('live.maxOver', { v0: windowLabel, v1: metric(stats.maxSpeed, { unit: t('unit.kmh') }) }),
       icon: Gauge,
       tone: 'warn' as const,
     },
     {
-      label: 'Пройдено за вікно',
-      value: metric(stats.distanceKm, { unit: 'км', digits: 1 }),
-      meta: `Середня в русі: ${metric(stats.avgMovingSpeed, { unit: 'км/год' })}`,
+      label: t('live.coveredWindow'),
+      value: metric(stats.distanceKm, { unit: t('common.km'), digits: 1 }),
+      meta: t('live.averageWhileMoving', { v0: metric(stats.avgMovingSpeed, { unit: t('unit.kmh') }) }),
       icon: Route,
       tone: 'muted' as const,
     },
     {
-      label: 'Пальне в баку',
-      value: metric(latest?.fuel_level_liters ?? null, { unit: 'л', digits: 1 }),
+      label: t('live.fuelInTank'),
+      value: metric(latest?.fuel_level_liters ?? null, { unit: t('unit.litre'), digits: 1 }),
       meta:
         stats.fuelDelta === null
-          ? 'CAN не передає рівень'
-          : `Зміна за вікно: ${stats.fuelDelta > 0 ? '+' : ''}${metric(stats.fuelDelta, { digits: 1 })} л`,
+          ? t('live.canNotReportingLevel')
+          : t('live.changeOverWindowL', { v0: stats.fuelDelta > 0 ? '+' : '', v1: metric(stats.fuelDelta, { digits: 1 }) }),
       icon: Fuel,
       tone: 'accent' as const,
     },
     {
-      label: 'Точок у треку',
+      label: t('live.pointsTrack'),
       value: metric(points.length),
-      meta: stats.firstAt ? `Від ${clock(stats.firstAt)}` : 'Очікування даних',
+      meta: stats.firstAt ? t('live.from', { v0: clock(stats.firstAt) }) : t('live.waitingForData'),
       icon: Activity,
       tone: 'muted' as const,
     },
@@ -363,16 +368,16 @@ function LiveWatchView() {
 
   return (
     <RuptelaShell
-      title="Реальний час"
-      subtitle="Історія координат Ruptela v2 · /objects/{id}/coordinates"
+      title={t('common.realTime')}
+      subtitle={t('live.ruptelaV2CoordinateHistory')}
       status={
         !vehicleId ? null : live ? (
           <span className="badge badge-success">
             <span className="live-dot" />
-            Кожні {intervalSec} с
+            {t('live.every')} {intervalSec} {t('live.s')}
           </span>
         ) : (
-          <span className="badge badge-neutral">Паузу увімкнено</span>
+          <span className="badge badge-neutral">{t('live.paused')}</span>
         )
       }
       actions={
@@ -380,18 +385,18 @@ function LiveWatchView() {
           <button
             onClick={() => setLive((v) => !v)}
             className={live ? 'btn btn-ghost' : 'btn btn-warn'}
-            title={live ? 'Призупинити оновлення' : 'Відновити оновлення'}
+            title={live ? t('live.pauseAutoRefresh') : t('live.resumeAutoRefresh')}
           >
             {live ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-            <span className="hidden sm:inline">{live ? 'Пауза' : 'Старт'}</span>
+            <span className="hidden sm:inline">{live ? t('live.pause') : t('live.start')}</span>
           </button>
           <button
             onClick={() => fetchTrack('poll')}
             className="btn btn-ghost"
-            title="Оновити зараз"
+            title={t('live.refreshNow')}
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin text-warn' : ''}`} />
-            <span className="hidden sm:inline">Оновити</span>
+            <span className="hidden sm:inline">{t('common.refresh')}</span>
           </button>
         </>
       }
@@ -408,12 +413,12 @@ function LiveWatchView() {
                 vehicles={vehicles}
                 selectedVehicleId={vehicleId}
                 onSelectVehicle={(v) => setVehicleId(v.id)}
-                label="Транспорт для спостереження"
+                label={t('live.vehicleToWatch')}
               />
             </div>
 
             <div className="lg:col-span-4">
-              <p className="micro-label mb-1.5">Період оновлення</p>
+              <p className="micro-label mb-1.5">{t('live.refreshInterval')}</p>
               <div className="segmented w-full">
                 {INTERVALS.map((sec) => (
                   <button
@@ -425,12 +430,12 @@ function LiveWatchView() {
                       intervalSec === sec ? 'segmented-item-active text-warn' : ''
                     }`}
                   >
-                    {sec} с
+                    {sec} {t('live.s')}
                   </button>
                 ))}
               </div>
 
-              <p className="micro-label mb-1.5 mt-3">Глибина треку</p>
+              <p className="micro-label mb-1.5 mt-3">{t('live.trackDepth')}</p>
               <div className="segmented w-full">
                 {WINDOWS.map((w) => (
                   <button
@@ -442,7 +447,7 @@ function LiveWatchView() {
                       windowMinutes === w.minutes ? 'segmented-item-active text-warn' : ''
                     }`}
                   >
-                    {w.label}
+                    {t(w.label)}
                   </button>
                 ))}
               </div>
@@ -450,37 +455,37 @@ function LiveWatchView() {
 
             <div className="flex flex-col justify-between gap-2 lg:col-span-3">
               <div>
-                <p className="micro-label mb-1.5">Карта</p>
+                <p className="micro-label mb-1.5">{t('live.map')}</p>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setFollow((v) => !v)}
                     aria-pressed={follow}
                     className={follow ? 'btn btn-warn' : 'btn btn-ghost'}
-                    title="Тримати авто в центрі карти"
+                    title={t('live.keepVehicleCentredMap')}
                   >
                     <Crosshair className="h-3.5 w-3.5" />
-                    <span>Стеження</span>
+                    <span>{t('live.tracking')}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setFitKey((k) => k + 1)}
                     className="btn btn-ghost"
-                    title="Показати весь трек"
+                    title={t('live.showWholeTrack')}
                   >
                     <Locate className="h-3.5 w-3.5" />
-                    <span>Весь трек</span>
+                    <span>{t('live.wholeTrack')}</span>
                   </button>
                 </div>
               </div>
 
               <dl className="glass-inset space-y-1 rounded-card p-3 text-2xs">
                 <div className="flex justify-between gap-3">
-                  <dt className="text-txt-muted">Останній запит</dt>
+                  <dt className="text-txt-muted">{t('live.lastRequest')}</dt>
                   <dd className="text-txt-secondary">{relativeAge(fetchedAt)}</dd>
                 </div>
                 <div className="flex justify-between gap-3">
-                  <dt className="text-txt-muted">Останній фікс</dt>
+                  <dt className="text-txt-muted">{t('live.lastFix')}</dt>
                   <dd className={isStale ? 'text-danger' : 'text-txt-secondary'}>
                     {relativeAge(latest?.datetime ?? null)}
                   </dd>
@@ -501,8 +506,7 @@ function LiveWatchView() {
                 <p className="flex items-start gap-2 rounded-field border border-warn/30 bg-warn/10 px-3 py-2 text-2xs text-warn">
                   <Timer className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   <span>
-                    За обраний період даних немає — показано останні 24 години. Трекер
-                    міг бути вимкнений.
+                    {t('live.noDataSelectedPeriod')}
                   </span>
                 </p>
               )}
@@ -510,8 +514,7 @@ function LiveWatchView() {
                 <p className="flex items-start gap-2 rounded-field border border-bdr-subtle bg-surface-inset px-3 py-2 text-2xs text-txt-secondary">
                   <Timer className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   <span>
-                    Останній запис — {relativeAge(latest?.datetime ?? null)}. Пристрій не
-                    передає нових координат.
+                    {t('live.lastRecord')} {relativeAge(latest?.datetime ?? null)}{t('live.deviceNotSendingNew')}
                   </span>
                 </p>
               )}
@@ -525,11 +528,10 @@ function LiveWatchView() {
               <Truck className="h-5 w-5" />
             </span>
             <p className="text-sm font-semibold text-txt-primary">
-              Оберіть транспортний засіб
+              {t('common.selectAVehicle')}
             </p>
             <p className="max-w-sm text-2xs text-txt-secondary">
-              Після вибору сторінка почне опитувати Ruptela FMS і будувати трек у
-              реальному часі.
+              {t('live.onceSelectedPageStarts')}
             </p>
           </section>
         ) : (
@@ -566,12 +568,12 @@ function LiveWatchView() {
                   <div className="min-w-0">
                     <h3 className="flex items-center gap-2 text-sm font-semibold text-txt-primary">
                       <MapPin className="h-4 w-4 text-warn" />
-                      <span>Трек за {windowLabel}</span>
+                      <span>{t('live.trackOver')} {windowLabel}</span>
                     </h3>
                     <p className="truncate text-micro text-txt-secondary">
                       {vehicle
-                        ? `${vehicle.name} · ${vehicle.plate || NO_DATA} · ${vehicle.driver_name ?? 'водія не призначено'}`
-                        : 'Завантаження даних ТЗ…'}
+                        ? `${vehicle.name} · ${vehicle.plate || NO_DATA} · ${vehicle.driver_name ?? t('live.noDriverAssigned')}`
+                        : t('live.loadingVehicleDataEllipsis')}
                     </p>
                   </div>
                   <span className={`badge shrink-0 ${isMoving ? 'badge-success' : 'badge-neutral'}`}>
@@ -588,16 +590,16 @@ function LiveWatchView() {
                 />
 
                 <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <MiniFact label="Широта" value={metric(latest?.latitude ?? null, { digits: 5 })} />
-                  <MiniFact label="Довгота" value={metric(latest?.longitude ?? null, { digits: 5 })} />
-                  <MiniFact label="Курс" value={metric(latest?.heading ?? null, { unit: '°' })} />
-                  <MiniFact label="Висота" value={metric(latest?.altitude ?? null, { unit: 'м' })} />
+                  <MiniFact label={t('common.latitude')} value={metric(latest?.latitude ?? null, { digits: 5 })} />
+                  <MiniFact label={t('common.longitude')} value={metric(latest?.longitude ?? null, { digits: 5 })} />
+                  <MiniFact label={t('live.heading')} value={metric(latest?.heading ?? null, { unit: '°' })} />
+                  <MiniFact label={t('live.altitude')} value={metric(latest?.altitude ?? null, { unit: t('live.m') })} />
                 </div>
               </section>
 
               <section className="glass-panel flex flex-col gap-4 p-5 lg:col-span-4">
                 <div className="hairline-b flex items-center justify-between gap-3 pb-3">
-                  <h3 className="text-sm font-semibold text-txt-primary">Телеметрія CAN</h3>
+                  <h3 className="text-sm font-semibold text-txt-primary">{t('live.canTelemetry')}</h3>
                   <span className="tabular font-mono text-micro text-txt-muted">
                     {clock(latest?.datetime)}
                   </span>
@@ -607,66 +609,66 @@ function LiveWatchView() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <MetricTile
-                    label="Запалювання"
+                    label={t('live.ignition')}
                     icon={<Zap className="h-3.5 w-3.5 text-warn" />}
                     value={
                       latest?.ignition === null || latest?.ignition === undefined
                         ? NO_DATA
                         : latest.ignition
-                          ? 'УВІМК'
-                          : 'ВИМК'
+                          ? t('live.on')
+                          : t('live.off')
                     }
-                    sub={`Оберти: ${metric(latest?.engine_rpm ?? null, { unit: 'об/хв' })}`}
+                    sub={t('common.revs', { v0: metric(latest?.engine_rpm ?? null, { unit: t('common.rpm') }) })}
                   />
                   <MetricTile
-                    label="Рівень пального"
+                    label={t('common.fuelLevel')}
                     icon={<Fuel className="h-3.5 w-3.5 text-accent" />}
                     value={metric(latest?.fuel_level_percent ?? null, { unit: '%', digits: 1 })}
-                    sub={`Витрата: ${metric(latest?.fuel_rate_lph ?? null, { unit: 'л/год', digits: 1 })}`}
+                    sub={t('common.consumption', { v0: metric(latest?.fuel_rate_lph ?? null, { unit: t('common.lH'), digits: 1 }) })}
                   />
                   <MetricTile
-                    label="Пробіг CAN"
+                    label={t('common.canMileage')}
                     icon={<Route className="h-3.5 w-3.5 text-txt-secondary" />}
-                    value={metric(latest?.odometer_km ?? null, { unit: 'км' })}
-                    sub={`Мотогодини: ${metric(latest?.engine_hours ?? null, { unit: 'год' })}`}
+                    value={metric(latest?.odometer_km ?? null, { unit: t('common.km') })}
+                    sub={t('common.engineHours', { v0: metric(latest?.engine_hours ?? null, { unit: t('common.h') }) })}
                   />
                   <MetricTile
-                    label="Температура ОЖ"
+                    label={t('common.coolantTemperature')}
                     icon={<Thermometer className="h-3.5 w-3.5 text-info" />}
                     value={metric(latest?.coolant_temp ?? null, { unit: '°C' })}
                     sub={
                       latest?.coolant_temp === null || latest?.coolant_temp === undefined
-                        ? 'Двигун заглушено — датчик мовчить'
-                        : `Педаль: ${metric(latest?.pedal_position ?? null, { unit: '%' })}`
+                        ? t('common.engineOffSensorSilent')
+                        : t('live.pedal', { v0: metric(latest?.pedal_position ?? null, { unit: '%' }) })
                     }
                   />
                   <MetricTile
-                    label="Бортова напруга"
+                    label={t('common.onBoardVoltage')}
                     icon={<Zap className="h-3.5 w-3.5 text-warn" />}
-                    value={metric(latest?.power_supply_voltage ?? null, { unit: 'В', digits: 2 })}
-                    sub={`АКБ трекера: ${metric(latest?.device_battery_voltage ?? null, { unit: 'В', digits: 2 })}`}
+                    value={metric(latest?.power_supply_voltage ?? null, { unit: t('common.v'), digits: 2 })}
+                    sub={t('live.trackerBattery', { v0: metric(latest?.device_battery_voltage ?? null, { unit: t('common.v'), digits: 2 }) })}
                   />
                   <MetricTile
-                    label="Якість звʼязку"
+                    label={t('common.signalQuality')}
                     icon={<Satellite className="h-3.5 w-3.5 text-txt-secondary" />}
-                    value={`${metric(latest?.satellites ?? null)} супут.`}
+                    value={t('common.sats', { v0: metric(latest?.satellites ?? null) })}
                     sub={`HDOP ${metric(latest?.hdop ?? null, { digits: 1 })} · GSM ${metric(latest?.gsm_signal ?? null)}`}
                   />
                 </div>
 
                 <dl className="glass-inset space-y-1.5 rounded-card p-3 text-2xs">
                   <div className="flex justify-between gap-3">
-                    <dt className="text-txt-muted">Тахограф</dt>
+                    <dt className="text-txt-muted">{t('common.tachograph')}</dt>
                     <dd className="text-txt-secondary">
                       {driverStateLabel(latest?.driver_state ?? null)}
                     </dd>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <dt className="text-txt-muted">Тип поїздки</dt>
+                    <dt className="text-txt-muted">{t('live.tripType')}</dt>
                     <dd className="text-txt-secondary">{latest?.trip_type ?? NO_DATA}</dd>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <dt className="text-txt-muted">IMEI трекера</dt>
+                    <dt className="text-txt-muted">{t('common.trackerIMEI')}</dt>
                     <dd className="tabular font-mono text-txt-secondary">
                       {vehicle?.device_imei || NO_DATA}
                     </dd>
@@ -680,33 +682,33 @@ function LiveWatchView() {
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <h3 className="text-sm font-semibold text-txt-primary">
-                    Останні записи пристрою
+                    {t('live.latestDeviceRecords')}
                   </h3>
                   <p className="text-micro text-txt-secondary">
-                    Кожен рядок — окремий запис Ruptela, найновіші зверху
+                    {t('live.eachRowSeparateRuptela')}
                   </p>
                 </div>
-                <span className="badge badge-neutral">{points.length} зап.</span>
+                <span className="badge badge-neutral">{points.length} {t('live.rec')}</span>
               </div>
 
               <div className="max-h-[420px] overflow-auto rounded-card border border-bdr-subtle">
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>Час</th>
-                      <th className="num">Швидкість</th>
-                      <th>Запалювання</th>
-                      <th className="num">Оберти</th>
-                      <th className="num">Пальне</th>
-                      <th className="num">Пробіг</th>
-                      <th className="num">Координати</th>
+                      <th>{t('common.time')}</th>
+                      <th className="num">{t('common.speed')}</th>
+                      <th>{t('live.ignition')}</th>
+                      <th className="num">{t('live.revs')}</th>
+                      <th className="num">{t('common.fuel')}</th>
+                      <th className="num">{t('common.mileage')}</th>
+                      <th className="num">{t('live.coordinates')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {points.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="py-10 text-center text-2xs text-txt-muted">
-                          {loading ? 'Завантаження треку…' : 'Немає записів за обраний період'}
+                          {loading ? t('live.loadingTheTrackEllipsis') : t('live.noRecordsSelectedPeriod')}
                         </td>
                       </tr>
                     ) : (
@@ -719,23 +721,23 @@ function LiveWatchView() {
                               {clock(p.datetime)}
                             </td>
                             <td className="num text-txt-primary">
-                              {metric(p.speed, { unit: 'км/год' })}
+                              {metric(p.speed, { unit: t('unit.kmh') })}
                             </td>
                             <td>
                               {p.ignition === null ? (
                                 <span className="text-txt-muted">{NO_DATA}</span>
                               ) : (
                                 <span className={`badge ${p.ignition ? 'badge-warn' : 'badge-neutral'}`}>
-                                  {p.ignition ? 'УВІМК' : 'ВИМК'}
+                                  {p.ignition ? t('live.on') : t('live.off')}
                                 </span>
                               )}
                             </td>
                             <td className="num text-txt-secondary">{metric(p.engine_rpm)}</td>
                             <td className="num text-accent">
-                              {metric(p.fuel_level_liters, { unit: 'л', digits: 1 })}
+                              {metric(p.fuel_level_liters, { unit: t('unit.litre'), digits: 1 })}
                             </td>
                             <td className="num text-txt-secondary">
-                              {metric(p.odometer_km, { unit: 'км' })}
+                              {metric(p.odometer_km, { unit: t('common.km') })}
                             </td>
                             <td className="num font-mono text-micro text-txt-muted">
                               {p.latitude === null || p.longitude === null
@@ -815,15 +817,15 @@ function SpeedTrend({ points }: { points: RuptelaTrackPoint[] }) {
   return (
     <div className="glass-inset rounded-card p-3 text-warn">
       <div className="mb-1.5 flex items-center justify-between gap-2">
-        <span className="micro-label">Динаміка швидкості</span>
+        <span className="micro-label">{t('live.speedTrend')}</span>
         <span className="tabular font-mono text-micro text-txt-muted">
-          {path ? `макс ${Math.round(path.max)} км/год` : NO_DATA}
+          {path ? t('live.maxKmH', { v0: Math.round(path.max) }) : NO_DATA}
         </span>
       </div>
 
       {path ? (
         <svg viewBox="0 0 100 32" preserveAspectRatio="none" className="h-10 w-full" role="img"
-             aria-label="Графік швидкості за обраний період">
+             aria-label={t('live.speedChartSelectedPeriod')}>
           <path d={path.area} fill="currentColor" opacity="0.14" />
           <path
             d={path.line}
@@ -837,7 +839,7 @@ function SpeedTrend({ points }: { points: RuptelaTrackPoint[] }) {
         </svg>
       ) : (
         <p className="py-3 text-center text-micro text-txt-muted">
-          Недостатньо записів для графіка
+          {t('live.notEnoughRecordsChart')}
         </p>
       )}
     </div>

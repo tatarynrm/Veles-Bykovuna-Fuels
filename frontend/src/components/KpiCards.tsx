@@ -3,6 +3,7 @@
 import React from 'react';
 import { Wallet, Droplets, CreditCard, Store, Receipt, Percent } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/lib/format';
+import { t } from '@/lib/i18n';
 
 interface Summary {
   totalContracts: number;
@@ -44,34 +45,34 @@ export default function KpiCards({ summary }: KpiCardsProps) {
     progress?: number;
   }> = [
     {
-      label: 'Загальні витрати',
+      label: t('common.totalSpending'),
       value: formatCurrency(summary?.totalSpendUah),
-      meta: `${formatNumber(summary?.totalTransactions ?? 0)} операцій за період`,
+      meta: t('analytics.transactionsPeriod', { v0: formatNumber(summary?.totalTransactions ?? 0) }),
       icon: Wallet,
       tone: 'accent',
     },
     {
-      label: 'Обʼєм пального',
-      value: `${formatNumber(summary?.totalVolumeLiters)} л`,
+      label: t('common.fuelVolume'),
+      value: t('common.l', { v0: formatNumber(summary?.totalVolumeLiters) }),
       meta:
         summary && summary.totalVolumeLiters > 0
-          ? `Середня ціна ${formatCurrency(summary.totalSpendUah / summary.totalVolumeLiters)}/л`
-          : 'Дані за період відсутні',
+          ? t('analytics.averagePriceL', { v0: formatCurrency(summary.totalSpendUah / summary.totalVolumeLiters) })
+          : t('analytics.noDataPeriod'),
       icon: Droplets,
       tone: 'info',
     },
     {
-      label: 'Паливні картки',
+      label: t('common.fuelCards'),
       value: `${formatNumber(summary?.activeCards)} / ${formatNumber(summary?.totalCards)}`,
-      meta: `${activeRatio}% активних у реєстрі`,
+      meta: t('analytics.activeRegistry', { v0: activeRatio }),
       icon: CreditCard,
       tone: 'accent',
       progress: activeRatio,
     },
     {
-      label: 'Мережа АЗК',
+      label: t('common.stationNetwork'),
       value: formatNumber(summary?.totalMerchantsAZS),
-      meta: `${formatNumber(summary?.totalContracts)} активних договорів`,
+      meta: t('analytics.activeContracts', { v0: formatNumber(summary?.totalContracts) }),
       icon: Store,
       tone: 'warn',
     },
@@ -121,17 +122,17 @@ export function KpiSecondary({ summary }: KpiCardsProps) {
 
   const items = [
     {
-      label: 'Знижки за період',
+      label: t('analytics.discountsPeriod'),
       value: formatCurrency(summary.totalDiscountsUah),
       icon: Percent,
     },
     {
-      label: 'Баланс договорів',
+      label: t('analytics.contractBalance'),
       value: formatCurrency(summary.totalBalanceUah),
       icon: Wallet,
     },
     {
-      label: 'Транзакцій',
+      label: t('common.transactions'),
       value: formatNumber(summary.totalTransactions),
       icon: Receipt,
     },

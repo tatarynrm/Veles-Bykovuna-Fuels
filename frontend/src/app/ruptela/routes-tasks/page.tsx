@@ -51,6 +51,7 @@ import {
   ArrowDown,
   RotateCcw,
 } from 'lucide-react';
+import { t } from '@/lib/i18n';
 
 export default function RuptelaRoutesTasksPage() {
   return (
@@ -139,7 +140,7 @@ function RoutesTasksView() {
         setResult(data);
         scopeShown.current[scope] = true;
       } catch (err: any) {
-        setError(err?.message ?? 'Не вдалося завантажити поїздки');
+        setError(err?.message ?? t('trip.couldNotLoadTrips'));
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -257,15 +258,15 @@ function RoutesTasksView() {
 
   return (
     <RuptelaShell
-      title="Маршрути та завдання"
-      subtitle="Поїздки Ruptela Routing & Tasking — створення, редагування, видалення"
+      title={t('trip.routesAndTasks')}
+      subtitle={t('trip.ruptelaRoutingTaskingTrips')}
       status={
         result?.fetchedAt ? (
           <span className="badge badge-neutral" title={formatDateTime(result.fetchedAt)}>
             {refreshing || result.stale ? (
               <Loader2 className="h-3 w-3 animate-spin" />
             ) : null}
-            Дані {relativeAge(result.fetchedAt)}
+            {t('common.data')} {relativeAge(result.fetchedAt)}
           </span>
         ) : null
       }
@@ -277,22 +278,22 @@ function RoutesTasksView() {
             className="btn btn-ghost"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Оновити</span>
+            <span className="hidden sm:inline">{t('common.refresh')}</span>
           </button>
           {isGuest ? (
             <button
               type="button"
               disabled
               className="btn btn-ghost"
-              title="Гостьовий доступ: створення поїздок вимкнено"
+              title={t('trip.guestAccessCreatingTrips')}
             >
               <Lock className="h-3.5 w-3.5" />
-              <span>Нова поїздка</span>
+              <span>{t('common.newTrip')}</span>
             </button>
           ) : (
             <Link href="/ruptela/create-trip" className="btn btn-warn">
               <PlusCircle className="h-3.5 w-3.5" />
-              <span>Нова поїздка</span>
+              <span>{t('common.newTrip')}</span>
             </Link>
           )}
         </>
@@ -301,9 +302,7 @@ function RoutesTasksView() {
       {isGuest && (
         <div className="mb-4">
           <GuestBanner>
-            <strong className="font-semibold text-warn">Гостьовий доступ.</strong> Маршрути
-            та завдання доступні для перегляду; створення, редагування, видалення й
-            позначення завдань вимкнені.
+            <strong className="font-semibold text-warn">{t('common.guestAccess')}</strong> {t('trip.routesTasksViewableCreating')}
           </GuestBanner>
         </div>
       )}
@@ -320,7 +319,7 @@ function RoutesTasksView() {
       {/* Scope + filters */}
       <div className="glass-panel mb-4 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="segmented" role="tablist" aria-label="Набір поїздок">
+          <div className="segmented" role="tablist" aria-label={t('trip.tripScope')}>
             <button
               role="tab"
               aria-selected={scope === 'active'}
@@ -331,7 +330,7 @@ function RoutesTasksView() {
               className={`segmented-item flex items-center gap-2 ${scope === 'active' ? 'segmented-item-active' : ''}`}
             >
               <Flag className="h-3.5 w-3.5" />
-              Активні
+              {t('trip.active')}
             </button>
             <button
               role="tab"
@@ -341,10 +340,10 @@ function RoutesTasksView() {
                 setPage(1);
               }}
               className={`segmented-item flex items-center gap-2 ${scope === 'archive' ? 'segmented-item-active' : ''}`}
-              title="Завершені та скасовані — вантажиться довше"
+              title={t('trip.completedCancelledSlowerLoad')}
             >
               <Archive className="h-3.5 w-3.5" />
-              Архів
+              {t('trip.archive')}
             </button>
             <button
               role="tab"
@@ -354,10 +353,10 @@ function RoutesTasksView() {
                 setPage(1);
               }}
               className={`segmented-item flex items-center gap-2 ${scope === 'all' ? 'segmented-item-active' : ''}`}
-              title="Активні разом з архівом"
+              title={t('trip.activePlusArchive')}
             >
               <Route className="h-3.5 w-3.5" />
-              Всі
+              {t('trip.all')}
             </button>
           </div>
 
@@ -368,8 +367,8 @@ function RoutesTasksView() {
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Назва, ТЗ, водій, маршрут…"
-                aria-label="Пошук поїздок"
+                placeholder={t('trip.titleVehicleDriverRouteEllipsis')}
+                aria-label={t('trip.searchTrips')}
                 className="field field-sm w-64 pl-9"
               />
             </div>
@@ -377,10 +376,10 @@ function RoutesTasksView() {
               <button
                 onClick={resetFilters}
                 className="btn btn-ghost"
-                title="Скинути всі фільтри"
+                title={t('trip.resetAllFilters')}
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                Скинути
+                {t('trip.reset')}
               </button>
             )}
           </div>
@@ -388,7 +387,7 @@ function RoutesTasksView() {
 
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
           <label className="block">
-            <span className="micro-label mb-1 block">Стан</span>
+            <span className="micro-label mb-1 block">{t('trip.state')}</span>
             <select
               value={stateFilter}
               onChange={(e) => {
@@ -397,7 +396,7 @@ function RoutesTasksView() {
               }}
               className="field field-sm"
             >
-              <option value="">Всі стани</option>
+              <option value="">{t('trip.allStates')}</option>
               {(facets?.states ?? []).map((s) => (
                 <option key={s.state} value={s.state}>
                   {TRIP_STATE_LABEL[s.state] ?? s.state} ({s.count})
@@ -407,7 +406,7 @@ function RoutesTasksView() {
           </label>
 
           <label className="block">
-            <span className="micro-label mb-1 block">Транспорт</span>
+            <span className="micro-label mb-1 block">{t('common.vehicles')}</span>
             <select
               value={vehicleFilter}
               onChange={(e) => {
@@ -416,7 +415,7 @@ function RoutesTasksView() {
               }}
               className="field field-sm"
             >
-              <option value="">Всі ТЗ</option>
+              <option value="">{t('trip.allVehicles')}</option>
               {(facets?.vehicles ?? []).map((v) => (
                 <option key={v.id} value={v.id}>
                   {v.plate ?? v.name ?? v.id} ({v.count})
@@ -426,7 +425,7 @@ function RoutesTasksView() {
           </label>
 
           <label className="block">
-            <span className="micro-label mb-1 block">Водій</span>
+            <span className="micro-label mb-1 block">{t('common.driver')}</span>
             <select
               value={driverFilter}
               onChange={(e) => {
@@ -435,7 +434,7 @@ function RoutesTasksView() {
               }}
               className="field field-sm"
             >
-              <option value="">Всі водії</option>
+              <option value="">{t('trip.allDrivers')}</option>
               {(facets?.drivers ?? []).map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name ?? d.id} ({d.count})
@@ -445,7 +444,7 @@ function RoutesTasksView() {
           </label>
 
           <label className="block">
-            <span className="micro-label mb-1 block">Дата від</span>
+            <span className="micro-label mb-1 block">{t('trip.dateFrom')}</span>
             <input
               type="date"
               value={dateFrom}
@@ -459,7 +458,7 @@ function RoutesTasksView() {
           </label>
 
           <label className="block">
-            <span className="micro-label mb-1 block">Дата до</span>
+            <span className="micro-label mb-1 block">{t('trip.dateTo')}</span>
             <input
               type="date"
               value={dateTo}
@@ -473,7 +472,7 @@ function RoutesTasksView() {
           </label>
 
           <div className="block">
-            <span className="micro-label mb-1 block">Сортування</span>
+            <span className="micro-label mb-1 block">{t('trip.sorting')}</span>
             <div className="flex items-center gap-1.5">
               <select
                 value={sort}
@@ -481,7 +480,7 @@ function RoutesTasksView() {
                   setSort(e.target.value as TripSortKey);
                   setPage(1);
                 }}
-                aria-label="Поле сортування"
+                aria-label={t('trip.sortField')}
                 className="field field-sm min-w-0 flex-1"
               >
                 {(Object.keys(TRIP_SORT_LABEL) as TripSortKey[]).map((key) => (
@@ -496,8 +495,8 @@ function RoutesTasksView() {
                   setPage(1);
                 }}
                 className="btn-icon h-8 w-8 shrink-0"
-                title={order === 'asc' ? 'За зростанням' : 'За спаданням'}
-                aria-label="Напрямок сортування"
+                title={order === 'asc' ? t('trip.ascending') : t('trip.descending')}
+                aria-label={t('trip.sortDirection')}
               >
                 {order === 'asc' ? (
                   <ArrowUp className="h-3.5 w-3.5" />
@@ -513,8 +512,7 @@ function RoutesTasksView() {
       {scope === 'archive' && loading && (
         <div className="glass-inset mb-4 flex items-center gap-2 p-3 text-2xs text-txt-muted">
           <Info className="h-3.5 w-3.5 shrink-0" />
-          Архів запитується з Ruptela одним запитом без пагінації — перше завантаження
-          триває близько 30 секунд, далі кешується на 15 хвилин.
+          {t('trip.archiveFetchedRuptelaSingle')}
         </div>
       )}
 
@@ -534,19 +532,19 @@ function RoutesTasksView() {
               <Route className="mx-auto mb-2 h-6 w-6 text-txt-muted" />
               <p className="text-sm text-txt-secondary">
                 {hasFilters
-                  ? 'За цими фільтрами нічого не знайдено'
-                  : 'Поїздок у цьому наборі немає'}
+                  ? t('trip.nothingMatchesTheseFilters')
+                  : t('trip.thereNoTripsScope')}
               </p>
               {hasFilters ? (
                 <button onClick={resetFilters} className="btn btn-ghost mt-4">
                   <RotateCcw className="h-3.5 w-3.5" />
-                  Скинути фільтри
+                  {t('trip.resetFilters')}
                 </button>
               ) : (
                 scope === 'active' && (
                   <Link href="/ruptela/create-trip" className="btn btn-warn mt-4">
                     <PlusCircle className="h-3.5 w-3.5" />
-                    Створити першу
+                    {t('trip.createFirstOne')}
                   </Link>
                 )
               )}
@@ -586,7 +584,7 @@ function RoutesTasksView() {
                       {trip.vehicle_plate ?? NO_DATA} · {trip.driver_name ?? NO_DATA}
                     </span>
                     <span className="tabular shrink-0">
-                      {metric(trip.distance_km, { unit: 'км' })}
+                      {metric(trip.distance_km, { unit: t('common.km') })}
                       {trip.tasks.length > 0 && ` · ${done}/${trip.tasks.length}`}
                     </span>
                   </div>
@@ -600,7 +598,7 @@ function RoutesTasksView() {
             <div className="glass-panel flex flex-wrap items-center justify-between gap-3 p-3">
               <span className="tabular text-2xs text-txt-muted">
                 {(result.page - 1) * result.size + 1}–
-                {Math.min(result.page * result.size, result.total)} з {result.total}
+                {Math.min(result.page * result.size, result.total)} {t('common.of')} {result.total}
               </span>
 
               <div className="flex items-center gap-2">
@@ -610,12 +608,12 @@ function RoutesTasksView() {
                     setSize(Number(e.target.value));
                     setPage(1);
                   }}
-                  aria-label="Поїздок на сторінку"
+                  aria-label={t('trip.tripsPerPage')}
                   className="field field-sm w-auto"
                 >
                   {[10, 20, 50].map((n) => (
                     <option key={n} value={n}>
-                      {n} / стор.
+                      {n} {t('trip.page')}
                     </option>
                   ))}
                 </select>
@@ -624,8 +622,8 @@ function RoutesTasksView() {
                   onClick={() => setPage(Math.max(1, page - 1))}
                   disabled={result.page <= 1}
                   className="btn-icon h-8 w-8 disabled:pointer-events-none disabled:opacity-40"
-                  title="Попередня сторінка"
-                  aria-label="Попередня сторінка"
+                  title={t('common.previousPage')}
+                  aria-label={t('common.previousPage')}
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
@@ -636,8 +634,8 @@ function RoutesTasksView() {
                   onClick={() => setPage(Math.min(result.totalPages, page + 1))}
                   disabled={result.page >= result.totalPages}
                   className="btn-icon h-8 w-8 disabled:pointer-events-none disabled:opacity-40"
-                  title="Наступна сторінка"
-                  aria-label="Наступна сторінка"
+                  title={t('common.nextPage')}
+                  aria-label={t('common.nextPage')}
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -650,7 +648,7 @@ function RoutesTasksView() {
         <div className="xl:col-span-7">
           {!selected ? (
             <div className="glass-panel p-12 text-center text-sm text-txt-muted">
-              Оберіть поїздку зі списку
+              {t('trip.selectTripList')}
             </div>
           ) : (
             <div className="space-y-4">
@@ -675,7 +673,7 @@ function RoutesTasksView() {
                     {isGuest ? (
                       <span className="badge badge-warn">
                         <Lock className="h-3 w-3" />
-                        Лише перегляд
+                        {t('common.viewOnly')}
                       </span>
                     ) : (
                       <>
@@ -685,22 +683,22 @@ function RoutesTasksView() {
                           className="btn btn-warn"
                         >
                           <Route className="h-3.5 w-3.5" />
-                          Редагувати маршрут
+                          {t('trip.editTheRoute')}
                         </Link>
                         <button
                           onClick={() => setEditing(selected)}
                           className="btn btn-ghost"
-                          title="Швидка зміна назви, нотаток, ТЗ і водія"
+                          title={t('trip.quicklyChangeTitleNotes')}
                         >
                           <Pencil className="h-3.5 w-3.5" />
-                          Швидке редагування
+                          {t('trip.quickEdit')}
                         </button>
                         <button
                           onClick={() => setDeleting(selected)}
                           className="btn btn-ghost hover:text-danger"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
-                          Видалити
+                          {t('trip.delete')}
                         </button>
                       </>
                     )}
@@ -709,11 +707,11 @@ function RoutesTasksView() {
 
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {[
-                    { label: 'Транспорт', value: selected.vehicle_plate ?? NO_DATA },
-                    { label: 'Водій', value: selected.driver_name ?? NO_DATA },
+                    { label: t('common.vehicles'), value: selected.vehicle_plate ?? NO_DATA },
+                    { label: t('common.driver'), value: selected.driver_name ?? NO_DATA },
                     {
-                      label: 'Дистанція',
-                      value: metric(selected.distance_km, { unit: 'км' }),
+                      label: t('trip.distance'),
+                      value: metric(selected.distance_km, { unit: t('common.km') }),
                     },
                     {
                       label: 'ETA',
@@ -732,12 +730,12 @@ function RoutesTasksView() {
               <section className="glass-panel p-5">
                 <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-txt-primary">
                   <Route className="h-4 w-4 text-warn" />
-                  Маршрут ({selected.waypoints.length})
+                  {t('trip.routeCountPrefix')}{selected.waypoints.length})
                 </h3>
 
                 {selected.waypoints.length === 0 ? (
                   <p className="py-6 text-center text-2xs text-txt-muted">
-                    Ruptela не повернула точок для цієї поїздки
+                    {t('trip.ruptelaReturnedNoStops')}
                   </p>
                 ) : (
                   <ol className="space-y-2">
@@ -780,7 +778,7 @@ function RoutesTasksView() {
                               {visited ? (
                                 <span className="flex items-center gap-1 text-accent">
                                   <CheckCircle2 className="h-3 w-3" />
-                                  Відвідано {formatDateTime(w.visited_at)}
+                                  {t('trip.visited')} {formatDateTime(w.visited_at)}
                                 </span>
                               ) : w.eta ? (
                                 <span className="flex items-center gap-1">
@@ -802,18 +800,17 @@ function RoutesTasksView() {
                 <div className="mb-1 flex items-center justify-between gap-3">
                   <h3 className="flex items-center gap-2 text-sm font-semibold text-txt-primary">
                     <CheckCircle2 className="h-4 w-4 text-accent" />
-                    Чек-лист водія ({selected.tasks.filter((t) => t.completed).length}/
+                    {t('trip.driverChecklist')}{selected.tasks.filter((t) => t.completed).length}/
                     {selected.tasks.length})
                   </h3>
                 </div>
                 <p className="mb-3 text-micro text-txt-muted">
-                  Ruptela не має мутації для позначення завдань — відмітки зберігаються
-                  локально у диспетчера.
+                  {t('trip.ruptelaHasNoMutation')}
                 </p>
 
                 {selected.tasks.length === 0 ? (
                   <p className="py-6 text-center text-2xs text-txt-muted">
-                    Для цієї поїздки завдань не задано
+                    {t('trip.noTasksDefinedTrip')}
                   </p>
                 ) : (
                   <ul className="space-y-1.5">
@@ -826,7 +823,7 @@ function RoutesTasksView() {
                           disabled={isGuest}
                           title={
                             isGuest
-                              ? 'Гостьовий доступ: позначення завдань вимкнено'
+                              ? t('trip.guestAccessTickingTasks')
                               : undefined
                           }
                           className={`glass-inset flex w-full items-center gap-3 p-3 text-left transition-colors ${
@@ -936,7 +933,7 @@ function EditTripDialog({
       });
       onSaved(updated);
     } catch (err: any) {
-      setError(err?.message ?? 'Не вдалося зберегти зміни');
+      setError(err?.message ?? t('trip.couldNotSaveChanges'));
       setSaving(false);
     }
   };
@@ -947,7 +944,7 @@ function EditTripDialog({
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Редагування поїздки"
+      aria-label={t('trip.editingATrip')}
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -955,10 +952,10 @@ function EditTripDialog({
       >
         <div className="hairline-b flex items-start justify-between pb-4">
           <div>
-            <h3 className="text-sm font-semibold text-txt-primary">Редагувати поїздку</h3>
+            <h3 className="text-sm font-semibold text-txt-primary">{t('trip.editTheTrip')}</h3>
             <p className="font-mono text-micro text-txt-muted">{trip.id}</p>
           </div>
-          <button onClick={onClose} className="btn-icon h-8 w-8" aria-label="Закрити">
+          <button onClick={onClose} className="btn-icon h-8 w-8" aria-label={t('common.close')}>
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -974,7 +971,7 @@ function EditTripDialog({
         )}
 
         <label className="block">
-          <span className="micro-label mb-1.5 block">Назва</span>
+          <span className="micro-label mb-1.5 block">{t('common.title')}</span>
           <input
             type="text"
             value={title}
@@ -984,7 +981,7 @@ function EditTripDialog({
         </label>
 
         <label className="block">
-          <span className="micro-label mb-1.5 block">Нотатки</span>
+          <span className="micro-label mb-1.5 block">{t('trip.notes')}</span>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -994,13 +991,13 @@ function EditTripDialog({
         </label>
 
         <label className="block">
-          <span className="micro-label mb-1.5 block">Транспортний засіб</span>
+          <span className="micro-label mb-1.5 block">{t('common.vehicle')}</span>
           <select
             value={vehicleId}
             onChange={(e) => setVehicleId(e.target.value)}
             className="field"
           >
-            <option value="">— без зміни —</option>
+            <option value="">{t('trip.unchanged')}</option>
             {vehicles.map((v) => (
               <option key={v.id} value={v.id}>
                 {v.name} ({v.plate})
@@ -1010,14 +1007,14 @@ function EditTripDialog({
         </label>
 
         <label className="block">
-          <span className="micro-label mb-1.5 block">Водій</span>
+          <span className="micro-label mb-1.5 block">{t('common.driver')}</span>
           <select
             value={driverId}
             onChange={(e) => setDriverId(e.target.value)}
             className="field"
           >
             <option value="">
-              — без зміни{trip.driver_name ? ` (зараз: ${trip.driver_name})` : ''} —
+              {t('trip.unchanged2')}{trip.driver_name ? t('trip.currently', { v0: trip.driver_name }) : ''} —
             </option>
             {drivers.map((d) => (
               <option key={d.id} value={d.id}>
@@ -1028,17 +1025,16 @@ function EditTripDialog({
         </label>
 
         <p className="text-micro text-txt-muted">
-          Ruptela дозволяє змінювати назву, нотатки, ТЗ та призначеного водія. Точки
-          маршруту редагуються у Ruptela FM.
+          {t('trip.ruptelaAllowsChangingTitle')}
         </p>
 
         <div className="hairline-t flex justify-end gap-2 pt-4">
           <button onClick={onClose} className="btn btn-ghost">
-            Скасувати
+            {t('trip.cancel')}
           </button>
           <button onClick={save} disabled={saving} className="btn btn-warn">
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-            Зберегти в Ruptela
+            {t('trip.saveToRuptela')}
           </button>
         </div>
       </div>
@@ -1073,7 +1069,7 @@ function DeleteTripDialog({
       await apiSend('DELETE', `/api/ruptela/trips/${trip.id}`);
       onDeleted(trip.id);
     } catch (err: any) {
-      setError(err?.message ?? 'Не вдалося видалити поїздку');
+      setError(err?.message ?? t('trip.couldNotDeleteTrip'));
       setDeleting(false);
     }
   };
@@ -1094,9 +1090,9 @@ function DeleteTripDialog({
             <Trash2 className="h-4 w-4" />
           </span>
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-txt-primary">Видалити поїздку?</h3>
+            <h3 className="text-sm font-semibold text-txt-primary">{t('trip.deleteThisTripQuestion')}</h3>
             <p className="mt-1 text-2xs text-txt-secondary">
-              «{trip.title}» буде видалено з Ruptela назавжди. Дію не можна скасувати.
+              «{trip.title}{t('trip.willPermanentlyDeletedRuptela')}
             </p>
           </div>
         </div>
@@ -1113,7 +1109,7 @@ function DeleteTripDialog({
 
         <div className="flex justify-end gap-2">
           <button onClick={onClose} className="btn btn-ghost">
-            Скасувати
+            {t('trip.cancel')}
           </button>
           <button
             onClick={confirm}
@@ -1121,7 +1117,7 @@ function DeleteTripDialog({
             className="btn bg-danger text-white hover:brightness-110"
           >
             {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-            Видалити назавжди
+            {t('trip.deletePermanently')}
           </button>
         </div>
       </div>

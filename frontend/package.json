@@ -6,7 +6,15 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
-    "lint": "next lint"
+    "lint": "next lint",
+    "i18n": "node scripts/i18n/scan.mjs",
+    "i18n:check": "node scripts/i18n/scan.mjs --check",
+    "i18n:prune": "node scripts/i18n/scan.mjs --prune",
+    "i18n:todo": "node scripts/i18n/scan.mjs --todo",
+    "i18n:wrap": "node scripts/i18n/wrap.mjs && node scripts/i18n/wrap-ast.mjs",
+    "i18n:keyize": "node scripts/i18n/keyize.mjs",
+    "i18n:merge": "node scripts/i18n/merge.mjs scripts/i18n/translations",
+    "i18n:rename": "node scripts/i18n/rename-key.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",

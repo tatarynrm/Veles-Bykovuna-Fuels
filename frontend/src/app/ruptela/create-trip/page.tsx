@@ -33,6 +33,7 @@ import {
   History,
   Globe2,
 } from 'lucide-react';
+import { t } from '@/lib/i18n';
 
 /**
  * A waypoint as edited in this form. Ruptela's InputLocation accepts either a
@@ -205,7 +206,7 @@ function CreateTripView() {
       .then((trip) => {
         if (!alive) return;
         if (!trip) {
-          setError('Поїздку не знайдено — можливо, її вже видалено');
+          setError(t('trip.tripNotFoundMay'));
           return;
         }
         setTitle(trip.title ?? '');
@@ -215,7 +216,7 @@ function CreateTripView() {
         const wps = tripToDraftWaypoints(trip);
         if (wps.length >= 2) setWaypoints(wps);
       })
-      .catch((e: any) => alive && setError(e?.message ?? 'Не вдалося завантажити поїздку'))
+      .catch((e: any) => alive && setError(e?.message ?? t('trip.couldNotLoadTrip')))
       .finally(() => alive && setLoadingTrip(false));
     return () => {
       alive = false;
@@ -328,50 +329,50 @@ function CreateTripView() {
     e.preventDefault();
     setError(null);
 
-    if (!title.trim()) return setError('Вкажіть назву поїздки');
-    if (!vehicleId) return setError('Оберіть транспортний засіб');
+    if (!title.trim()) return setError(t('trip.enterTripTitle'));
+    if (!vehicleId) return setError(t('common.selectAVehicle'));
 
     // Mirror the backend's rules so the dispatcher gets instant feedback
     // instead of a round-trip; the backend still enforces all of this.
     for (let i = 0; i < waypoints.length; i++) {
       const w = waypoints[i];
-      const n = `Точка №${i + 1}`;
+      const n = t('trip.stopNo', { v0: i + 1 });
 
       const hasLat = w.latitude.trim() !== '';
       const hasLon = w.longitude.trim() !== '';
       if (hasLat !== hasLon) {
-        return setError(`${n}: координати вказуються парою — і широта, і довгота`);
+        return setError(t('trip.coordinatesComePairsBoth', { v0: n }));
       }
       if (hasLat) {
         const lat = Number(w.latitude);
         const lon = Number(w.longitude);
         if (!Number.isFinite(lat) || Math.abs(lat) > 90) {
-          return setError(`${n}: широта має бути числом у межах −90…90`);
+          return setError(t('trip.latitudeMustNumberBetween', { v0: n }));
         }
         if (!Number.isFinite(lon) || Math.abs(lon) > 180) {
-          return setError(`${n}: довгота має бути числом у межах −180…180`);
+          return setError(t('trip.longitudeMustNumberBetween', { v0: n }));
         }
       }
       if (!hasLat && !w.address.trim()) {
-        return setError(`${n}: вкажіть адресу або координати`);
+        return setError(t('trip.enterAddressCoordinates', { v0: n }));
       }
 
       // datetime-local strings share a format, so they compare lexicographically
       const hasFrom = Boolean(w.arrivalPlannedFrom);
       const hasTill = Boolean(w.arrivalPlannedTill);
       if (hasFrom !== hasTill) {
-        return setError(`${n}: вкажіть обидві межі вікна прибуття — «від» і «до»`);
+        return setError(t('trip.setBothEndsArrival', { v0: n }));
       }
       if (hasFrom && w.arrivalPlannedFrom > w.arrivalPlannedTill) {
-        return setError(`${n}: початок вікна прибуття пізніший за його кінець`);
+        return setError(t('trip.arrivalWindowStartsAfter', { v0: n }));
       }
     }
 
     if (Boolean(plannedArrivalFrom) !== Boolean(plannedArrivalTill)) {
-      return setError('Плановане прибуття: вкажіть обидві межі — «від» і «до»');
+      return setError(t('trip.plannedArrivalSetBoth'));
     }
     if (plannedArrivalFrom && plannedArrivalFrom > plannedArrivalTill) {
-      return setError('Плановане прибуття: початок пізніший за кінець');
+      return setError(t('trip.plannedArrivalStartLater'));
     }
 
     setSubmitting(true);
@@ -418,7 +419,7 @@ function CreateTripView() {
     } catch (err: any) {
       // The backend forwards Ruptela's own validation text — show it verbatim
       // instead of a generic failure message.
-      setError(err?.message ?? (editTripId ? 'Не вдалося зберегти зміни' : 'Не вдалося створити поїздку'));
+      setError(err?.message ?? (editTripId ? t('trip.couldNotSaveChanges') : t('trip.couldNotCreateTrip')));
       setSubmitting(false);
     }
   };
@@ -428,8 +429,8 @@ function CreateTripView() {
   if (isGuest) {
     return (
       <RuptelaShell
-        title={editTripId ? 'Редагувати поїздку' : 'Створити поїздку'}
-        subtitle="Гостьовий режим — лише перегляд"
+        title={editTripId ? t('trip.editTheTrip') : t('common.createATrip')}
+        subtitle={t('trip.guestModeViewOnly')}
       >
         <GuestBlockedPanel />
       </RuptelaShell>
@@ -438,17 +439,17 @@ function CreateTripView() {
 
   return (
     <RuptelaShell
-      title={editTripId ? 'Редагувати поїздку' : 'Створити поїздку'}
+      title={editTripId ? t('trip.editTheTrip') : t('common.createATrip')}
       subtitle={
         editTripId
-          ? 'Зміни маршруту, точок і завдань зберігаються напряму в Ruptela'
-          : 'Маршрут надсилається напряму в Ruptela Routing & Tasking'
+          ? t('trip.routeStopTaskChanges')
+          : t('trip.routeGoesStraightRuptela')
       }
     >
       {loadingTrip && (
         <div className="flex items-center gap-2 py-10 text-2xs text-txt-muted">
           <Loader2 className="h-4 w-4 animate-spin" />
-          Завантаження поїздки з Ruptela…
+          {t('trip.loadingTripRuptelaEllipsis')}
         </div>
       )}
 
@@ -460,21 +461,21 @@ function CreateTripView() {
           <div className="flex flex-wrap items-center gap-2 rounded-field border border-bdr-subtle bg-surface px-3 py-2 text-2xs text-txt-secondary">
             <History className="h-3.5 w-3.5 shrink-0 text-warn" aria-hidden="true" />
             <span>
-              Відновлено чернетку від{' '}
+              {t('trip.draftRestoredFrom')}{' '}
               {new Date(draftRestoredAt).toLocaleString('uk-UA', {
                 day: '2-digit',
                 month: '2-digit',
                 hour: '2-digit',
                 minute: '2-digit',
               })}{' '}
-              — дані не втрачено.
+              {t('trip.noDataWasLost')}
             </span>
             <button
               type="button"
               onClick={discardDraft}
               className="ml-auto font-semibold text-danger hover:underline"
             >
-              Почати з чистої форми
+              {t('trip.startBlankForm')}
             </button>
           </div>
         )}
@@ -491,15 +492,15 @@ function CreateTripView() {
 
         {/* ── Basics ── */}
         <section className="glass-panel space-y-4 p-5">
-          <h2 className="text-sm font-semibold text-txt-primary">Основне</h2>
+          <h2 className="text-sm font-semibold text-txt-primary">{t('trip.main')}</h2>
 
           <label className="block">
-            <span className="micro-label mb-1.5 block">Назва поїздки *</span>
+            <span className="micro-label mb-1.5 block">{t('trip.tripTitle')}</span>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Наприклад: Чернівці — Львів"
+              placeholder={t('trip.exampleChernivtsiLviv')}
               required
               className="field"
             />
@@ -512,14 +513,14 @@ function CreateTripView() {
           />
 
           <label className="block">
-            <span className="micro-label mb-1.5 block">Водій</span>
+            <span className="micro-label mb-1.5 block">{t('common.driver')}</span>
             <select
               value={driverId}
               onChange={(e) => setDriverId(e.target.value)}
               className="field"
             >
               <option value="">
-                За призначенням на ТЗ{selectedVehicle?.driver_name ? `: ${selectedVehicle.driver_name}` : ` (${NO_DATA})`}
+                {t('trip.assignedVehicle')}{selectedVehicle?.driver_name ? `: ${selectedVehicle.driver_name}` : ` (${NO_DATA})`}
               </option>
               {drivers.map((d) => (
                 <option key={d.id} value={d.id}>
@@ -532,27 +533,25 @@ function CreateTripView() {
           <div className="glass-inset flex items-start gap-2 p-3">
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-txt-muted" />
             <p className="text-micro text-txt-muted">
-              Обраний тут водій буде призначений на поїздку в Ruptela як основний.
-              Якщо залишити «За призначенням на ТЗ», Ruptela візьме водія,
-              закріпленого за транспортним засобом.
+              {t('trip.driverChosenHereAssigned')}
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="block">
-              <span className="micro-label mb-1.5 block">Нотатки для водія</span>
+              <span className="micro-label mb-1.5 block">{t('trip.notesDriver')}</span>
               <input
                 type="text"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Вантаж, особливі умови…"
+                placeholder={t('trip.cargoSpecialConditionsEllipsis')}
                 className="field"
               />
             </label>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="block">
-                <span className="micro-label mb-1.5 block">Прибуття від</span>
+                <span className="micro-label mb-1.5 block">{t('trip.arrivalFrom')}</span>
                 <input
                   type="datetime-local"
                   value={plannedArrivalFrom}
@@ -561,7 +560,7 @@ function CreateTripView() {
                 />
               </label>
               <label className="block">
-                <span className="micro-label mb-1.5 block">Прибуття до</span>
+                <span className="micro-label mb-1.5 block">{t('trip.arrivalTo')}</span>
                 <input
                   type="datetime-local"
                   value={plannedArrivalTill}
@@ -582,7 +581,7 @@ function CreateTripView() {
             />
             <span className="flex items-center gap-2 text-2xs text-txt-secondary">
               <BellRing className="h-3.5 w-3.5 text-warn" />
-              Одразу надіслати поїздку водію на планшет
+              {t('trip.sendTripDriverS')}
             </span>
           </label>
         </section>
@@ -591,10 +590,10 @@ function CreateTripView() {
         <section className="glass-panel space-y-4 p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold text-txt-primary">Маршрут</h2>
+              <h2 className="text-sm font-semibold text-txt-primary">{t('trip.route')}</h2>
               <p className="mt-0.5 text-2xs text-txt-muted">
-                Щонайменше дві точки. Порядок точок = порядок руху — перетягніть за{' '}
-                <GripVertical className="inline h-3 w-3 align-[-2px]" /> або стрілками.
+                {t('trip.leastTwoStopsTheir')}{' '}
+                <GripVertical className="inline h-3 w-3 align-[-2px]" /> {t('trip.arrowKeys')}
               </p>
             </div>
             <button
@@ -603,7 +602,7 @@ function CreateTripView() {
               className="btn btn-ghost"
             >
               <Plus className="h-3.5 w-3.5" />
-              Додати точку
+              {t('trip.addStop')}
             </button>
           </div>
 
@@ -637,7 +636,7 @@ function CreateTripView() {
                         }
                       }}
                       onDragEnd={() => setDragKey(null)}
-                      title="Перетягніть, щоб змінити порядок"
+                      title={t('trip.dragToReorder')}
                       aria-hidden="true"
                       className="flex h-7 w-7 cursor-grab items-center justify-center rounded-control text-txt-muted transition-colors hover:bg-surface-hover hover:text-txt-primary active:cursor-grabbing"
                     >
@@ -651,7 +650,7 @@ function CreateTripView() {
                       onChange={(e) =>
                         patchWaypoint(w.key, { type: e.target.value as WaypointType })
                       }
-                      aria-label={`Тип точки ${index + 1}`}
+                      aria-label={t('trip.typeOfStop', { v0: index + 1 })}
                       className="field field-sm w-auto"
                     >
                       {PLANNABLE_WAYPOINT_TYPES.map((t) => (
@@ -667,8 +666,8 @@ function CreateTripView() {
                       type="button"
                       onClick={() => moveWaypoint(index, -1)}
                       disabled={index === 0}
-                      aria-label="Перемістити вище"
-                      title="Перемістити вище"
+                      aria-label={t('trip.moveUp')}
+                      title={t('trip.moveUp')}
                       className="btn-icon h-7 w-7 disabled:opacity-30"
                     >
                       <ChevronUp className="h-3.5 w-3.5" />
@@ -677,8 +676,8 @@ function CreateTripView() {
                       type="button"
                       onClick={() => moveWaypoint(index, 1)}
                       disabled={index === waypoints.length - 1}
-                      aria-label="Перемістити нижче"
-                      title="Перемістити нижче"
+                      aria-label={t('trip.moveDown')}
+                      title={t('trip.moveDown')}
                       className="btn-icon h-7 w-7 disabled:opacity-30"
                     >
                       <ChevronDown className="h-3.5 w-3.5" />
@@ -687,8 +686,8 @@ function CreateTripView() {
                       type="button"
                       onClick={() => setWaypoints((l) => l.filter((x) => x.key !== w.key))}
                       disabled={waypoints.length <= 2}
-                      aria-label="Видалити точку"
-                      title="Видалити точку"
+                      aria-label={t('trip.removeStop')}
+                      title={t('trip.removeStop')}
                       className="btn-icon h-7 w-7 hover:text-danger disabled:opacity-30"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -698,11 +697,11 @@ function CreateTripView() {
 
                 <div className="block">
                   <span className="micro-label mb-1 block">
-                    Адреса — почніть вводити, оберіть зі списку
+                    {t('trip.addressStartTypingThen')}
                   </span>
                   <AddressGeocodeInput
                     value={w.address}
-                    ariaLabel={`Адреса точки ${index + 1}`}
+                    ariaLabel={t('trip.addressOfStop', { v0: index + 1 })}
                     onChange={(address) =>
                       patchWaypoint(
                         w.key,
@@ -726,7 +725,7 @@ function CreateTripView() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <label className="block">
-                    <span className="micro-label mb-1 block">Широта</span>
+                    <span className="micro-label mb-1 block">{t('common.latitude')}</span>
                     <input
                       type="number"
                       step="any"
@@ -739,7 +738,7 @@ function CreateTripView() {
                     />
                   </label>
                   <label className="block">
-                    <span className="micro-label mb-1 block">Довгота</span>
+                    <span className="micro-label mb-1 block">{t('common.longitude')}</span>
                     <input
                       type="number"
                       step="any"
@@ -756,13 +755,13 @@ function CreateTripView() {
                 {w.geocoded && (
                   <p className="flex items-center gap-1.5 text-micro text-txt-muted">
                     <Globe2 className="h-3 w-3 shrink-0 text-accent" />
-                    Координати визначено автоматично за адресою
+                    {t('trip.coordinatesResolvedAutomaticallyAddress')}
                   </p>
                 )}
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   <label className="block">
-                    <span className="micro-label mb-1 block">Прибуття від</span>
+                    <span className="micro-label mb-1 block">{t('trip.arrivalFrom')}</span>
                     <input
                       type="datetime-local"
                       value={w.arrivalPlannedFrom}
@@ -773,7 +772,7 @@ function CreateTripView() {
                     />
                   </label>
                   <label className="block">
-                    <span className="micro-label mb-1 block">Прибуття до</span>
+                    <span className="micro-label mb-1 block">{t('trip.arrivalTo')}</span>
                     <input
                       type="datetime-local"
                       value={w.arrivalPlannedTill}
@@ -785,7 +784,7 @@ function CreateTripView() {
                     />
                   </label>
                   <label className="block">
-                    <span className="micro-label mb-1 block">Стоянка, хв</span>
+                    <span className="micro-label mb-1 block">{t('trip.standingMin')}</span>
                     <input
                       type="number"
                       min="0"
@@ -798,7 +797,7 @@ function CreateTripView() {
                     />
                   </label>
                   <label className="block">
-                    <span className="micro-label mb-1 block">Вантаж, кг</span>
+                    <span className="micro-label mb-1 block">{t('trip.cargoKg')}</span>
                     <input
                       type="number"
                       min="0"
@@ -810,7 +809,7 @@ function CreateTripView() {
                       disabled={w.type !== 'LOADING' && w.type !== 'UNLOADING'}
                       title={
                         w.type !== 'LOADING' && w.type !== 'UNLOADING'
-                          ? 'Ruptela приймає вагу лише для завантаження/розвантаження'
+                          ? t('trip.ruptelaAcceptsCargoWeight')
                           : undefined
                       }
                       className="field tabular"
@@ -819,7 +818,7 @@ function CreateTripView() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <span className="micro-label block">Завдання водію на точці</span>
+                  <span className="micro-label block">{t('trip.driverTaskStop')}</span>
                   {w.todos.map((todo, tIdx) => (
                     <div key={tIdx} className="flex items-center gap-2">
                       <input
@@ -830,7 +829,7 @@ function CreateTripView() {
                             todos: w.todos.map((t, i) => (i === tIdx ? e.target.value : t)),
                           })
                         }
-                        placeholder="Наприклад: підписати ТТН"
+                        placeholder={t('trip.exampleSignConsignmentNote')}
                         className="field"
                       />
                       <button
@@ -840,7 +839,7 @@ function CreateTripView() {
                             todos: w.todos.filter((_, i) => i !== tIdx),
                           })
                         }
-                        aria-label="Прибрати завдання"
+                        aria-label={t('trip.removeTask')}
                         className="btn-icon h-8 w-8 shrink-0 hover:text-danger"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -852,7 +851,7 @@ function CreateTripView() {
                     onClick={() => patchWaypoint(w.key, { todos: [...w.todos, ''] })}
                     className="text-micro font-semibold text-warn hover:underline"
                   >
-                    + Додати завдання
+                    {t('trip.addTask')}
                   </button>
                 </div>
               </div>
@@ -862,18 +861,18 @@ function CreateTripView() {
 
         <div className="flex items-center justify-end gap-2 pb-4">
           <Link href="/ruptela/routes-tasks" className="btn btn-ghost">
-            Скасувати
+            {t('trip.cancel')}
           </Link>
           <button type="submit" disabled={submitting} className="btn btn-warn px-6 py-3">
             {submitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {editTripId ? 'Збереження…' : 'Створення…'}
+                {editTripId ? t('trip.savingEllipsis') : t('trip.creatingEllipsis')}
               </>
             ) : (
               <>
                 <PlusCircle className="h-4 w-4" />
-                {editTripId ? 'Зберегти зміни в Ruptela' : 'Створити поїздку в Ruptela'}
+                {editTripId ? t('trip.saveChangesRuptela') : t('trip.createTripRuptela')}
               </>
             )}
           </button>

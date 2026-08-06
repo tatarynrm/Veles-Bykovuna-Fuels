@@ -2,6 +2,7 @@
 
 import React, { useId, useMemo } from 'react';
 import { cn } from '@/lib/cn';
+import { t } from '@/lib/i18n';
 
 export type SparkTone = 'accent' | 'warn' | 'danger' | 'info' | 'muted';
 
@@ -96,14 +97,14 @@ export default function Sparkline({
         className={cn('flex items-center', className)}
         style={{ height }}
         role="img"
-        aria-label="Недостатньо даних для побудови тренду"
+        aria-label={t('ui.notEnoughDataDraw')}
       >
         <span className="h-px w-full border-t border-dashed border-bdr-subtle" />
       </div>
     );
   }
 
-  const trend = geometry.delta === 0 ? 'без змін' : geometry.delta > 0 ? 'зростання' : 'спад';
+  const trend = geometry.delta === 0 ? t('ui.unchanged') : geometry.delta > 0 ? t('ui.rising') : t('ui.falling');
 
   return (
     <div className={cn('relative w-full', className)} style={{ height }}>
@@ -149,7 +150,7 @@ export default function Sparkline({
         />
       )}
 
-      <span className="sr-only">{label ?? `Тренд за ${data.length} точок: ${trend}`}</span>
+      <span className="sr-only">{label ?? t('ui.trendOverPoints', { v0: data.length, v1: trend })}</span>
     </div>
   );
 }

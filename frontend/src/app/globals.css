@@ -592,8 +592,14 @@ h1, h2, h3, h4 {
     background: var(--surface-inset);
     border: 1px solid var(--border-subtle);
   }
+  /*
+    inline-flex + центрування — частина класу, а не справа місця виклику:
+    кнопка сама по собі inline-block, тож самотня іконка всередині лягала
+    ліворуч, а `justify-center` в місці виклику нічого не робив (нема flex).
+    Саме так «поїхали» іконки теми в бічній панелі.
+  */
   .segmented-item {
-    @apply rounded-control px-3 py-1.5 text-2xs font-semibold;
+    @apply inline-flex items-center justify-center gap-1.5 rounded-control px-3 py-1.5 text-2xs font-semibold;
     color: var(--text-muted);
     transition: all 0.15s var(--ease-state);
     white-space: nowrap;
@@ -887,6 +893,80 @@ h1, h2, h3, h4 {
 }
 .leaflet-control-attribution a {
   color: var(--text-secondary) !important;
+}
+.leaflet-control-scale-line {
+  background: var(--surface-inset) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-secondary) !important;
+  font-size: 10px;
+}
+
+/* Власні кнопки карти (повний екран, «де я») — вигляд рідних контролів Leaflet */
+.veles-map-btn {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: var(--surface-solid);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+.veles-map-btn:hover {
+  background: var(--surface-hover);
+}
+/* Зчитувач координат під курсором */
+.veles-map-coords {
+  padding: 2px 7px;
+  border-radius: 8px;
+  background: var(--surface-inset);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+  Обгортка карти в повноекранному режимі: без цього лишалася б фіксована
+  висота (h-[400px]) посеред чорного екрана.
+*/
+[data-map-shell]:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  max-height: none;
+  border-radius: 0;
+}
+
+/* Повзунки в налаштуваннях карти */
+.veles-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--surface-inset);
+  border: 1px solid var(--border-subtle);
+  outline: none;
+  cursor: pointer;
+}
+.veles-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 2px solid var(--surface-solid);
+  box-shadow: var(--shadow-sm);
+}
+.veles-range::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--surface-solid);
+  border-radius: 999px;
+  background: var(--accent);
+}
+.veles-range:focus-visible {
+  border-color: var(--border-accent);
 }
 
 .recharts-cartesian-axis-tick text {

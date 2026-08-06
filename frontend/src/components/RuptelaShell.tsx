@@ -5,21 +5,22 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Truck, PlusCircle, Route, Radio, Sun, Moon, BarChart3 } from 'lucide-react';
 import Sidebar from './Sidebar';
-import { useTheme } from '@/context/ThemeContext';
 import { useSessionUser } from '@/lib/useAuthGuard';
+import { t } from '@/lib/i18n';
+import ThemeToggleButton from './ThemeToggleButton';
 
 const TABS = [
-  { href: '/ruptela/fleet', label: 'Мій автопарк', icon: Truck },
-  { href: '/ruptela/live', label: 'Реальний час', icon: Radio },
+  { href: '/ruptela/fleet', label: 'common.myFleet', icon: Truck },
+  { href: '/ruptela/live', label: 'common.realTime', icon: Radio },
   {
     href: '/ruptela/create-trip',
-    label: 'Створити поїздку',
+    label: 'common.createATrip',
     icon: PlusCircle,
     /** Writes to Ruptela — not offered to the read-only guest role. */
     staffOnly: true,
   },
-  { href: '/ruptela/routes-tasks', label: 'Маршрут і завдання', icon: Route },
-  { href: '/ruptela/insights', label: 'Звіти FMS', icon: BarChart3 },
+  { href: '/ruptela/routes-tasks', label: 'common.routesAndTasks', icon: Route },
+  { href: '/ruptela/insights', label: 'common.fmsReports', icon: BarChart3 },
 ];
 
 interface RuptelaShellProps {
@@ -41,7 +42,6 @@ export default function RuptelaShell({
   children,
 }: RuptelaShellProps) {
   const pathname = usePathname();
-  const { theme, toggleTheme } = useTheme();
   const { isGuest } = useSessionUser();
   const tabs = TABS.filter((tab) => !(tab.staffOnly && isGuest));
 
@@ -67,18 +67,11 @@ export default function RuptelaShell({
 
             <div className="flex flex-wrap items-center gap-2">
               {actions}
-              <button
-                onClick={toggleTheme}
-                className="btn-icon"
-                title={theme === 'dark' ? 'Світла тема' : 'Темна тема'}
-                aria-label={theme === 'dark' ? 'Увімкнути світлу тему' : 'Увімкнути темну тему'}
-              >
-                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </button>
+              <ThemeToggleButton />
             </div>
           </div>
 
-          <nav className="mt-3 flex gap-1 overflow-x-auto" aria-label="Розділи Ruptela">
+          <nav className="mt-3 flex gap-1 overflow-x-auto" aria-label={t('telematics.ruptelaSections')}>
             <div className="segmented">
               {tabs.map((tab) => {
                 const active = pathname === tab.href;
@@ -93,7 +86,7 @@ export default function RuptelaShell({
                     }`}
                   >
                     <Icon className={`h-3.5 w-3.5 ${active ? 'text-warn' : 'text-txt-muted'}`} />
-                    <span>{tab.label}</span>
+                    <span>{t(tab.label)}</span>
                   </Link>
                 );
               })}

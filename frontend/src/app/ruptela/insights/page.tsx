@@ -33,6 +33,7 @@ import {
   Download,
   CalendarClock,
 } from 'lucide-react';
+import { t, localizedMap } from '@/lib/i18n';
 
 /* ══════════════════════ shared plumbing ══════════════════════ */
 
@@ -62,15 +63,15 @@ type TabKey =
   | 'registry';
 
 const TABS: Array<{ key: TabKey; label: string; icon: React.ElementType }> = [
-  { key: 'fuel', label: 'Паливні події', icon: Fuel },
-  { key: 'events', label: 'Події', icon: AlertTriangle },
-  { key: 'eco', label: 'Еко-водіння', icon: Leaf },
-  { key: 'drivers', label: 'Водії', icon: Users },
-  { key: 'geozones', label: 'Геозони', icon: MapPin },
-  { key: 'countries', label: 'Країни', icon: Globe2 },
-  { key: 'tacho', label: 'Тахограф', icon: HardDriveDownload },
-  { key: 'share', label: 'Посилання', icon: Link2 },
-  { key: 'registry', label: 'Довідники', icon: Library },
+  { key: 'fuel', label: 'insights.fuelEvents', icon: Fuel },
+  { key: 'events', label: 'insights.events', icon: AlertTriangle },
+  { key: 'eco', label: 'insights.ecoDriving', icon: Leaf },
+  { key: 'drivers', label: 'insights.driversTab', icon: Users },
+  { key: 'geozones', label: 'common.geofences', icon: MapPin },
+  { key: 'countries', label: 'insights.countries', icon: Globe2 },
+  { key: 'tacho', label: 'common.tachograph', icon: HardDriveDownload },
+  { key: 'share', label: 'insights.links', icon: Link2 },
+  { key: 'registry', label: 'insights.registries', icon: Library },
 ];
 
 /* ── period presets ── */
@@ -78,13 +79,13 @@ const TABS: Array<{ key: TabKey; label: string; icon: React.ElementType }> = [
 type PresetKey = 'today' | 'yesterday' | '7d' | '30d' | 'month' | 'prevMonth' | 'quarter';
 
 const PRESETS: Array<{ key: PresetKey; label: string }> = [
-  { key: 'today', label: 'Сьогодні' },
-  { key: 'yesterday', label: 'Вчора' },
-  { key: '7d', label: '7 днів' },
-  { key: '30d', label: '30 днів' },
-  { key: 'month', label: 'Цей місяць' },
-  { key: 'prevMonth', label: 'Минулий місяць' },
-  { key: 'quarter', label: 'Квартал' },
+  { key: 'today', label: 'common.today' },
+  { key: 'yesterday', label: 'insights.yesterday' },
+  { key: '7d', label: 'insights.n7Days' },
+  { key: '30d', label: 'insights.n30Days' },
+  { key: 'month', label: 'insights.thisMonth' },
+  { key: 'prevMonth', label: 'insights.lastMonth' },
+  { key: 'quarter', label: 'insights.quarter' },
 ];
 
 function presetRange(key: PresetKey): { from: Date; to: Date } {
@@ -136,7 +137,7 @@ const fmtDuration = (seconds?: number | null) => {
   if (!seconds || !Number.isFinite(seconds)) return '—';
   const h = Math.floor(seconds / 3600);
   const m = Math.round((seconds % 3600) / 60);
-  return h > 0 ? `${h} год ${m} хв` : `${m} хв`;
+  return h > 0 ? t('insights.hMin', { v0: h, v1: m }) : t('common.min', { v0: m });
 };
 
 const fmtNum = (n?: number | null, digits = 1) =>
@@ -189,7 +190,7 @@ function useReport<T>(load: (() => Promise<T>) | null, deps: unknown[]) {
     setError(null);
     load()
       .then((d) => alive && setData(d))
-      .catch((e: any) => alive && setError(e?.message ?? 'Помилка запиту'))
+      .catch((e: any) => alive && setError(e?.message ?? t('insights.requestError')))
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
@@ -217,7 +218,7 @@ function ReportState({
     return (
       <div className="flex items-center justify-center gap-2 py-12 text-2xs text-txt-muted">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Запит до Ruptela FMS…
+        {t('insights.queryingRuptelaFMSEllipsis')}
       </div>
     );
   }
@@ -228,7 +229,7 @@ function ReportState({
         <p className="max-w-md text-center text-2xs text-txt-secondary">{error}</p>
         <button type="button" onClick={onRetry} className="btn btn-ghost">
           <RefreshCw className="h-3.5 w-3.5" />
-          Повторити
+          {t('insights.retry')}
         </button>
       </div>
     );
@@ -272,7 +273,7 @@ function ReportHeader({
             options={{
               filename: `${exportName ?? 'report'}_${new Date().toISOString().slice(0, 10)}`,
               title,
-              subtitle: 'VELES ERP · дані Ruptela fm-track',
+              subtitle: t('insights.velesERPRuptelaFm'),
               columns: exportColumns,
             }}
           />
@@ -343,8 +344,8 @@ export default function RuptelaInsightsPage() {
 
   return (
     <RuptelaShell
-      title="Звіти FMS"
-      subtitle="Прямі дані Ruptela fm-track: паливо, події, тахограф, геозони, кордони"
+      title={t('common.fmsReports')}
+      subtitle={t('insights.rawRuptelaFmTrack')}
     >
       {/* Global report filters.
           backdrop-filter makes every glass panel its own stacking context, so
@@ -354,18 +355,18 @@ export default function RuptelaInsightsPage() {
       <div className="glass-panel relative z-20 space-y-3 p-4">
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-[240px] flex-1">
-            <span className="micro-label mb-1 block">Транспортні засоби</span>
+            <span className="micro-label mb-1 block">{t('insights.vehicles')}</span>
             <MultiSelect
               options={vehicles.map((v) => ({ value: v.id, label: v.name, hint: v.plate }))}
               selected={vehicleIds}
               onChange={setVehicleIds}
-              placeholder="Оберіть транспорт…"
-              unit="ТЗ обрано"
-              ariaLabel="Транспортні засоби для звіту"
+              placeholder={t('insights.selectAVehicleEllipsis')}
+              unit={t('insights.vehiclesSelected')}
+              ariaLabel={t('insights.vehiclesReport')}
             />
           </div>
           <label className="block">
-            <span className="micro-label mb-1 block">Період від</span>
+            <span className="micro-label mb-1 block">{t('insights.periodFrom')}</span>
             <input
               type="datetime-local"
               value={fromLocal}
@@ -377,7 +378,7 @@ export default function RuptelaInsightsPage() {
             />
           </label>
           <label className="block">
-            <span className="micro-label mb-1 block">до</span>
+            <span className="micro-label mb-1 block">{t('insights.to')}</span>
             <input
               type="datetime-local"
               value={toLocal}
@@ -403,7 +404,7 @@ export default function RuptelaInsightsPage() {
                 aria-pressed={preset === p.key}
                 className={`segmented-item ${preset === p.key ? 'segmented-item-active text-warn' : ''}`}
               >
-                {p.label}
+                {t(p.label)}
               </button>
             ))}
           </div>
@@ -411,7 +412,7 @@ export default function RuptelaInsightsPage() {
       </div>
 
       {/* Tabs */}
-      <nav className="flex gap-1 overflow-x-auto" aria-label="Розділи звітів">
+      <nav className="flex gap-1 overflow-x-auto" aria-label={t('insights.reportSections')}>
         <div className="segmented">
           {TABS.map(({ key, label, icon: Icon }) => (
             <button
@@ -424,7 +425,7 @@ export default function RuptelaInsightsPage() {
               }`}
             >
               <Icon className={`h-3.5 w-3.5 ${tab === key ? 'text-warn' : 'text-txt-muted'}`} />
-              {label}
+              {t(label)}
             </button>
           ))}
         </div>
@@ -432,7 +433,7 @@ export default function RuptelaInsightsPage() {
 
       {!rangeReady ? (
         <div className="glass-panel p-6 text-center text-2xs text-txt-muted">
-          Оберіть транспортний засіб і період, щоб побудувати звіт.
+          {t('insights.selectVehiclePeriodBuild')}
         </div>
       ) : (
         <>
@@ -489,7 +490,7 @@ function FuelEventsTab({ vehicleIds, from, to, drivers, vehicleName }: TabProps)
   const exportRows = () =>
     rows.map((e) => ({
       vehicle: vehicleName(e.vehicleId),
-      type: e.event_type === 'REFUEL' ? 'Заправка' : 'Злив',
+      type: e.event_type === 'REFUEL' ? t('common.refuelling') : t('insights.drain'),
       start: formatDateTime(e.start_date),
       end: formatDateTime(e.end_date),
       level_start: e.fuel_level_start,
@@ -501,29 +502,29 @@ function FuelEventsTab({ vehicleIds, from, to, drivers, vehicleName }: TabProps)
   return (
     <section className="glass-panel overflow-hidden">
       <ReportHeader
-        title="Заправки та зливи"
+        title={t('insights.refuellingsAndDrains')}
         exportData={exportRows}
         exportName="fuel_events"
         exportColumns={[
-          { label: 'Транспорт', key: 'vehicle' },
-          { label: 'Тип', key: 'type' },
-          { label: 'Початок', key: 'start' },
-          { label: 'Кінець', key: 'end' },
-          { label: 'Рівень до, л', key: 'level_start' },
-          { label: 'Рівень після, л', key: 'level_end' },
-          { label: 'Обсяг, л', key: 'volume' },
-          { label: 'Водій', key: 'driver' },
+          { label: t('common.vehicles'), key: 'vehicle' },
+          { label: t('insights.type'), key: 'type' },
+          { label: t('common.start'), key: 'start' },
+          { label: t('common.end'), key: 'end' },
+          { label: t('insights.levelBeforeL'), key: 'level_start' },
+          { label: t('insights.levelAfterL'), key: 'level_end' },
+          { label: t('insights.volumeL'), key: 'volume' },
+          { label: t('common.driver'), key: 'driver' },
         ]}
-        note="Джерело: датчик рівня палива"
+        note={t('insights.sourceFuelLevelSensor')}
       >
         <span className="badge badge-success">
-          <ArrowUpRight className="h-3 w-3" /> {refuels.length} заправок ·{' '}
-          {fmtNum(refuels.reduce((a, e) => a + (e.difference ?? 0), 0), 0)} л
+          <ArrowUpRight className="h-3 w-3" /> {refuels.length} {t('insights.refuellings')}{' '}
+          {fmtNum(refuels.reduce((a, e) => a + (e.difference ?? 0), 0), 0)} {t('unit.litre')}
         </span>
         {drains.length > 0 && (
           <span className="badge badge-danger">
-            <ArrowDownRight className="h-3 w-3" /> {drains.length} зливів ·{' '}
-            {fmtNum(Math.abs(drains.reduce((a, e) => a + (e.difference ?? 0), 0)), 0)} л
+            <ArrowDownRight className="h-3 w-3" /> {drains.length} {t('insights.drains')}{' '}
+            {fmtNum(Math.abs(drains.reduce((a, e) => a + (e.difference ?? 0), 0)), 0)} {t('unit.litre')}
           </span>
         )}
       </ReportHeader>
@@ -532,7 +533,7 @@ function FuelEventsTab({ vehicleIds, from, to, drivers, vehicleName }: TabProps)
         loading={loading}
         error={error}
         empty={rows.length === 0}
-        emptyText="За обраний період паливних подій не зафіксовано"
+        emptyText={t('insights.noFuelEventsRecorded')}
         onRetry={reload}
       />
 
@@ -541,15 +542,15 @@ function FuelEventsTab({ vehicleIds, from, to, drivers, vehicleName }: TabProps)
           <table className="data-table">
             <thead>
               <tr>
-                <th>Транспорт</th>
-                <th>Тип</th>
-                <th>Початок</th>
-                <th>Кінець</th>
-                <th className="num">До, л</th>
-                <th className="num">Після, л</th>
-                <th className="num">Обсяг, л</th>
-                <th>Водій</th>
-                <th>Локація</th>
+                <th>{t('common.vehicles')}</th>
+                <th>{t('insights.type')}</th>
+                <th>{t('common.start')}</th>
+                <th>{t('common.end')}</th>
+                <th className="num">{t('insights.toL')}</th>
+                <th className="num">{t('insights.afterL')}</th>
+                <th className="num">{t('insights.volumeL')}</th>
+                <th>{t('common.driver')}</th>
+                <th>{t('insights.location')}</th>
               </tr>
             </thead>
             <tbody>
@@ -566,7 +567,7 @@ function FuelEventsTab({ vehicleIds, from, to, drivers, vehicleName }: TabProps)
                         ) : (
                           <ArrowDownRight className="h-3 w-3" />
                         )}
-                        {refuel ? 'Заправка' : 'Злив'}
+                        {refuel ? t('common.refuelling') : t('insights.drain')}
                       </span>
                     </td>
                     <td className="whitespace-nowrap">{formatDateTime(e.start_date)}</td>
@@ -589,7 +590,7 @@ function FuelEventsTab({ vehicleIds, from, to, drivers, vehicleName }: TabProps)
                           rel="noreferrer"
                           className="text-2xs text-warn hover:underline"
                         >
-                          мапа ↗
+                          {t('insights.map')}
                         </a>
                       ) : (
                         '—'
@@ -643,18 +644,18 @@ function DetectedEventsTab({ vehicleIds, from, to, drivers, vehicleName }: TabPr
   return (
     <section className="glass-panel overflow-hidden">
       <ReportHeader
-        title="Зафіксовані події"
+        title={t('insights.recordedEvents')}
         exportData={exportRows}
         exportName="detected_events"
         exportColumns={[
-          { label: 'Транспорт', key: 'vehicle' },
-          { label: 'Подія', key: 'name' },
-          { label: 'Початок', key: 'start' },
-          { label: 'Тривалість', key: 'duration' },
-          { label: 'Швидкість', key: 'speed' },
-          { label: 'Водій', key: 'driver' },
+          { label: t('common.vehicles'), key: 'vehicle' },
+          { label: t('insights.event'), key: 'name' },
+          { label: t('common.start'), key: 'start' },
+          { label: t('insights.duration'), key: 'duration' },
+          { label: t('common.speed'), key: 'speed' },
+          { label: t('common.driver'), key: 'driver' },
         ]}
-        note="Правила подій налаштовуються у fm-track"
+        note={t('insights.eventRulesConfiguredFm')}
       >
         <span className="badge badge-neutral">{rows.length}</span>
       </ReportHeader>
@@ -663,7 +664,7 @@ function DetectedEventsTab({ vehicleIds, from, to, drivers, vehicleName }: TabPr
         loading={loading}
         error={error}
         empty={rows.length === 0}
-        emptyText="Подій за обраний період немає"
+        emptyText={t('insights.noEventsSelectedPeriod')}
         onRetry={reload}
       />
 
@@ -672,13 +673,13 @@ function DetectedEventsTab({ vehicleIds, from, to, drivers, vehicleName }: TabPr
           <table className="data-table">
             <thead>
               <tr>
-                <th>Транспорт</th>
-                <th>Подія</th>
-                <th>Початок</th>
-                <th className="num">Тривалість</th>
-                <th className="num">Швидкість, км/год</th>
-                <th>Водій</th>
-                <th>Локація</th>
+                <th>{t('common.vehicles')}</th>
+                <th>{t('insights.event')}</th>
+                <th>{t('common.start')}</th>
+                <th className="num">{t('insights.duration')}</th>
+                <th className="num">{t('insights.speedKmH')}</th>
+                <th>{t('common.driver')}</th>
+                <th>{t('insights.location')}</th>
               </tr>
             </thead>
             <tbody>
@@ -702,7 +703,7 @@ function DetectedEventsTab({ vehicleIds, from, to, drivers, vehicleName }: TabPr
                           rel="noreferrer"
                           className="text-2xs text-warn hover:underline"
                         >
-                          мапа ↗
+                          {t('insights.map')}
                         </a>
                       ) : (
                         '—'
@@ -753,36 +754,36 @@ function EcodrivingTab({ vehicleIds, from, to, vehicleName }: TabProps) {
     });
 
   const exportColumns = [
-    { label: 'Транспорт', key: 'vehicle' },
-    { label: 'Заг. бал', key: 'total_score' },
-    { label: 'Швидкість', key: 'speed_score' },
-    { label: 'Хол. хід', key: 'idling_score' },
-    { label: 'Двигун', key: 'engine_score' },
-    { label: 'Пробіг, км', key: 'distance' },
-    { label: 'Пальне, л', key: 'fuel' },
-    { label: 'л/100км', key: 'rate' },
-    { label: 'Перевищ., %', key: 'overspeed_pct' },
-    { label: 'Хол. хід, час', key: 'idling' },
-    { label: 'CO₂, кг', key: 'co2' },
+    { label: t('common.vehicles'), key: 'vehicle' },
+    { label: t('insights.overall'), key: 'total_score' },
+    { label: t('common.speed'), key: 'speed_score' },
+    { label: t('insights.idle'), key: 'idling_score' },
+    { label: t('insights.engine'), key: 'engine_score' },
+    { label: t('insights.mileageKm'), key: 'distance' },
+    { label: t('insights.fuelL'), key: 'fuel' },
+    { label: t('insights.l100KmUnit'), key: 'rate' },
+    { label: t('insights.speeding2'), key: 'overspeed_pct' },
+    { label: t('insights.idleTime'), key: 'idling' },
+    { label: t('insights.coKg'), key: 'co2' },
   ];
 
   return (
     <section className="glass-panel overflow-hidden">
       <ReportHeader
-        title="Еко-водіння за період"
+        title={t('insights.ecoDrivingPeriod')}
         exportData={exportRows}
         exportName="ecodriving"
         exportColumns={exportColumns}
-        note="Бали 0–100; більше — краще"
+        note={t('insights.score0100Higher')}
       >
-        <span className="badge badge-neutral">{results.length} ТЗ</span>
+        <span className="badge badge-neutral">{results.length} {t('common.vehicleShort')}</span>
       </ReportHeader>
 
       <ReportState
         loading={loading}
         error={error}
         empty={results.length === 0}
-        emptyText="Немає даних еко-водіння за період"
+        emptyText={t('insights.noEcoDrivingData')}
         onRetry={reload}
       />
 
@@ -793,15 +794,15 @@ function EcodrivingTab({ vehicleIds, from, to, vehicleName }: TabProps) {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Транспорт</th>
-                <th className="num">Заг. бал</th>
-                <th className="num">Швидкість</th>
-                <th className="num">Хол. хід</th>
-                <th className="num">Двигун</th>
-                <th className="num">Пробіг, км</th>
-                <th className="num">Пальне, л</th>
-                <th className="num">л/100км</th>
-                <th className="num">Перевищ. %</th>
+                <th>{t('common.vehicles')}</th>
+                <th className="num">{t('insights.overall')}</th>
+                <th className="num">{t('common.speed')}</th>
+                <th className="num">{t('insights.idle')}</th>
+                <th className="num">{t('insights.engine')}</th>
+                <th className="num">{t('insights.mileageKm')}</th>
+                <th className="num">{t('insights.fuelL')}</th>
+                <th className="num">{t('insights.l100KmUnit')}</th>
+                <th className="num">{t('insights.speeding3')}</th>
               </tr>
             </thead>
             <tbody>
@@ -851,28 +852,28 @@ function EcoSingle({ result }: { result: any }) {
   const main = p?.main_parameters;
 
   const scores = [
-    { label: 'Загальний бал', value: main?.total_score },
-    { label: 'Швидкість', value: p?.speed_parameters?.speed_score },
-    { label: 'Холостий хід', value: p?.idling_parameters?.idling_score },
-    { label: 'Двигун', value: p?.engine_parameters?.engine_score },
+    { label: t('insights.overallScore'), value: main?.total_score },
+    { label: t('common.speed'), value: p?.speed_parameters?.speed_score },
+    { label: t('common.idling'), value: p?.idling_parameters?.idling_score },
+    { label: t('insights.engine'), value: p?.engine_parameters?.engine_score },
   ].filter((s) => Number.isFinite(s.value));
 
   const facts = [
-    { label: 'Пробіг', value: `${fmtNum(main?.distance, 0)} км` },
-    { label: 'Час у русі', value: fmtDuration(main?.driving_duration) },
-    { label: 'Витрачено пального', value: `${fmtNum(main?.fuel_consumed_count, 0)} л` },
-    { label: 'Середня витрата', value: `${fmtNum(main?.fuel_consumption_rate)} л/100км` },
-    { label: 'Викиди CO₂', value: `${fmtNum(main?.co2_emission, 0)} кг` },
-    { label: 'Макс. швидкість', value: `${fmtNum(p?.speed_parameters?.maximum_speed, 0)} км/год` },
+    { label: t('common.mileage'), value: t('insights.km', { v0: fmtNum(main?.distance, 0) }) },
+    { label: t('insights.timeMoving'), value: fmtDuration(main?.driving_duration) },
+    { label: t('insights.fuelConsumed'), value: t('common.l', { v0: fmtNum(main?.fuel_consumed_count, 0) }) },
+    { label: t('insights.averageConsumption'), value: t('insights.l100Km', { v0: fmtNum(main?.fuel_consumption_rate) }) },
+    { label: t('insights.coEmissions'), value: t('insights.kg', { v0: fmtNum(main?.co2_emission, 0) }) },
+    { label: t('insights.topSpeed'), value: t('common.kmH', { v0: fmtNum(p?.speed_parameters?.maximum_speed, 0) }) },
     {
-      label: 'Перевищення швидкості',
-      value: `${fmtNum(p?.speed_parameters?.overspeeding_percentage)} % шляху`,
+      label: t('insights.speeding'),
+      value: t('insights.ofTheRoute', { v0: fmtNum(p?.speed_parameters?.overspeeding_percentage) }),
     },
     {
-      label: 'Холостий хід',
-      value: `${fmtDuration(p?.idling_parameters?.idling_duration)} · ${fmtNum(
+      label: t('common.idling'),
+      value: t('insights.l', { v0: fmtDuration(p?.idling_parameters?.idling_duration), v1: fmtNum(
         p?.idling_parameters?.idling_fuel_consumed_count,
-      )} л`,
+      ) }),
     },
   ];
 
@@ -947,15 +948,15 @@ function DriversTab({ from, to, drivers }: TabProps) {
   return (
     <section className="glass-panel overflow-hidden">
       <ReportHeader
-        title="Водії компанії"
+        title={t('insights.companyDrivers')}
         exportData={exportRows}
         exportName="drivers"
         exportColumns={[
-          { label: 'ПІБ', key: 'name' },
-          { label: 'Телефон', key: 'phone' },
-          { label: 'Тахокартка', key: 'card' },
+          { label: t('insights.fullName'), key: 'name' },
+          { label: t('insights.phone'), key: 'phone' },
+          { label: t('insights.tachographCard'), key: 'card' },
         ]}
-        note="Клік по водію — тахо-активність за період"
+        note={t('insights.clickDriverTachographActivity')}
       >
         <span className="badge badge-neutral">{visible.length}</span>
         <div className="w-56">
@@ -966,9 +967,9 @@ function DriversTab({ from, to, drivers }: TabProps) {
             }))}
             selected={driverIds}
             onChange={setDriverIds}
-            placeholder="Усі водії"
-            unit="водіїв"
-            ariaLabel="Фільтр водіїв"
+            placeholder={t('insights.allDrivers')}
+            unit={t('insights.drivers')}
+            ariaLabel={t('insights.driverFilter')}
           />
         </div>
       </ReportHeader>
@@ -978,7 +979,7 @@ function DriversTab({ from, to, drivers }: TabProps) {
           loading={false}
           error={null}
           empty
-          emptyText="Реєстр водіїв порожній"
+          emptyText={t('insights.driverRegistryEmpty')}
           onRetry={() => {}}
         />
       ) : (
@@ -986,9 +987,9 @@ function DriversTab({ from, to, drivers }: TabProps) {
           <table className="data-table">
             <thead>
               <tr>
-                <th>ПІБ</th>
-                <th>Телефон</th>
-                <th>Тахокартка</th>
+                <th>{t('insights.fullName')}</th>
+                <th>{t('insights.phone')}</th>
+                <th>{t('insights.tachographCard')}</th>
               </tr>
             </thead>
             <tbody>
@@ -1010,12 +1011,11 @@ function DriversTab({ from, to, drivers }: TabProps) {
                           <div className="bg-[var(--surface-inset)] px-4 py-3">
                             {stateLoading === d.id ? (
                               <p className="flex items-center gap-2 text-2xs text-txt-muted">
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Завантаження
-                                тахо-станів…
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('insights.loadingTachographStatesEllipsis')}
                               </p>
                             ) : (states[d.id] ?? []).length === 0 ? (
                               <p className="text-2xs text-txt-muted">
-                                Немає тахо-активності за період
+                                {t('insights.noTachographActivityPeriod')}
                               </p>
                             ) : (
                               <div className="flex flex-wrap gap-2">
@@ -1074,7 +1074,7 @@ function GeozonesTab({ vehicleIds, from, to, vehicleName }: TabProps) {
     rows.map((r) => ({
       vehicle: vehicleName(r.object_id),
       zone: zoneName(r.geozone_id),
-      direction: r.direction === 'IN' ? 'В’їзд' : 'Виїзд',
+      direction: r.direction === 'IN' ? t('insights.entry') : t('insights.exit'),
       datetime: formatDateTime(r.datetime),
       mileage: r.mileage,
       fuel_level: r.fuel_level,
@@ -1083,27 +1083,27 @@ function GeozonesTab({ vehicleIds, from, to, vehicleName }: TabProps) {
   return (
     <section className="glass-panel overflow-hidden">
       <ReportHeader
-        title="Візити геозон"
+        title={t('insights.geofenceVisits')}
         exportData={exportRows}
         exportName="geozone_visits"
         exportColumns={[
-          { label: 'Транспорт', key: 'vehicle' },
-          { label: 'Геозона', key: 'zone' },
-          { label: 'Напрямок', key: 'direction' },
-          { label: 'Час', key: 'datetime' },
-          { label: 'Одометр', key: 'mileage' },
-          { label: 'Рівень палива, л', key: 'fuel_level' },
+          { label: t('common.vehicles'), key: 'vehicle' },
+          { label: t('insights.geofence'), key: 'zone' },
+          { label: t('insights.direction'), key: 'direction' },
+          { label: t('common.time'), key: 'datetime' },
+          { label: t('insights.odometer'), key: 'mileage' },
+          { label: t('insights.fuelLevelL'), key: 'fuel_level' },
         ]}
-        note="IN — в’їзд, OUT — виїзд"
+        note={t('insights.entryOUTExit')}
       >
-        <span className="badge badge-neutral">{zones.data?.items?.length ?? 0} зон у акаунті</span>
+        <span className="badge badge-neutral">{zones.data?.items?.length ?? 0} {t('insights.zonesAccount')}</span>
       </ReportHeader>
 
       <ReportState
         loading={visits.loading || zones.loading}
         error={visits.error ?? zones.error}
         empty={rows.length === 0}
-        emptyText="Обрані ТЗ не перетинали геозони за період"
+        emptyText={t('insights.selectedVehiclesDidNot')}
         onRetry={() => {
           zones.reload();
           visits.reload();
@@ -1115,13 +1115,13 @@ function GeozonesTab({ vehicleIds, from, to, vehicleName }: TabProps) {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Транспорт</th>
-                <th>Геозона</th>
-                <th>Напрямок</th>
-                <th>Час</th>
-                <th className="num">Одометр, км</th>
-                <th className="num">Рівень палива, л</th>
-                <th>Локація</th>
+                <th>{t('common.vehicles')}</th>
+                <th>{t('insights.geofence')}</th>
+                <th>{t('insights.direction')}</th>
+                <th>{t('common.time')}</th>
+                <th className="num">{t('insights.odometerKm')}</th>
+                <th className="num">{t('insights.fuelLevelL')}</th>
+                <th>{t('insights.location')}</th>
               </tr>
             </thead>
             <tbody>
@@ -1135,7 +1135,7 @@ function GeozonesTab({ vehicleIds, from, to, vehicleName }: TabProps) {
                     <td>
                       <span className={`badge ${inbound ? 'badge-success' : 'badge-warn'}`}>
                         {inbound ? <LogIn className="h-3 w-3" /> : <LogOut className="h-3 w-3" />}
-                        {inbound ? 'В’їзд' : 'Виїзд'}
+                        {inbound ? t('insights.entry') : t('insights.exit')}
                       </span>
                     </td>
                     <td className="whitespace-nowrap">{formatDateTime(r.datetime)}</td>
@@ -1149,7 +1149,7 @@ function GeozonesTab({ vehicleIds, from, to, vehicleName }: TabProps) {
                           rel="noreferrer"
                           className="text-2xs text-warn hover:underline"
                         >
-                          мапа ↗
+                          {t('insights.map')}
                         </a>
                       ) : (
                         '—'
@@ -1202,31 +1202,31 @@ function CountriesTab({ vehicleIds, from, to, drivers, vehicleName }: TabProps) 
   return (
     <section className="glass-panel overflow-hidden">
       <ReportHeader
-        title="Звіт по країнах"
+        title={t('insights.countryReport')}
         exportData={exportRows}
         exportName="countries"
         exportColumns={[
-          { label: 'Транспорт', key: 'vehicle' },
-          { label: 'Країна', key: 'country' },
-          { label: 'В’їзд', key: 'entered' },
-          { label: 'Виїзд', key: 'exited' },
-          { label: 'Пробіг, км', key: 'mileage' },
-          { label: 'Пальне, л', key: 'fuel' },
-          { label: 'л/100км', key: 'rate' },
-          { label: 'Кермування', key: 'driving' },
-          { label: 'Простій', key: 'stop' },
-          { label: 'Водій', key: 'driver' },
+          { label: t('common.vehicles'), key: 'vehicle' },
+          { label: t('insights.country'), key: 'country' },
+          { label: t('insights.entry'), key: 'entered' },
+          { label: t('insights.exit'), key: 'exited' },
+          { label: t('insights.mileageKm'), key: 'mileage' },
+          { label: t('insights.fuelL'), key: 'fuel' },
+          { label: t('insights.l100KmUnit'), key: 'rate' },
+          { label: t('insights.driving'), key: 'driving' },
+          { label: t('insights.idling'), key: 'stop' },
+          { label: t('common.driver'), key: 'driver' },
         ]}
-        note="Перетини кордонів і показники в межах країни"
+        note={t('insights.borderCrossingsPerCountry')}
       >
-        <span className="badge badge-neutral">{rows.length} перебувань</span>
+        <span className="badge badge-neutral">{rows.length} {t('insights.visits')}</span>
       </ReportHeader>
 
       <ReportState
         loading={loading}
         error={error}
         empty={rows.length === 0}
-        emptyText="Обрані ТЗ не перетинали кордони за період"
+        emptyText={t('insights.selectedVehiclesDidNotCross')}
         onRetry={reload}
       />
 
@@ -1235,15 +1235,15 @@ function CountriesTab({ vehicleIds, from, to, drivers, vehicleName }: TabProps) 
           <table className="data-table">
             <thead>
               <tr>
-                <th>Транспорт</th>
-                <th>Країна</th>
-                <th>В’їзд</th>
-                <th>Виїзд</th>
-                <th className="num">Пробіг, км</th>
-                <th className="num">Пальне, л</th>
-                <th className="num">Сер. витрата</th>
-                <th className="num">Кермування</th>
-                <th>Водій</th>
+                <th>{t('common.vehicles')}</th>
+                <th>{t('insights.country')}</th>
+                <th>{t('insights.entry')}</th>
+                <th>{t('insights.exit')}</th>
+                <th className="num">{t('insights.mileageKm')}</th>
+                <th className="num">{t('insights.fuelL')}</th>
+                <th className="num">{t('insights.avgConsumption')}</th>
+                <th className="num">{t('insights.driving')}</th>
+                <th>{t('common.driver')}</th>
               </tr>
             </thead>
             <tbody>
@@ -1260,7 +1260,7 @@ function CountriesTab({ vehicleIds, from, to, drivers, vehicleName }: TabProps) 
                   <td className="whitespace-nowrap">{formatDateTime(c.end?.datetime)}</td>
                   <td className="num">{fmtNum(c.mileage, 0)}</td>
                   <td className="num">{fmtNum(c.fuel_consumed, 0)}</td>
-                  <td className="num">{fmtNum(c.average_fuel_consumption)} л/100км</td>
+                  <td className="num">{fmtNum(c.average_fuel_consumption)} {t('insights.l100KmUnit')}</td>
                   <td className="num">{fmtDuration(c.driving_status_duration)}</td>
                   <td>{driverName(drivers, c.first_driver_ids?.[0])}</td>
                 </tr>
@@ -1288,27 +1288,27 @@ const TACHO_STATUS_BADGE: Record<string, string> = {
   UNKNOWN: 'badge-neutral',
 };
 
-const TACHO_STATUS_LABEL: Record<string, string> = {
-  SUCCEEDED: 'Готово',
-  SUCCEEDED_DIRTY: 'Готово (частково)',
-  PENDING: 'Очікує пристрій',
-  AUTHENTICATING: 'Автентифікація',
-  AUTHENTICATION_COMPLETED: 'Автентифіковано',
-  DOWNLOADING: 'Завантаження',
-  PENDING_VALIDATION: 'Перевірка файлу',
-  FAILED: 'Помилка',
-  UNKNOWN: 'Невідомо',
-};
+const TACHO_STATUS_LABEL: Record<string, string> = localizedMap({
+  SUCCEEDED: 'insights.done',
+  SUCCEEDED_DIRTY: 'insights.donePartial',
+  PENDING: 'insights.waitingDevice',
+  AUTHENTICATING: 'insights.authentication',
+  AUTHENTICATION_COMPLETED: 'insights.authenticated',
+  DOWNLOADING: 'common.loading',
+  PENDING_VALIDATION: 'insights.fileCheck',
+  FAILED: 'insights.error',
+  UNKNOWN: 'insights.unknown',
+});
 
 /**
  * Optional VU download blocks — the base activity data always downloads;
  * these enum values come from VehicleTachoScheduleRequest in the swagger.
  */
 const VU_OPTIONS = [
-  { value: 'TACHO_FILE_FAULTS_AND_EVENTS', label: 'Події та збої' },
-  { value: 'TACHO_FILE_DETAILED_SPEED', label: 'Детальна швидкість' },
-  { value: 'TACHO_FILE_TECHNICAL_DATA', label: 'Технічні дані' },
-  { value: 'SINCE_LAST_DOWNLOAD', label: 'Лише з останнього завантаження' },
+  { value: 'TACHO_FILE_FAULTS_AND_EVENTS', label: 'insights.eventsAndFaults' },
+  { value: 'TACHO_FILE_DETAILED_SPEED', label: 'insights.detailedSpeed' },
+  { value: 'TACHO_FILE_TECHNICAL_DATA', label: 'insights.technicalData' },
+  { value: 'SINCE_LAST_DOWNLOAD', label: 'insights.sinceLastDownloadOnly' },
 ];
 
 function TachoTab({ vehicles }: TabProps) {
@@ -1354,24 +1354,24 @@ function TachoTab({ vehicles }: TabProps) {
       if (kind === 'driver-card') {
         await apiSend('POST', '/api/ruptela/insights/tacho/driver-card-download', {
           external_object_id: targetVehicle,
-          request_name: `VELES картка ${new Date().toISOString().slice(0, 10)}`,
+          request_name: t('insights.velesCard', { v0: new Date().toISOString().slice(0, 10) }),
           slot,
         });
       } else {
         await apiSend('POST', '/api/ruptela/insights/tacho/vehicle-download', {
           external_object_id: targetVehicle,
-          request_name: `VELES тахограф ${new Date().toISOString().slice(0, 10)}`,
+          request_name: t('insights.velesTachograph', { v0: new Date().toISOString().slice(0, 10) }),
           from_date_time: toIso(vuFrom),
           to_date_time: toIso(vuTo),
           options: vuOptions,
         });
       }
       setActionOk(
-        'Завантаження заплановано. Пристрій передасть файл, щойно буде на зв’язку — стежте за статусом у списку нижче.',
+        t('insights.downloadScheduledDeviceWill'),
       );
       requests.reload();
     } catch (e: any) {
-      setActionError(e?.message ?? 'Не вдалося запланувати завантаження');
+      setActionError(e?.message ?? t('insights.couldNotScheduleDownload'));
     } finally {
       setScheduling(false);
     }
@@ -1384,7 +1384,7 @@ function TachoTab({ vehicles }: TabProps) {
       await apiSend('DELETE', `/api/ruptela/insights/tacho/request/${id}`);
       requests.reload();
     } catch (e: any) {
-      setActionError(e?.message ?? 'Не вдалося скасувати запит');
+      setActionError(e?.message ?? t('insights.couldNotCancelRequest'));
     } finally {
       setDeletingId(null);
     }
@@ -1399,28 +1399,27 @@ function TachoTab({ vehicles }: TabProps) {
       {/* Schedule form */}
       <section className="glass-panel p-5">
         <h2 className="mb-1 text-sm font-semibold text-txt-primary">
-          Запланувати завантаження тахографа
+          {t('insights.scheduleTachographDownload')}
         </h2>
         <p className="mb-4 text-2xs text-txt-muted">
-          Команда надсилається на реальний пристрій у ТЗ. Файл .ddd з’явиться у списку після
-          передачі — зазвичай коли запалювання ввімкнене і є GSM-зв’язок.
+          {t('insights.commandGoesRealDevice')}
         </p>
 
         <div className="flex flex-wrap items-end gap-3">
           <label className="block">
-            <span className="micro-label mb-1 block">Що завантажити</span>
+            <span className="micro-label mb-1 block">{t('insights.whatToDownload')}</span>
             <select
               value={kind}
               onChange={(e) => setKind(e.target.value as typeof kind)}
               className="field w-auto"
             >
-              <option value="driver-card">Картка водія</option>
-              <option value="vehicle">Тахограф ТЗ (VU)</option>
+              <option value="driver-card">{t('insights.driverCardTab')}</option>
+              <option value="vehicle">{t('insights.vehicleUnitVU')}</option>
             </select>
           </label>
 
           <label className="block min-w-[220px] flex-1">
-            <span className="micro-label mb-1 block">Транспортний засіб</span>
+            <span className="micro-label mb-1 block">{t('common.vehicle')}</span>
             <select
               value={targetVehicle}
               onChange={(e) => setVehicleId(e.target.value)}
@@ -1436,20 +1435,20 @@ function TachoTab({ vehicles }: TabProps) {
 
           {kind === 'driver-card' ? (
             <label className="block">
-              <span className="micro-label mb-1 block">Слот картки</span>
+              <span className="micro-label mb-1 block">{t('insights.cardSlot')}</span>
               <select
                 value={slot}
                 onChange={(e) => setSlot(e.target.value as typeof slot)}
                 className="field w-auto"
               >
-                <option value="DRIVER_CARD_FIRST_SLOT">Слот 1 — водій</option>
-                <option value="DRIVER_CARD_SECOND_SLOT">Слот 2 — змінник</option>
+                <option value="DRIVER_CARD_FIRST_SLOT">{t('insights.slot1Driver')}</option>
+                <option value="DRIVER_CARD_SECOND_SLOT">{t('insights.slot2CoDriver')}</option>
               </select>
             </label>
           ) : (
             <>
               <label className="block">
-                <span className="micro-label mb-1 block">Дані від</span>
+                <span className="micro-label mb-1 block">{t('insights.dataAsOf')}</span>
                 <input
                   type="datetime-local"
                   value={vuFrom}
@@ -1458,7 +1457,7 @@ function TachoTab({ vehicles }: TabProps) {
                 />
               </label>
               <label className="block">
-                <span className="micro-label mb-1 block">до</span>
+                <span className="micro-label mb-1 block">{t('insights.to')}</span>
                 <input
                   type="datetime-local"
                   value={vuTo}
@@ -1481,14 +1480,14 @@ function TachoTab({ vehicles }: TabProps) {
             ) : (
               <HardDriveDownload className="h-3.5 w-3.5" />
             )}
-            Запланувати
+            {t('insights.schedule')}
           </button>
         </div>
 
         {kind === 'vehicle' && (
           <div className="mt-3">
             <span className="micro-label mb-1.5 block">
-              Додаткові блоки DDD — активності завантажуються завжди
+              {t('insights.extraDDDBlocksActivities')}
             </span>
             <div className="flex flex-wrap gap-2">
               {VU_OPTIONS.map((o) => {
@@ -1506,7 +1505,7 @@ function TachoTab({ vehicles }: TabProps) {
                     className={`badge ${on ? 'badge-warn' : 'badge-neutral'} cursor-pointer`}
                   >
                     {on && <Check className="h-3 w-3" />}
-                    {o.label}
+                    {t(o.label)}
                   </button>
                 );
               })}
@@ -1529,14 +1528,14 @@ function TachoTab({ vehicles }: TabProps) {
       {/* Requests table */}
       <section className="glass-panel overflow-hidden">
         <header className="flex items-center gap-3 border-b border-bdr-subtle px-4 py-3">
-          <h2 className="text-sm font-semibold text-txt-primary">Запити на завантаження</h2>
+          <h2 className="text-sm font-semibold text-txt-primary">{t('insights.downloadRequests')}</h2>
           <span className="badge badge-neutral">{items.length}</span>
           <button
             type="button"
             onClick={requests.reload}
             className="btn-icon ml-auto h-8 w-8"
-            title="Оновити список"
-            aria-label="Оновити список"
+            title={t('insights.refreshTheList')}
+            aria-label={t('insights.refreshTheList')}
           >
             <RefreshCw className={`h-3.5 w-3.5 ${requests.loading ? 'animate-spin' : ''}`} />
           </button>
@@ -1546,7 +1545,7 @@ function TachoTab({ vehicles }: TabProps) {
           loading={requests.loading}
           error={requests.error}
           empty={items.length === 0}
-          emptyText="Запитів ще немає — заплануйте перше завантаження вище"
+          emptyText={t('insights.noRequestsYetSchedule')}
           onRetry={requests.reload}
         />
 
@@ -1555,12 +1554,12 @@ function TachoTab({ vehicles }: TabProps) {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Створено</th>
-                  <th>Тип</th>
-                  <th>Транспорт</th>
-                  <th>Водій / картка</th>
-                  <th>Статус</th>
-                  <th aria-label="Дії" />
+                  <th>{t('insights.created')}</th>
+                  <th>{t('insights.type')}</th>
+                  <th>{t('common.vehicles')}</th>
+                  <th>{t('insights.driverCard')}</th>
+                  <th>{t('common.status')}</th>
+                  <th aria-label={t('common.actions')} />
                 </tr>
               </thead>
               <tbody>
@@ -1589,8 +1588,8 @@ function TachoTab({ vehicles }: TabProps) {
                         <a
                           href={`${API_BASE}/api/ruptela/insights/tacho/file/${r.id}`}
                           download
-                          title="Завантажити файл .ddd"
-                          aria-label="Завантажити файл .ddd"
+                          title={t('insights.downloadDddFile')}
+                          aria-label={t('insights.downloadDddFile')}
                           className="btn-icon mr-1 inline-flex h-7 w-7"
                         >
                           <Download className="h-3.5 w-3.5 text-accent" />
@@ -1600,8 +1599,8 @@ function TachoTab({ vehicles }: TabProps) {
                         type="button"
                         onClick={() => remove(r.id)}
                         disabled={deletingId === r.id}
-                        title="Скасувати запит"
-                        aria-label="Скасувати запит"
+                        title={t('insights.cancelTheRequest')}
+                        aria-label={t('insights.cancelTheRequest')}
                         className="btn-icon h-7 w-7 hover:text-danger"
                       >
                         {deletingId === r.id ? (
@@ -1656,7 +1655,7 @@ function ShareLinksTab({ vehicles }: TabProps) {
       });
       reload();
     } catch (e: any) {
-      setActionError(e?.message ?? 'Не вдалося створити посилання');
+      setActionError(e?.message ?? t('insights.couldNotCreateLink'));
     } finally {
       setCreating(false);
     }
@@ -1669,7 +1668,7 @@ function ShareLinksTab({ vehicles }: TabProps) {
       await apiSend('DELETE', `/api/ruptela/insights/share-links/${id}`);
       reload();
     } catch (e: any) {
-      setActionError(e?.message ?? 'Не вдалося видалити посилання');
+      setActionError(e?.message ?? t('insights.couldNotDeleteLink'));
     } finally {
       setDeletingId(null);
     }
@@ -1684,15 +1683,15 @@ function ShareLinksTab({ vehicles }: TabProps) {
   return (
     <section className="glass-panel overflow-hidden">
       <header className="flex items-center gap-3 border-b border-bdr-subtle px-4 py-3">
-        <h2 className="text-sm font-semibold text-txt-primary">Публічні посилання на трекінг</h2>
+        <h2 className="text-sm font-semibold text-txt-primary">{t('insights.publicTrackingLinks')}</h2>
         <p className="ml-auto text-micro text-txt-muted">
-          Стеження за ТЗ без облікового запису — для клієнтів і експедиторів
+          {t('insights.vehicleTrackingWithoutAccount')}
         </p>
       </header>
 
       <div className="flex flex-wrap items-end gap-3 border-b border-bdr-subtle px-4 py-3">
         <label className="block min-w-[200px] flex-1">
-          <span className="micro-label mb-1 block">Транспортний засіб</span>
+          <span className="micro-label mb-1 block">{t('common.vehicle')}</span>
           <select
             value={newVehicleId || vehicles[0]?.id || ''}
             onChange={(e) => setNewVehicleId(e.target.value)}
@@ -1706,7 +1705,7 @@ function ShareLinksTab({ vehicles }: TabProps) {
           </select>
         </label>
         <label className="block">
-          <span className="micro-label mb-1 block">Діє до</span>
+          <span className="micro-label mb-1 block">{t('insights.validUntil')}</span>
           <input
             type="datetime-local"
             value={expires}
@@ -1720,7 +1719,7 @@ function ShareLinksTab({ vehicles }: TabProps) {
           ) : (
             <Link2 className="h-3.5 w-3.5" />
           )}
-          Створити посилання
+          {t('insights.createALink')}
         </button>
       </div>
 
@@ -1737,7 +1736,7 @@ function ShareLinksTab({ vehicles }: TabProps) {
         loading={loading}
         error={error}
         empty={items.length === 0}
-        emptyText="Активних посилань немає — створіть перше вище"
+        emptyText={t('insights.noActiveLinksCreate')}
         onRetry={reload}
       />
 
@@ -1746,11 +1745,11 @@ function ShareLinksTab({ vehicles }: TabProps) {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Посилання</th>
-                <th>Транспорт</th>
-                <th>Створено</th>
-                <th>Діє до</th>
-                <th aria-label="Дії" />
+                <th>{t('insights.links')}</th>
+                <th>{t('common.vehicles')}</th>
+                <th>{t('insights.created')}</th>
+                <th>{t('insights.validUntil')}</th>
+                <th aria-label={t('common.actions')} />
               </tr>
             </thead>
             <tbody>
@@ -1773,8 +1772,8 @@ function ShareLinksTab({ vehicles }: TabProps) {
                     <button
                       type="button"
                       onClick={() => copy(l)}
-                      title="Скопіювати посилання"
-                      aria-label="Скопіювати посилання"
+                      title={t('insights.copyTheLink')}
+                      aria-label={t('insights.copyTheLink')}
                       className="btn-icon mr-1 h-7 w-7"
                     >
                       {copiedId === l.id ? (
@@ -1787,8 +1786,8 @@ function ShareLinksTab({ vehicles }: TabProps) {
                       type="button"
                       onClick={() => remove(l.id)}
                       disabled={deletingId === l.id}
-                      title="Видалити посилання"
-                      aria-label="Видалити посилання"
+                      title={t('insights.deleteLink')}
+                      aria-label={t('insights.deleteLink')}
                       className="btn-icon h-7 w-7 hover:text-danger"
                     >
                       {deletingId === l.id ? (
@@ -1821,22 +1820,22 @@ function RegistryTab() {
     <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
       <section className="glass-panel overflow-hidden">
         <header className="flex items-center gap-3 border-b border-bdr-subtle px-4 py-3">
-          <h2 className="text-sm font-semibold text-txt-primary">Групи транспорту</h2>
+          <h2 className="text-sm font-semibold text-txt-primary">{t('common.vehicleGroups')}</h2>
           <span className="badge badge-neutral">{groups.data?.items?.length ?? 0}</span>
         </header>
         <ReportState
           loading={groups.loading}
           error={groups.error}
           empty={(groups.data?.items ?? []).length === 0}
-          emptyText="Груп не створено у fm-track"
+          emptyText={t('insights.noGroupsCreatedFm')}
           onRetry={groups.reload}
         />
         {(groups.data?.items ?? []).length > 0 && (
           <table className="data-table">
             <thead>
               <tr>
-                <th>Назва</th>
-                <th className="num">Обʼєктів</th>
+                <th>{t('common.title')}</th>
+                <th className="num">{t('insights.objects')}</th>
               </tr>
             </thead>
             <tbody>
@@ -1853,23 +1852,23 @@ function RegistryTab() {
 
       <section className="glass-panel overflow-hidden">
         <header className="flex items-center gap-3 border-b border-bdr-subtle px-4 py-3">
-          <h2 className="text-sm font-semibold text-txt-primary">Користувачі fm-track</h2>
+          <h2 className="text-sm font-semibold text-txt-primary">{t('insights.fmTrackUsers')}</h2>
           <span className="badge badge-neutral">{users.data?.items?.length ?? 0}</span>
         </header>
         <ReportState
           loading={users.loading}
           error={users.error}
           empty={(users.data?.items ?? []).length === 0}
-          emptyText="Користувачів не знайдено"
+          emptyText={t('insights.noUsersFound')}
           onRetry={users.reload}
         />
         {(users.data?.items ?? []).length > 0 && (
           <table className="data-table">
             <thead>
               <tr>
-                <th>Імʼя</th>
+                <th>{t('insights.name')}</th>
                 <th>Email</th>
-                <th>Телефон</th>
+                <th>{t('insights.phone')}</th>
               </tr>
             </thead>
             <tbody>

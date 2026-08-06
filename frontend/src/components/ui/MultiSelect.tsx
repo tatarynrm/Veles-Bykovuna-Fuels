@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { t } from '@/lib/i18n';
 
 export interface MultiSelectOption {
   value: string;
@@ -31,8 +32,8 @@ export default function MultiSelect({
   options,
   selected,
   onChange,
-  placeholder = 'Оберіть…',
-  unit = 'обрано',
+  placeholder = t('ui.selectEllipsis'),
+  unit = t('ui.selected'),
   ariaLabel,
   className,
 }: MultiSelectProps) {
@@ -109,8 +110,8 @@ export default function MultiSelect({
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Пошук…"
-                aria-label="Фільтр варіантів"
+                placeholder={t('common.searchEllipsis')}
+                aria-label={t('ui.filterOptions')}
                 className="field field-sm w-full pl-7"
               />
             </div>
@@ -119,13 +120,13 @@ export default function MultiSelect({
               onClick={() => onChange(options.map((o) => o.value))}
               className="whitespace-nowrap text-micro font-semibold text-warn hover:underline"
             >
-              Усі
+              {t('ui.all')}
             </button>
             <button
               type="button"
               onClick={() => onChange([])}
-              title="Очистити вибір"
-              aria-label="Очистити вибір"
+              title={t('ui.clearSelection')}
+              aria-label={t('ui.clearSelection')}
               className="btn-icon h-7 w-7"
             >
               <X className="h-3 w-3" />
@@ -134,7 +135,7 @@ export default function MultiSelect({
 
           <div role="listbox" aria-multiselectable="true" className="max-h-60 overflow-y-auto">
             {filtered.length === 0 ? (
-              <p className="px-2.5 py-3 text-center text-2xs text-txt-muted">Нічого не знайдено</p>
+              <p className="px-2.5 py-3 text-center text-2xs text-txt-muted">{t('ui.nothingFound')}</p>
             ) : (
               filtered.map((o) => {
                 const active = selected.includes(o.value);

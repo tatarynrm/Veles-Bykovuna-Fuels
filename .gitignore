@@ -11,6 +11,8 @@ node_modules/
 # Збірки
 dist/
 .next/
+# Перевірочна збірка збоку, поки піднятий dev-сервер (NEXT_DIST_DIR)
+.next-build/
 out/
 build/
 

@@ -22,6 +22,7 @@ import {
   ShimmerButton,
   Sparkline,
 } from '@/components/ui';
+import { t } from '@/lib/i18n';
 
 /**
  * Showcase for the shared UI primitives.
@@ -52,12 +53,12 @@ export default function UiKitPage() {
   return (
     <PageShell
       title="UI Kit"
-      subtitle="Бібліотека компонентів VELES ERP — патерни 21st.dev на токенах Aurora Glass"
+      subtitle={t('uikit.velesERPComponentLibrary')}
       onRefresh={reroll}
       isRefreshing={busy}
       actions={
         <ShimmerButton icon={Command} onClick={openPalette} kbd="⌘K">
-          <span className="hidden sm:inline">Палітра</span>
+          <span className="hidden sm:inline">{t('uikit.palette')}</span>
         </ShimmerButton>
       }
     >
@@ -65,30 +66,29 @@ export default function UiKitPage() {
         {/* ── Command palette ───────────────────────────────────────────── */}
         <Section
           icon={Command}
-          title="Командна палітра"
-          note="Глобальна — доступна на будь-якій сторінці, окрім /login"
+          title={t('common.commandPalette')}
+          note={t('uikit.globalAvailableEveryPage')}
         >
           <div className="glass-panel flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div className="space-y-3">
               <p className="text-xs text-txt-secondary">
-                Натисніть <span className="kbd">Ctrl</span> <span className="kbd">K</span> (або{' '}
-                <span className="kbd">⌘</span> <span className="kbd">K</span> на macOS) будь-де в
-                застосунку.
+                {t('uikit.press')} <span className="kbd">Ctrl</span> <span className="kbd">K</span> {t('uikit.or')}{' '}
+                <span className="kbd">⌘</span> <span className="kbd">K</span> {t('uikit.macosAnywhereApp')}
               </p>
               <ul className="space-y-1.5 text-2xs text-txt-muted">
-                <li>Нечіткий пошук: «жтр» знаходить «Журнал транзакцій»</li>
-                <li>Латинські аліаси: «cards», «analytics», «logout»</li>
-                <li>Запамʼятовує 4 останні команди в блоці «Нещодавні»</li>
+                <li>{t('uikit.fuzzySearchTlgFinds')}</li>
+                <li>{t('uikit.latinAliasesCardsAnalytics')}</li>
+                <li>{t('uikit.remembersLast4Commands')}</li>
                 <li>
                   <span className="kbd">↑</span> <span className="kbd">↓</span>{' '}
-                  <span className="kbd">Home</span> <span className="kbd">End</span> навігація,{' '}
-                  <span className="kbd">⏎</span> виконати, <span className="kbd">Esc</span> закрити
+                  <span className="kbd">Home</span> <span className="kbd">End</span> {t('uikit.navigation')}{' '}
+                  <span className="kbd">⏎</span> {t('uikit.run')} <span className="kbd">Esc</span> {t('uikit.close')}
                 </li>
-                <li>Дія «Оновити дані» викликає справжній refresh поточної сторінки</li>
+                <li>{t('uikit.refreshDataTriggersReal')}</li>
               </ul>
             </div>
             <ShimmerButton icon={Command} onClick={openPalette} className="shrink-0 self-start">
-              Відкрити палітру
+              {t('uikit.openPalette')}
             </ShimmerButton>
           </div>
         </Section>
@@ -97,51 +97,51 @@ export default function UiKitPage() {
         <Section
           icon={TrendingUp}
           title="MetricTile"
-          note="NumberTicker + Sparkline + дельта в одній плитці"
+          note={t('uikit.numbertickerSparklineDeltaOne')}
         >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <MetricTile
               index={0}
-              label="Витрати за період"
+              label={t('uikit.spendingPeriod')}
               value={spend[spend.length - 1]}
               format={formatCurrency}
               delta={pctChange(spend)}
               invertDelta
               trend={spend}
               icon={Wallet}
-              meta="Зростання витрат позначається червоним — invertDelta"
+              meta={t('uikit.risingSpendingShownRed')}
             />
             <MetricTile
               index={1}
-              label="Обʼєм пального"
+              label={t('common.fuelVolume')}
               value={volume[volume.length - 1]}
-              unit="л"
+              unit={t('unit.litre')}
               delta={pctChange(volume)}
               trend={volume}
               tone="info"
               icon={Droplets}
-              meta="Сумарно по OKKO та Shell"
+              meta={t('uikit.combinedOKKOShell')}
             />
             <MetricTile
               index={2}
-              label="Холостий хід"
+              label={t('common.idling')}
               value={idle[idle.length - 1]}
-              unit="год"
+              unit={t('common.h')}
               decimals={1}
               delta={pctChange(idle)}
               invertDelta
               trend={idle}
               tone="warn"
               icon={Gauge}
-              meta="Телематика Ruptela"
+              meta={t('uikit.ruptelaTelematics')}
             />
             <MetricTile
               index={3}
-              label="Транзакцій"
+              label={t('common.transactions')}
               value={1284}
               delta={0}
               icon={Receipt}
-              meta="Без тренду — плитка рендериться без Sparkline"
+              meta={t('uikit.noTrendTileRenders')}
             />
           </div>
         </Section>
@@ -150,24 +150,24 @@ export default function UiKitPage() {
         <Section
           icon={Gauge}
           title="GaugeRing"
-          note="tone=&quot;auto&quot;: нижче 20% — критично, нижче 45% — увага"
+          note={t('uikit.toneQuotAutoQuot')}
         >
           <div className="glass-panel flex flex-wrap items-center justify-center gap-8 p-6 sm:justify-start">
-            <GaugeRing value={78} label="Готовність парку" />
-            <GaugeRing value={34} label="Ліміт по картці" />
-            <GaugeRing value={12} label="Запас у баку" />
-            <GaugeRing value={92} tone="info" label="Покриття GPS" size={110} thickness={8} />
+            <GaugeRing value={78} label={t('uikit.fleetAvailability')} />
+            <GaugeRing value={34} label={t('uikit.cardLimit')} />
+            <GaugeRing value={12} label={t('uikit.tankLevel')} />
+            <GaugeRing value={92} tone="info" label={t('uikit.gpsCoverage')} size={110} thickness={8} />
           </div>
         </Section>
 
         {/* ── Sparklines ────────────────────────────────────────────────── */}
-        <Section icon={Sparkles} title="Sparkline" note="Чистий SVG, без залежностей">
+        <Section icon={Sparkles} title="Sparkline" note={t('uikit.pureSVGNoDependencies')}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {(
               [
-                { tone: 'accent', label: 'Зростання', data: spend },
-                { tone: 'warn', label: 'Волатильність', data: idle },
-                { tone: 'danger', label: 'Спад', data: [...volume].reverse() },
+                { tone: 'accent', label: t('uikit.growth'), data: spend },
+                { tone: 'warn', label: t('uikit.volatility'), data: idle },
+                { tone: 'danger', label: t('uikit.decline'), data: [...volume].reverse() },
               ] as const
             ).map(({ tone, label, data }) => (
               <div key={label} className="glass-panel p-4">
@@ -176,7 +176,7 @@ export default function UiKitPage() {
               </div>
             ))}
             <div className="glass-panel p-4">
-              <p className="micro-label">Порожній стан</p>
+              <p className="micro-label">{t('uikit.emptyState')}</p>
               <Sparkline data={[]} height={48} className="mt-3" />
             </div>
           </div>
@@ -186,26 +186,26 @@ export default function UiKitPage() {
         <Section
           icon={TrendingUp}
           title="NumberTicker"
-          note="Стартує у вʼюпорті, переанімовує з поточного значення при зміні"
+          note={t('uikit.startsViewportReAnimates')}
         >
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <TickerCard label="Загальні витрати">
+            <TickerCard label={t('common.totalSpending')}>
               <NumberTicker value={sum(spend)} format={formatCurrency} />
             </TickerCard>
-            <TickerCard label="Літрів">
+            <TickerCard label={t('uikit.litres')}>
               <NumberTicker value={sum(volume)} />
-              <span className="ml-1 text-sm font-medium text-txt-muted">л</span>
+              <span className="ml-1 text-sm font-medium text-txt-muted">{t('unit.litre')}</span>
             </TickerCard>
-            <TickerCard label="Середня ціна">
+            <TickerCard label={t('uikit.averagePrice')}>
               <NumberTicker value={sum(spend) / sum(volume)} decimals={2} />
-              <span className="ml-1 text-sm font-medium text-txt-muted">₴/л</span>
+              <span className="ml-1 text-sm font-medium text-txt-muted">{t('uikit.uahL')}</span>
             </TickerCard>
-            <TickerCard label="Активних карток">
+            <TickerCard label={t('uikit.activeCards')}>
               <NumberTicker value={47} />
             </TickerCard>
           </div>
           <p className="mt-3 text-2xs text-txt-muted">
-            Натисніть «Оновити» у шапці — усі значення перерахуються з анімацією.
+            {t('uikit.pressRefreshHeaderEvery')}
           </p>
         </Section>
 
@@ -213,7 +213,7 @@ export default function UiKitPage() {
         <Section
           icon={Droplets}
           title="Marquee / PriceTicker"
-          note="Пауза при наведенні; напрямок зміни дублюється стрілкою, не лише кольором"
+          note={t('uikit.pausesHoverDirectionChange')}
         >
           <div className="glass-panel overflow-hidden">
             <PriceTicker items={PRICES} />
@@ -224,18 +224,18 @@ export default function UiKitPage() {
         <Section
           icon={Sparkles}
           title="ShimmerButton"
-          note="Проблиск лише на hover/focus — постійна анімація в цьому продукті означає «живі дані»"
+          note={t('uikit.shimmerOnlyHoverFocus')}
         >
           <div className="glass-panel flex flex-wrap items-center gap-3 p-5">
-            <ShimmerButton icon={Command}>Основна дія</ShimmerButton>
+            <ShimmerButton icon={Command}>{t('uikit.primaryAction')}</ShimmerButton>
             <ShimmerButton tone="ghost" icon={Receipt}>
-              Другорядна
+              {t('uikit.secondary')}
             </ShimmerButton>
             <ShimmerButton tone="warn" icon={Gauge}>
-              Телематика
+              {t('uikit.telematics')}
             </ShimmerButton>
-            <ShimmerButton loading>Завантаження</ShimmerButton>
-            <ShimmerButton disabled>Недоступно</ShimmerButton>
+            <ShimmerButton loading>{t('common.loading')}</ShimmerButton>
+            <ShimmerButton disabled>{t('uikit.unavailable')}</ShimmerButton>
           </div>
         </Section>
       </div>
@@ -246,12 +246,12 @@ export default function UiKitPage() {
 /* ── helpers ──────────────────────────────────────────────────────────── */
 
 const PRICES = [
-  { station: 'ОККО Чернівці-1', fuel: 'ДП Preloff', price: 54.99, delta: 0.35 },
-  { station: 'ОККО Кіцмань', fuel: 'A-95 Pulls', price: 57.4, delta: -0.12 },
-  { station: 'Shell Хотин', fuel: 'V-Power Diesel', price: 59.15, delta: 0.08 },
-  { station: 'ОККО Сторожинець', fuel: 'ГАЗ', price: 27.8, delta: -0.4 },
-  { station: 'Shell Новоселиця', fuel: 'FuelSave 95', price: 56.2, delta: 0 },
-  { station: 'ОККО Вижниця', fuel: 'ДП Евро', price: 53.6, delta: 0.21 },
+  { station: 'uikit.okkoChernivtsi1', fuel: 'uikit.dieselPreloff', price: 54.99, delta: 0.35 },
+  { station: 'uikit.okkoKitsman', fuel: 'A-95 Pulls', price: 57.4, delta: -0.12 },
+  { station: 'uikit.shellKhotyn', fuel: 'V-Power Diesel', price: 59.15, delta: 0.08 },
+  { station: 'uikit.okkoStorozhynets', fuel: 'uikit.lpg', price: 27.8, delta: -0.4 },
+  { station: 'uikit.shellNovoselytsia', fuel: 'FuelSave 95', price: 56.2, delta: 0 },
+  { station: 'uikit.okkoVyzhnytsia', fuel: 'uikit.dieselEuro', price: 53.6, delta: 0.21 },
 ];
 
 /** Deterministic pseudo-series, so the showcase renders without a backend call. */

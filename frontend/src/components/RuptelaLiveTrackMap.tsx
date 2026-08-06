@@ -4,6 +4,16 @@ import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { useTheme } from '@/context/ThemeContext';
 import { NO_DATA, metric, type RuptelaTrackPoint } from '@/lib/ruptela';
+import { t, intlLocale } from '@/lib/i18n';
+import { getMapPrefs, onMapPrefsChange } from '@/lib/mapPrefs';
+import {
+  applyMapPrefs,
+  createHandles,
+  disposeHandles,
+  drawUserLocation,
+  type MapHandles,
+} from '@/lib/mapRuntime';
+import MapSettingsPanel from './MapSettingsPanel';
 
 interface RuptelaLiveTrackMapProps {
   /** Oldest-first, exactly as the API returns them. */
@@ -14,11 +24,6 @@ interface RuptelaLiveTrackMapProps {
   /** Bumped by the page to re-fit the whole track into view. */
   fitKey: number;
 }
-
-const TILES = {
-  dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-  light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-};
 
 /**
  * Leaflet takes literal color strings, so theme tokens are resolved from the
@@ -40,7 +45,7 @@ export default function RuptelaLiveTrackMap({
   const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const handlesRef = useRef<MapHandles | null>(null);
   const casingRef = useRef<L.Polyline | null>(null);
   const trackRef = useRef<L.Polyline | null>(null);
   const startRef = useRef<L.CircleMarker | null>(null);
@@ -59,32 +64,32 @@ export default function RuptelaLiveTrackMap({
       attributionControl: true,
     });
 
-    tileLayerRef.current = L.tileLayer(theme === 'light' ? TILES.light : TILES.dark, {
-      attribution: '&copy; CARTO &copy; OpenStreetMap',
-      maxZoom: 19,
-      subdomains: 'abcd',
-    }).addTo(map);
-
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-    L.control.scale({ position: 'bottomleft', imperial: false }).addTo(map);
+    // Плитку, зум і масштабну лінійку створює applyMapPrefs за налаштуваннями.
+    const handles = createHandles(map);
+    handlesRef.current = handles;
+    map.on('locationfound', (e) => drawUserLocation(handles, e as L.LocationEvent));
     mapRef.current = map;
 
     return () => {
+      disposeHandles(handles);
       map.remove();
       mapRef.current = null;
-      tileLayerRef.current = null;
+      handlesRef.current = null;
       casingRef.current = null;
       trackRef.current = null;
       startRef.current = null;
       currentRef.current = null;
     };
-    // Theme is only read for the initial tile URL; the swap below keeps it in sync.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* Swap basemap with the theme */
+  /* Підкладка й поведінка — з налаштувань користувача, плюс реакція на тему */
   useEffect(() => {
-    tileLayerRef.current?.setUrl(theme === 'light' ? TILES.light : TILES.dark);
+    const apply = () => {
+      const handles = handlesRef.current;
+      if (handles) applyMapPrefs(handles, getMapPrefs(), theme === 'light' ? 'light' : 'dark');
+    };
+    apply();
+    return onMapPrefsChange(apply);
   }, [theme]);
 
   /* Draw the track */
@@ -153,7 +158,7 @@ export default function RuptelaLiveTrackMap({
         fillColor: muted,
         fillOpacity: 0.55,
       })
-        .bindTooltip('Початок треку', { direction: 'top' })
+        .bindTooltip(t('live.startOfTrack'), { direction: 'top' })
         .addTo(map);
     }
 
@@ -183,7 +188,7 @@ export default function RuptelaLiveTrackMap({
           margin-top:4px;padding:2px 7px;border-radius:7px;white-space:nowrap;
           font-size:10px;font-weight:600;letter-spacing:.02em;
           background:rgba(10,14,20,.88);color:#fff;border:1px solid rgba(255,255,255,.16)">
-          ${plate || 'ТЗ'} · ${last.speed !== null ? `${Math.round(last.speed)} км/год` : NO_DATA}
+          ${plate || t('common.vehicleShort')} · ${last.speed !== null ? t('common.kmH', { v0: Math.round(last.speed) }) : NO_DATA}
         </div>
       </div>
       <style>@keyframes liveTrackPing{75%,100%{transform:scale(2);opacity:0}}</style>
@@ -196,14 +201,12 @@ export default function RuptelaLiveTrackMap({
       iconAnchor: [22, 26],
     });
 
-    const tooltip = `
-      <div style="font-size:11px;line-height:1.5">
-        <strong>${new Date(last.datetime).toLocaleTimeString('uk-UA')}</strong><br/>
-        Швидкість: ${metric(last.speed, { unit: 'км/год' })}<br/>
-        Пальне: ${metric(last.fuel_level_liters, { unit: 'л', digits: 1 })}<br/>
-        Супутники: ${metric(last.satellites)}
-      </div>
-    `;
+    const tooltip = `<div style="font-size:11px;line-height:1.5">
+      <strong>${new Date(last.datetime).toLocaleTimeString(intlLocale())}</strong><br/>
+      ${t('common.speed')}: ${metric(last.speed, { unit: t('unit.kmh') })}<br/>
+      ${t('common.fuel')}: ${metric(last.fuel_level_liters, { unit: t('unit.litre'), digits: 1 })}<br/>
+      ${t('live.satellites')}: ${metric(last.satellites)}
+    </div>`;
 
     const position: L.LatLngTuple = [last.latitude, last.longitude];
     if (currentRef.current) {
@@ -241,13 +244,18 @@ export default function RuptelaLiveTrackMap({
   }, [fitKey]);
 
   return (
-    <div className="relative h-[420px] w-full overflow-hidden rounded-card border border-bdr-subtle lg:h-[520px]">
+    <div
+      data-map-shell
+      className="relative h-[420px] w-full overflow-hidden rounded-card border border-bdr-subtle lg:h-[520px]"
+    >
       <div ref={containerRef} className="z-0 h-full w-full" />
+
+      <MapSettingsPanel />
 
       {points.length === 0 && (
         <div className="pointer-events-none absolute inset-0 z-[400] flex items-center justify-center">
           <p className="glass-float rounded-field px-3 py-2 text-2xs text-txt-secondary">
-            Немає координат за обраним вікном
+            {t('live.noCoordinatesSelectedWindow')}
           </p>
         </div>
       )}

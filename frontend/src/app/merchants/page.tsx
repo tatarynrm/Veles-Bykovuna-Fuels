@@ -6,10 +6,12 @@ import MerchantsGrid from '@/components/MerchantsGrid';
 import { DateRange } from '@/components/DateRangePicker';
 import { SkeletonGrid } from '@/components/Skeletons';
 import { useAuthGuard } from '@/lib/useAuthGuard';
-import { apiList } from '@/lib/api';
+import { cachedList, hasFreshEnough, useApiRefreshing } from '@/lib/apiCache';
+import { t } from '@/lib/i18n';
 
 export default function MerchantsPage() {
   const { authenticated } = useAuthGuard();
+  const revalidating = useApiRefreshing();
 
   const [activeBrand, setActiveBrand] = useState('ALL');
   const [dateRange, setDateRange] = useState<DateRange>({
@@ -22,9 +24,13 @@ export default function MerchantsPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [merchants, setMerchants] = useState<any[]>([]);
 
-  const loadData = useCallback(async (brand: string) => {
+  const loadData = useCallback(async (brand: string, force = false) => {
     setIsRefreshing(true);
-    setMerchants(await apiList<any>('/api/merchants', { brand, size: 200 }));
+    const params = { brand, size: 200 };
+
+    if (!hasFreshEnough('/api/merchants', params)) setLoading(true);
+    setMerchants(await cachedList<any>('/api/merchants', params, setMerchants, { force }));
+
     setLoading(false);
     setIsRefreshing(false);
   }, []);
@@ -37,10 +43,10 @@ export default function MerchantsPage() {
 
   return (
     <PageShell
-      title="Мережа АЗК"
-      subtitle="Заправні комплекси ОККО та Shell з підтримкою паливних карток"
-      onRefresh={() => loadData(activeBrand)}
-      isRefreshing={isRefreshing}
+      title={t('common.stationNetwork')}
+      subtitle={t('merchants.okkoShellStationsAccepting')}
+      onRefresh={() => loadData(activeBrand, true)}
+      isRefreshing={isRefreshing || revalidating}
       currentRange={dateRange}
       onDateChange={setDateRange}
       activeBrand={activeBrand}

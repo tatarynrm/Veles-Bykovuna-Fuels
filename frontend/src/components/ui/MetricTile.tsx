@@ -5,6 +5,7 @@ import { ArrowDownRight, ArrowRight, ArrowUpRight } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import NumberTicker from './NumberTicker';
 import Sparkline, { type SparkTone } from './Sparkline';
+import { t } from '@/lib/i18n';
 
 export interface MetricTileProps {
   label: string;
@@ -94,7 +95,7 @@ export default function MetricTile({
             data={trend}
             tone={flat ? 'muted' : good ? tone : 'danger'}
             height={38}
-            label={`${label}: тренд за ${trend.length} періодів`}
+            label={t('ui.trendOverPeriods', { v0: label, v1: trend.length })}
           />
         </div>
       )}

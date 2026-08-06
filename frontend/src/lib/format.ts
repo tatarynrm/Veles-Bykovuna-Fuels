@@ -1,31 +1,57 @@
-/** Shared Ukrainian-locale formatters. Never hand-roll number strings in components. */
+/**
+ * Спільні форматери. Ніколи не збирайте числові рядки руками в компонентах.
+ *
+ * Форматери залежать від обраної мови, тому їх не можна створювати на рівні
+ * модуля: Intl застряг би на локалі, активній під час імпорту. Кеш нижче
+ * тримає по одному екземпляру на мову — перемикання лишається дешевим, але
+ * вже без заморожування.
+ */
 
-const uah = new Intl.NumberFormat('uk-UA', {
-  style: 'currency',
-  currency: 'UAH',
-  maximumFractionDigits: 2,
-});
+import { intlLocale, t } from '@/lib/i18n';
 
-const num = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2 });
-const compact = new Intl.NumberFormat('uk-UA', {
-  notation: 'compact',
-  maximumFractionDigits: 1,
-});
+/** Валюта одна — гривня; від мови залежить лише спосіб її запису. */
+const CURRENCY = 'UAH';
 
-export const formatCurrency = (value?: number | null) => uah.format(value ?? 0);
+type Kind = 'currency' | 'number' | 'compact';
 
-export const formatNumber = (value?: number | null) => num.format(value ?? 0);
+const cache = new Map<string, Intl.NumberFormat>();
 
-export const formatCompact = (value?: number | null) => compact.format(value ?? 0);
+function formatter(kind: Kind): Intl.NumberFormat {
+  const locale = intlLocale();
+  const key = `${kind}:${locale}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
 
-export const formatLiters = (value?: number | null) => `${num.format(value ?? 0)} л`;
+  const created =
+    kind === 'currency'
+      ? new Intl.NumberFormat(locale, {
+          style: 'currency',
+          currency: CURRENCY,
+          maximumFractionDigits: 2,
+        })
+      : kind === 'compact'
+        ? new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 1 })
+        : new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
+
+  cache.set(key, created);
+  return created;
+}
+
+export const formatCurrency = (value?: number | null) => formatter('currency').format(value ?? 0);
+
+export const formatNumber = (value?: number | null) => formatter('number').format(value ?? 0);
+
+export const formatCompact = (value?: number | null) => formatter('compact').format(value ?? 0);
+
+export const formatLiters = (value?: number | null) =>
+  t('common.l', { v0: formatter('number').format(value ?? 0) });
 
 export const formatDateTime = (value?: string | null) => {
   if (!value) return '—';
   const d = new Date(value);
   return isNaN(d.getTime())
     ? '—'
-    : d.toLocaleString('uk-UA', {
+    : d.toLocaleString(intlLocale(), {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -39,5 +65,5 @@ export const formatDate = (value?: string | null) => {
   const d = new Date(value);
   return isNaN(d.getTime())
     ? '—'
-    : d.toLocaleDateString('uk-UA', { day: '2-digit', month: 'short', year: 'numeric' });
+    : d.toLocaleDateString(intlLocale(), { day: '2-digit', month: 'short', year: 'numeric' });
 };

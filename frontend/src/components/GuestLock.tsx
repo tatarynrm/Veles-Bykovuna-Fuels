@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Eye, Lock } from 'lucide-react';
+import { t } from '@/lib/i18n';
 
 /**
  * Guest-role notices. The restriction itself lives on the server
@@ -18,8 +19,7 @@ export function GuestBanner({ children }: { children?: React.ReactNode }) {
       <span className="text-txt-secondary">
         {children ?? (
           <>
-            <strong className="font-semibold text-warn">Гостьовий доступ.</strong> Дані
-            доступні для перегляду, зміни заблоковані.
+            <strong className="font-semibold text-warn">{t('common.guestAccess')}</strong> {t('guest.dataViewableChangesBlocked')}
           </>
         )}
       </span>
@@ -29,8 +29,8 @@ export function GuestBanner({ children }: { children?: React.ReactNode }) {
 
 /** Full-panel replacement for a screen whose entire purpose is writing data. */
 export function GuestBlockedPanel({
-  title = 'Доступно лише для співробітників',
-  description = 'У гостьовому режимі створення та редагування маршрутів вимкнено — поїздка з дашборда потрапляє напряму в Ruptela і може бути надіслана водієві.',
+  title = t('guest.staffOnly'),
+  description = t('guest.guestModeCreatingEditing'),
 }: {
   title?: string;
   description?: string;
@@ -44,10 +44,10 @@ export function GuestBlockedPanel({
       <p className="max-w-md text-2xs leading-relaxed text-txt-secondary">{description}</p>
       <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
         <Link href="/ruptela/routes-tasks" className="btn btn-ghost">
-          Переглянути маршрути
+          {t('guest.viewRoutes')}
         </Link>
         <Link href="/login" className="btn btn-warn">
-          Увійти під іншим користувачем
+          {t('guest.signDifferentUser')}
         </Link>
       </div>
     </section>

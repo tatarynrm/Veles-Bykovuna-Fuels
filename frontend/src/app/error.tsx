@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
+import { t } from '@/lib/i18n';
 
 export default function Error({
   error,
@@ -17,7 +18,7 @@ export default function Error({
           <AlertTriangle className="h-5 w-5" />
         </div>
         <h2 className="text-base font-semibold text-txt-primary">
-          Помилка під час завантаження розділу
+          {t('error.errorWhileLoadingSection')}
         </h2>
         {error?.message && (
           <p className="glass-inset mt-3 break-words p-3 text-left font-mono text-micro text-txt-muted">
@@ -26,7 +27,7 @@ export default function Error({
         )}
         <button onClick={reset} className="btn btn-primary mt-6 w-full py-2.5">
           <RotateCcw className="h-3.5 w-3.5" />
-          Спробувати знову
+          {t('error.tryAgain')}
         </button>
       </div>
     </div>
