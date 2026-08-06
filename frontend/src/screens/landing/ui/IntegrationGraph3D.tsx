@@ -152,14 +152,14 @@ function Graph3DCanvas({
           const finalOpacity = baseOpacity * currentLinkDim;
 
           return (
-            <line key={line.key} geometry={lineGeom}>
+            <lineSegments key={line.key} geometry={lineGeom}>
               <lineBasicMaterial
                 color={line.color}
                 opacity={finalOpacity}
                 transparent
                 linewidth={1}
               />
-            </line>
+            </lineSegments>
           );
         })}
 
