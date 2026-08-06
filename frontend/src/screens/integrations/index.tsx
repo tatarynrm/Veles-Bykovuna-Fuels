@@ -83,7 +83,8 @@ export default function IntegrationsScreen() {
       {/* Фільтр */}
       <section className="px-5 pb-24 sm:px-8">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-8 flex flex-wrap gap-2">
+          {/* Sticky панель категорій */}
+          <div className="sticky top-[60px] z-30 -mx-2 mb-8 flex flex-wrap gap-2 rounded-xl bg-[var(--background)]/85 p-2 backdrop-blur-md transition-all border border-transparent backdrop-saturate-150">
             {([['all', total], ...categories] as [string, number][]).map(([key, count]) => {
               const active = category === key;
               return (

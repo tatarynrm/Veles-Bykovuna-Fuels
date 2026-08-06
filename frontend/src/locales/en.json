@@ -1638,5 +1638,7 @@
   "uikit.volatility": "Volatility",
   "unit.kmh": "km/h",
   "unit.litre": "L",
-  "unit.secondsShort": "s"
+  "unit.secondsShort": "s",
+  "auth.loginSuccess": "Login successful!",
+  "auth.redirecting": "Redirecting to dashboard..."
 }

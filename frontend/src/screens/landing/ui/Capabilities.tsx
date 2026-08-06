@@ -12,6 +12,12 @@ import { CAPABILITIES, TONE_VAR, TONE_SOFT } from '@/shared/config/capabilities'
 import { useSectionSound, useSound } from '@/features/sound';
 import CapabilityScene from './scenes/CapabilityScene';
 
+const WAVE_1_1 = 'M 0 82 Q 25 74 50 86 T 100 78 L 100 100 L 0 100 Z';
+const WAVE_1_2 = 'M 0 78 Q 25 86 50 74 T 100 82 L 100 100 L 0 100 Z';
+const WAVE_2_1 = 'M 0 86 Q 30 78 60 90 T 100 82 L 100 100 L 0 100 Z';
+const WAVE_2_2 = 'M 0 82 Q 30 90 60 78 T 100 86 L 100 100 L 0 100 Z';
+const FLAT_PATH = 'M 0 100 Q 25 100 50 100 T 100 100 L 100 100 L 0 100 Z';
+
 const COUNT = CAPABILITIES.length;
 /** Скільки висоти екрана «коштує» перехід між сусідніми пунктами. */
 const SCROLL_PER_SLIDE = 55;
@@ -184,80 +190,125 @@ export default function Capabilities() {
           наступний слайд просвічував у бічних відступах.
         */}
         <div className="mx-auto w-full max-w-6xl px-5 sm:px-8">
-        <div ref={viewportRef} className={isDesktop ? 'overflow-hidden' : ''}>
-          {/*
+          <div ref={viewportRef} className={isDesktop ? 'overflow-hidden' : ''}>
+            {/*
             Рухається стрічка цілком, а не кожен слайд окремо: інакше на кожен
             перехід стартує COUNT анімацій замість однієї.
 
             На дотику transform лишається нульовим — там елемент є рідним
             контейнером прокрутки, і зсув конфліктував би зі snap.
           */}
-          <motion.div
-            ref={trackRef}
-            onScroll={onTrackScroll}
-            animate={{ x: isDesktop && slideWidth ? -index * slideWidth : 0 }}
-            transition={{ duration: reduced ? 0 : 0.55, ease: EASE_ENTER }}
-            className={
-              isDesktop
-                ? 'flex'
-                : 'flex snap-x snap-mandatory overflow-x-auto pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
-            }
-          >
-            {CAPABILITIES.map((cap, i) => {
-              const Icon = cap.icon;
-              const activeSlide = i === index;
-              return (
-                <div key={cap.id} className="w-full flex-none snap-center">
-                  <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-12">
-                    {/* Опис */}
-                    <div className="order-2 lg:order-1">
-                      <div className="mb-4 flex items-center gap-3">
-                        <span
-                          className="flex h-11 w-11 flex-none items-center justify-center rounded-xl"
-                          style={{ background: TONE_SOFT[cap.tone], color: TONE_VAR[cap.tone] }}
-                        >
-                          <Icon size={21} />
-                        </span>
-                        <h3 className="font-display text-lg leading-tight sm:text-xl">
-                          {t(cap.title)}
-                        </h3>
+            <motion.div
+              ref={trackRef}
+              onScroll={onTrackScroll}
+              animate={{ x: isDesktop && slideWidth ? -index * slideWidth : 0 }}
+              transition={{ duration: reduced ? 0 : 0.55, ease: EASE_ENTER }}
+              className={
+                isDesktop
+                  ? 'flex'
+                  : 'flex snap-x snap-mandatory overflow-x-auto pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+              }
+            >
+              {CAPABILITIES.map((cap, i) => {
+                const Icon = cap.icon;
+                const activeSlide = i === index;
+                return (
+                  <div key={cap.id} className="w-full flex-none snap-center">
+                    <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-12">
+                      {/* Опис */}
+                      <div className="glass-panel order-2 p-6 lg:order-1 relative overflow-hidden">
+                        {/* Wave Fill Background */}
+                        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden rounded-2xl">
+                          <svg
+                            viewBox="0 0 100 100"
+                            preserveAspectRatio="none"
+                            className="absolute bottom-0 left-0 w-full h-[30%]"
+                          >
+                            {/* Back wave */}
+                            <motion.path
+                              d={FLAT_PATH}
+                              fill={TONE_SOFT[cap.tone]}
+                              fillOpacity={1}
+                              animate={{
+                                d: activeSlide ? [WAVE_2_1, WAVE_2_2, WAVE_2_1] : FLAT_PATH
+                              }}
+                              transition={{
+                                d: {
+                                  duration: activeSlide ? 6.5 : 0.75,
+                                  repeat: activeSlide ? Infinity : 0,
+                                  ease: "easeInOut",
+                                }
+                              }}
+                            />
+                            {/* Front wave */}
+                            <motion.path
+                              d={FLAT_PATH}
+                              fill={TONE_SOFT[cap.tone]}
+                              stroke={TONE_VAR[cap.tone]}
+                              strokeWidth={1.5}
+                              animate={{
+                                d: activeSlide ? [WAVE_1_1, WAVE_1_2, WAVE_1_1] : FLAT_PATH
+                              }}
+                              transition={{
+                                d: {
+                                  duration: activeSlide ? 4.8 : 0.75,
+                                  repeat: activeSlide ? Infinity : 0,
+                                  ease: "easeInOut",
+                                }
+                              }}
+                            />
+                          </svg>
+                        </div>
+
+                        <div className="relative z-10">
+                          <div className="mb-4 flex items-center gap-3">
+                            <span
+                              className="flex h-11 w-11 flex-none items-center justify-center rounded-xl"
+                              style={{ background: TONE_SOFT[cap.tone], color: TONE_VAR[cap.tone] }}
+                            >
+                              <Icon size={21} />
+                            </span>
+                            <h3 className="font-display text-lg leading-tight sm:text-xl">
+                              {t(cap.title)}
+                            </h3>
+                          </div>
+
+                          <p
+                            className="mb-5 text-sm leading-relaxed"
+                            style={{ color: 'var(--text-secondary)' }}
+                          >
+                            {t(cap.long)}
+                          </p>
+
+                          <ul className="space-y-2.5">
+                            {cap.points.map(point => (
+                              <li key={point} className="flex gap-2.5 text-xs leading-relaxed">
+                                <ChevronRight
+                                  size={13}
+                                  className="mt-0.5 flex-none"
+                                  style={{ color: TONE_VAR[cap.tone] }}
+                                />
+                                <span style={{ color: 'var(--text-secondary)' }}>{t(point)}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       </div>
 
-                      <p
-                        className="mb-5 text-sm leading-relaxed"
-                        style={{ color: 'var(--text-secondary)' }}
-                      >
-                        {t(cap.long)}
-                      </p>
-
-                      <ul className="space-y-2.5">
-                        {cap.points.map(point => (
-                          <li key={point} className="flex gap-2.5 text-xs leading-relaxed">
-                            <ChevronRight
-                              size={13}
-                              className="mt-0.5 flex-none"
-                              style={{ color: TONE_VAR[cap.tone] }}
-                            />
-                            <span style={{ color: 'var(--text-secondary)' }}>{t(point)}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* Інфографіка */}
-                    <div className="glass-panel order-1 p-4 sm:p-6 lg:order-2">
-                      <CapabilityScene
-                        id={cap.id}
-                        active={activeSlide}
-                        tone={TONE_VAR[cap.tone]}
-                      />
+                      {/* Інфографіка */}
+                      <div className="glass-panel order-1 p-4 sm:p-6 lg:order-2">
+                        <CapabilityScene
+                          id={cap.id}
+                          active={activeSlide}
+                          tone={TONE_VAR[cap.tone]}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </motion.div>
-        </div>
+                );
+              })}
+            </motion.div>
+          </div>
         </div>
 
         {/* Підказка про жест — лише там, де вона доречна */}

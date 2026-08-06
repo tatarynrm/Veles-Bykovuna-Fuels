@@ -1638,5 +1638,7 @@
   "uikit.volatility": "Волатильність",
   "unit.kmh": "км/год",
   "unit.litre": "л",
-  "unit.secondsShort": "с"
+  "unit.secondsShort": "с",
+  "auth.loginSuccess": "Успішний вхід!",
+  "auth.redirecting": "Перенаправлення на панель керування..."
 }
