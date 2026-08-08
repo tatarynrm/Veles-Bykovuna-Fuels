@@ -4,7 +4,6 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import AnimatedCounter from '@/shared/ui/AnimatedCounter';
 import { fadeUp, staggerParent, VIEWPORT } from '@/shared/lib/motion';
-import { useSectionSound } from '@/features/sound';
 import { t } from '@/lib/i18n';
 
 /**
@@ -24,11 +23,8 @@ const STATS = [
 ];
 
 export default function StatsBand() {
-  const ref = useSectionSound<HTMLElement>();
-
   return (
     <section
-      ref={ref}
       className="border-y"
       style={{ borderColor: 'var(--border-subtle)' }}
     >

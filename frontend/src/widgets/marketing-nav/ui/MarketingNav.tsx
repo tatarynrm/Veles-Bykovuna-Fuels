@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Menu, X } from 'lucide-react';
 import ThemeToggleButton from '@/components/ThemeToggleButton';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { SoundControl, useSound } from '@/features/sound';
 import { MARKETING_NAV, BRAND, appEntry } from '@/shared/config/site';
 import { t } from '@/lib/i18n';
 import { EASE_ENTER } from '@/shared/lib/motion';
@@ -17,7 +16,6 @@ export default function MarketingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [authed, setAuthed] = useState(false);
-  const { play } = useSound();
 
   useEffect(() => {
     setAuthed(!!localStorage.getItem('veles_token'));
@@ -75,7 +73,6 @@ export default function MarketingNav() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onMouseEnter={() => play('hover')}
                   className="relative rounded-control px-3 py-2 text-xs font-medium transition-colors"
                   style={{ color: active ? 'var(--text-primary)' : 'var(--text-secondary)' }}
                 >
@@ -92,14 +89,7 @@ export default function MarketingNav() {
             })}
           </div>
 
-          {/*
-            На 320 px чотири контроли по 44 px плюс перемикач мов (76 px) не
-            влазять поруч із логотипом: рядок вилазив на 42 px, і кнопку меню
-            зрізало навпіл. Ховаємо лише звук і лише на найвужчих екранах —
-            мова й тема потрібніші, а з 360 px усе вміщається як було.
-          */}
           <div className="flex items-center gap-1.5">
-            <SoundControl className="max-[359px]:hidden" />
             <ThemeToggleButton />
             <LanguageSwitcher />
             <Link

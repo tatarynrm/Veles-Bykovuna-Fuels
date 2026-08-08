@@ -6,7 +6,6 @@ import { OrbitControls, Html, Float } from '@react-three/drei';
 import * as THREE from 'three';
 import { STATUS_TONE } from '@/shared/config/integrations';
 import VendorLogo from '@/components/VendorLogos';
-import { useSound } from '@/features/sound';
 import { t } from '@/lib/i18n';
 
 /* i18n-ignore-raw: IntegrationGraph3D */
@@ -158,7 +157,6 @@ function Graph3DCanvas({
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const [isInteracting, setIsInteracting] = useState(false);
-  const { play } = useSound();
 
   useFrame((state, delta) => {
     if (groupRef.current && autoRotate && !isInteracting) {
@@ -213,7 +211,6 @@ function Graph3DCanvas({
 
   const handlePointerEnter = (id: string) => {
     setActive(id);
-    play('tick');
   };
 
   const handlePointerLeave = () => {

@@ -8,6 +8,7 @@
 export const MARKETING_NAV = [
   { href: '/', label: 'landing.navPlatform' },
   { href: '/integrations', label: 'landing.navIntegrations' },
+  { href: '/expenses', label: 'landing.navExpenses' },
   { href: '/future-plans', label: 'landing.navRoadmap' },
 ] as const;
 

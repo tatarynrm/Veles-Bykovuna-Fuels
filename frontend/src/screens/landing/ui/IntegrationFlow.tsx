@@ -4,7 +4,6 @@ import React, { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import SectionHeading from '@/shared/ui/SectionHeading';
 import { fadeUp, staggerParent, VIEWPORT, EASE_ENTER } from '@/shared/lib/motion';
-import { useSectionSound } from '@/features/sound';
 import IntegrationGraph from './IntegrationGraph';
 import { t } from '@/lib/i18n';
 
@@ -207,10 +206,8 @@ function Diagram() {
 }
 
 export default function IntegrationFlow() {
-  const ref = useSectionSound<HTMLElement>();
-
   return (
-    <section ref={ref} className="px-5 py-28 sm:px-8">
+    <section className="px-5 py-28 sm:px-8">
       <div className="mx-auto max-w-5xl">
         <SectionHeading
           eyebrow={t('landing.architectureEyebrow')}

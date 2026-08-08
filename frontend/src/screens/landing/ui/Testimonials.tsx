@@ -4,7 +4,6 @@ import React, { useEffect, useRef } from 'react';
 import { motion, useInView, useScroll, useTransform, type MotionValue } from 'framer-motion';
 import { Star } from 'lucide-react';
 import SectionHeading from '@/shared/ui/SectionHeading';
-import { useSectionSound } from '@/features/sound';
 import { t } from '@/lib/i18n';
 
 /**
@@ -316,10 +315,8 @@ function BillionCounter() {
 }
 
 export default function Testimonials() {
-  const ref = useSectionSound<HTMLElement>();
-
   return (
-    <section ref={ref} className="overflow-hidden px-5 py-28 sm:px-8">
+    <section className="overflow-hidden px-5 py-28 sm:px-8">
       <div className="mx-auto max-w-5xl">
         <SectionHeading
           eyebrow={t('landing.rev.eyebrow')}

@@ -7,12 +7,10 @@ import SectionHeading from '@/shared/ui/SectionHeading';
 import { fadeUp, staggerParent, VIEWPORT } from '@/shared/lib/motion';
 import { useGsap } from '@/shared/lib/useGsap';
 import { HORIZONS, REGULATORY, TONE_VAR } from '@/shared/config/roadmap';
-import { useSectionSound } from '@/features/sound';
 import { t } from '@/lib/i18n';
 
 export default function FuturePlansScreen() {
   const timelineRef = useRef<HTMLDivElement>(null);
-  const regulatoryRef = useSectionSound<HTMLElement>();
 
   /*
     Вертикальна лінія малюється разом зі скролом, а картки горизонтів
@@ -130,7 +128,6 @@ export default function FuturePlansScreen() {
 
       {/* Регуляторні дати */}
       <section
-        ref={regulatoryRef}
         className="border-t px-5 py-28 sm:px-8"
         style={{ borderColor: 'var(--border-subtle)' }}
       >

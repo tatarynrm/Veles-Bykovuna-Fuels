@@ -9,7 +9,6 @@ import { fadeUp, staggerParent, VIEWPORT, EASE_ENTER } from '@/shared/lib/motion
 import {
   CATEGORY_LABEL, STATUS_LABEL, STATUS_TONE,
 } from '@/shared/config/integrations';
-import { useSectionSound, useSound } from '@/features/sound';
 import { t, localizedMap } from '@/lib/i18n';
 import VendorLogo from '@/components/VendorLogos';
 import { useIntegrationFilter } from './model/useIntegrationFilter';
@@ -22,8 +21,6 @@ const API_LABEL: Record<string, string> = localizedMap({
 
 export default function IntegrationsScreen() {
   const { category, setCategory, categories, items, liveCount, total } = useIntegrationFilter();
-  const gridRef = useSectionSound<HTMLDivElement>();
-  const { play } = useSound();
 
   return (
     <>
@@ -92,7 +89,7 @@ export default function IntegrationsScreen() {
                 <button
                   key={key}
                   type="button"
-                  onClick={() => { setCategory(key as never); play('tick'); }}
+                  onClick={() => setCategory(key as never)}
                   className="rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors"
                   style={{
                     background: active ? 'var(--accent-soft)' : 'var(--surface)',
@@ -107,7 +104,7 @@ export default function IntegrationsScreen() {
             })}
           </div>
 
-          <div ref={gridRef} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <AnimatePresence mode="popLayout">
               {items.map(item => (
                 <motion.article

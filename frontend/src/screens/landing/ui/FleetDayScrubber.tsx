@@ -9,7 +9,6 @@ import { useMediaQuery } from '@/shared/lib/useMediaQuery';
 import { usePrefersReducedMotion } from '@/shared/lib/usePrefersReducedMotion';
 import { seededRandom } from '@/shared/lib/seededRandom';
 import { EASE_ENTER } from '@/shared/lib/motion';
-import { useSound } from '@/features/sound';
 import { t, intlLocale } from '@/lib/i18n';
 import {
   FLEET_DAY, FLEET_CUMULATIVE, FLEET_SIZE, MAX_HOUR_FUEL, MAX_HOUR_ACTIVE,
@@ -169,7 +168,6 @@ export default function FleetDayScrubber() {
     версія вміщається в широкий екран, широка у вузький не вміщається.
   */
   const wide = useMediaQuery('(min-width: 640px)');
-  const { play } = useSound();
 
   const lanePx = wide ? DRIVER_LANE_PX : DRIVER_LANE_PX_SM;
   const stripWidthPx = wide ? DRIVER_STRIP_WIDTH_PX : DRIVER_STRIP_WIDTH_PX_SM;
@@ -186,9 +184,8 @@ export default function FleetDayScrubber() {
       if (next === hourRef.current) return;
       hourRef.current = next;
       setHour(next);
-      play(next === 23 ? 'rev' : 'tick');
     },
-    [play, scrollProgress],
+    [scrollProgress],
   );
 
   useScrollProgress(sectionRef, handleProgress);

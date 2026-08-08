@@ -5,15 +5,11 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { fadeUp, staggerParent, VIEWPORT } from '@/shared/lib/motion';
-import { useSectionSound, useSound } from '@/features/sound';
 import { t } from '@/lib/i18n';
 
 export default function Cta() {
-  const ref = useSectionSound<HTMLElement>({ sound: 'confirm' });
-  const { play } = useSound();
-
   return (
-    <section ref={ref} className="px-5 py-36 sm:px-8">
+    <section className="px-5 py-36 sm:px-8">
       <motion.div
         variants={staggerParent(0.09)}
         initial="hidden"
@@ -45,7 +41,6 @@ export default function Cta() {
           />
           <Link
             href="/login"
-            onMouseEnter={() => play('hover')}
             className="btn btn-primary relative gap-2 px-8 py-3.5 text-sm"
           >
             {t('landing.signInToSystem')}
@@ -53,7 +48,6 @@ export default function Cta() {
           </Link>
           <Link
             href="/future-plans"
-            onMouseEnter={() => play('hover')}
             className="btn btn-ghost relative gap-2 px-8 py-3.5 text-sm"
           >
             {t('landing.ctaRoadmap')}

@@ -5,7 +5,6 @@ import { motion } from 'framer-motion';
 import { Fuel, Zap, ShieldCheck } from 'lucide-react';
 import SectionHeading from '@/shared/ui/SectionHeading';
 import { fadeUp, staggerParent, VIEWPORT } from '@/shared/lib/motion';
-import { useSectionSound } from '@/features/sound';
 import { t } from '@/lib/i18n';
 
 const STEPS = [
@@ -15,11 +14,8 @@ const STEPS = [
 ];
 
 export default function HowItWorks() {
-  const ref = useSectionSound<HTMLElement>();
-
   return (
     <section
-      ref={ref}
       className="border-t px-5 py-28 sm:px-8"
       style={{ borderColor: 'var(--border-subtle)' }}
     >

@@ -9,7 +9,6 @@ import { useMediaQuery } from '@/shared/lib/useMediaQuery';
 import { usePrefersReducedMotion } from '@/shared/lib/usePrefersReducedMotion';
 import { EASE_ENTER } from '@/shared/lib/motion';
 import { CAPABILITIES, TONE_VAR, TONE_SOFT } from '@/shared/config/capabilities';
-import { useSectionSound, useSound } from '@/features/sound';
 import CapabilityScene from './scenes/CapabilityScene';
 
 const WAVE_1_1 = 'M 0 82 Q 25 74 50 86 T 100 78 L 100 100 L 0 100 Z';
@@ -52,8 +51,6 @@ export default function Capabilities() {
 
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   const reduced = usePrefersReducedMotion();
-  const soundRef = useSectionSound<HTMLDivElement>();
-  const { play } = useSound();
 
   /*
     Зсув рахується в пікселях від виміряної ширини, а не у відсотках:
@@ -71,16 +68,12 @@ export default function Capabilities() {
     return () => observer.disconnect();
   }, []);
 
-  const handleProgress = useCallback(
-    (progress: number) => {
-      const next = Math.min(COUNT - 1, Math.max(0, Math.round(progress * (COUNT - 1))));
-      if (next === indexRef.current) return;
-      indexRef.current = next;
-      setIndex(next);
-      play('tick');
-    },
-    [play],
-  );
+  const handleProgress = useCallback((progress: number) => {
+    const next = Math.min(COUNT - 1, Math.max(0, Math.round(progress * (COUNT - 1))));
+    if (next === indexRef.current) return;
+    indexRef.current = next;
+    setIndex(next);
+  }, []);
 
   useScrollProgress(sectionRef, handleProgress);
 
@@ -95,7 +88,6 @@ export default function Capabilities() {
   }, [isDesktop, slideWidth]);
 
   const skip = () => {
-    play('whoosh');
     document.getElementById('fleet-day')?.scrollIntoView({
       behavior: reduced ? 'auto' : 'smooth',
       block: 'start',
@@ -121,10 +113,7 @@ export default function Capabilities() {
           : undefined
       }
     >
-      <div
-        ref={soundRef}
-        className={isDesktop ? 'sticky top-0 flex h-screen flex-col justify-center' : ''}
-      >
+      <div className={isDesktop ? 'sticky top-0 flex h-screen flex-col justify-center' : ''}>
         {/* Шапка */}
         <div className="mx-auto w-full max-w-6xl px-5 pt-24 sm:px-8 lg:pt-0">
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -167,7 +156,6 @@ export default function Capabilities() {
                 onClick={() => {
                   indexRef.current = i;
                   setIndex(i);
-                  play('tick');
                   if (!isDesktop && trackRef.current) {
                     trackRef.current.scrollTo({ left: i * slideWidth, behavior: 'smooth' });
                   }
