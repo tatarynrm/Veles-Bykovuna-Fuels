@@ -1,7 +1,7 @@
 import {
   Fuel, Gauge, Milestone, Wrench, Banknote,
   CreditCard, Receipt, BarChart3, Truck, Radio, Route, Download, ShieldCheck, Calculator,
-  Coins, Timer, CalendarRange, ArrowLeftRight,
+  Coins, Timer, CalendarRange, ArrowLeftRight, FileText,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -235,5 +235,42 @@ export const PLATFORM_BLOCKS: PlatformBlock[] = [
     id: 'bank', icon: ArrowLeftRight, status: 'planned', tone: 'muted',
     title: 'landing.exp.plat.bank.title',
     desc: 'landing.exp.plat.bank.desc',
+  },
+];
+
+export interface CtaFrame {
+  id: string;
+  icon: LucideIcon;
+  title: string;
+  detail: string;
+  tone: ExpenseTone;
+}
+
+/**
+ * Розкадровка фінальної сцени (`ExpensesCta`): кожен запис — це один «кадр»
+ * ролика `fules-reports.mp4` (каністра → рахунки → чеки → звітність), і текст
+ * під ним зʼявляється рівно тоді, коли на відео відповідний кадр. Порядок
+ * масиву — це порядок кадрів у ролику, змінювати один без іншого не можна.
+ */
+export const CTA_FRAMES: CtaFrame[] = [
+  {
+    id: 'fuel', icon: Fuel, tone: 'accent',
+    title: 'landing.exp.story0.title',
+    detail: 'landing.exp.story0.detail',
+  },
+  {
+    id: 'invoices', icon: FileText, tone: 'info',
+    title: 'landing.exp.story1.title',
+    detail: 'landing.exp.story1.detail',
+  },
+  {
+    id: 'receipts', icon: Receipt, tone: 'warn',
+    title: 'landing.exp.story2.title',
+    detail: 'landing.exp.story2.detail',
+  },
+  {
+    id: 'report', icon: BarChart3, tone: 'accent',
+    title: 'landing.exp.story3.title',
+    detail: 'landing.exp.story3.detail',
   },
 ];
