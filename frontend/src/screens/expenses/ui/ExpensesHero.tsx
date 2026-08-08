@@ -8,7 +8,7 @@ import { useGsap } from '@/shared/lib/useGsap';
 import { blurUp, staggerParent, EASE_ENTER } from '@/shared/lib/motion';
 import { appEntry } from '@/shared/config/site';
 import { t } from '@/lib/i18n';
-import { usePlayInView } from '../model/usePlayInView';
+import SchemeVideo from './SchemeVideo';
 
 /** Заголовок розбитий на слова — кожне виїжджає окремо. У масиві КЛЮЧІ. */
 const TITLE_WORDS = [
@@ -34,8 +34,6 @@ export default function ExpensesHero() {
   const sectionRef = useRef<HTMLElement>(null);
   const videoWrapRef = useRef<HTMLDivElement>(null);
   const [authed, setAuthed] = useState(false);
-
-  usePlayInView(sectionRef);
 
   useEffect(() => {
     setAuthed(!!localStorage.getItem('veles_token'));
@@ -66,14 +64,10 @@ export default function ExpensesHero() {
       className="relative flex min-h-screen items-center overflow-hidden"
     >
       <div ref={videoWrapRef} className="absolute inset-0" style={{ willChange: 'transform' }}>
-        <video
+        {/* Єдиний ролик на сторінці, який вантажиться одразу: це перший екран. */}
+        <SchemeVideo
           src="/videos/main_expenese_video.mp4"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          aria-hidden
+          eager
           className="absolute inset-0 h-full w-full object-cover"
           style={{ filter: 'var(--scheme-video-filter)' }}
         />

@@ -2,15 +2,18 @@
 /**
  * Заливає переклади з TSV у словники.
  *
- * Формат рядка: <ключ>\t<en>\t<pl>\t<de>
+ * Формат рядка: <ключ>\t<колонка для кожної мови з TARGETS, у тому ж порядку>
+ * (наразі: en, pl, de, ro, cs, sk, hu, fr, es — той самий список і порядок,
+ * що й TARGETS у scan.mjs; тут продубльований, а не імпортований, бо scan.mjs
+ * виконує сканування як побічний ефект імпорту — гарду на прямий запуск нема).
  * Порожня колонка означає «не чіпати» — уже наявний переклад лишиться.
  * Коментар — рядок, що починається з «# ».
  *
  *   node scripts/i18n/merge.mjs scripts/i18n/translations/07-reports.tsv
  *   node scripts/i18n/merge.mjs scripts/i18n/translations
  *
- * Навіщо TSV, а не редагування JSON руками: так усі три мови одного ключа
- * стоять поруч — і видно, що переклад узгоджений між ними. Український текст
+ * Навіщо TSV, а не редагування JSON руками: так усі мови одного ключа стоять
+ * поруч — і видно, що переклад узгоджений між ними. Український текст
  * (uk.json) сюди не входить: він задається під час присвоєння ключа (keyize).
  */
 
@@ -20,7 +23,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const LOCALES_DIR = join(ROOT, 'src', 'locales');
-const TARGETS = ['en', 'pl', 'de'];
+const TARGETS = ['en', 'pl', 'de', 'ro', 'cs', 'sk', 'hu', 'fr', 'es'];
 
 const files = process.argv.slice(2);
 if (!files.length) {
@@ -52,7 +55,7 @@ for (const file of files.flatMap(expand)) {
     const line = rawLine.replace(/\r$/, '');
     if (!line.trim() || line.startsWith('# ')) continue;
 
-    const [key, en, pl, de] = line.split('\t');
+    const [key, ...cols] = line.split('\t');
     if (!key) continue;
 
     // Ключ, якого немає в uk.json, — майже завжди друкарська помилка
@@ -61,7 +64,7 @@ for (const file of files.flatMap(expand)) {
       continue;
     }
 
-    const values = { en, pl, de };
+    const values = Object.fromEntries(TARGETS.map((locale, i) => [locale, cols[i]]));
     let touched = false;
     for (const locale of TARGETS) {
       const value = (values[locale] ?? '').trim();

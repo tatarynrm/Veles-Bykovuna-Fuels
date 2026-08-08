@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { ArrowRight, Check, Clock } from 'lucide-react';
 import { t } from '@/lib/i18n';
 import { useGsap } from '@/shared/lib/useGsap';
+import { useScrollProgress } from '@/shared/lib/useScrollProgress';
 import { usePrefersReducedMotion } from '@/shared/lib/usePrefersReducedMotion';
 import {
   COST_LINES, DATA_SOURCES, RESULT_ROWS, TONE_VAR, TONE_SOFT,
   type CostLine, type DataSource,
 } from '@/shared/config/expenses';
-import { usePlayInView } from '../model/usePlayInView';
+import SchemeVideo from './SchemeVideo';
 
 /**
  * Скільки висоти сторінки «коштує» сцена. Чотири з половиною екрани — це
@@ -25,6 +26,14 @@ const SPAN = 10;
 const TURN = 4.7;
 
 const LIVE_COUNT = COST_LINES.filter(line => line.status === 'live').length;
+
+/** Прогрес скролу, на якому кадр «туди» поступається кадру «назад». */
+const TURN_AT = TURN / SPAN;
+/**
+ * А тут другий ролик починає вантажитись. Запас перед розворотом навмисно
+ * великий: 2.6 МБ треба встигнути дотягнути, поки триває перша половина.
+ */
+const WARM_AT = TURN_AT - 0.22;
 
 /* ── дрібні спільні шматки: однакові в рухомій і статичній версії ──────── */
 
@@ -205,7 +214,32 @@ export default function TripScene() {
   const inWrapRef = useRef<HTMLDivElement>(null);
   const reduced = usePrefersReducedMotion();
 
-  usePlayInView(reduced ? staticRef : sectionRef);
+  /*
+    Половина сцени, яку зараз видно. Це не косметика, а економія декодера:
+    обидва кадри повноекранні й лежать один на одному, тож без цього браузер
+    увесь час крутив два потоки 720p, з яких один був повністю перекритий.
+
+    Стан міняється лише на переході — useScrollProgress віддає прогрес щокадру,
+    а сюди доходить одне оновлення на всю сцену.
+  */
+  const [phase, setPhase] = useState<'out' | 'in'>('out');
+  const [warm, setWarm] = useState(false);
+  const phaseRef = useRef<'out' | 'in'>('out');
+  const warmRef = useRef(false);
+
+  const handleProgress = useCallback((progress: number) => {
+    const next = progress < TURN_AT ? 'out' : 'in';
+    if (next !== phaseRef.current) {
+      phaseRef.current = next;
+      setPhase(next);
+    }
+    if (!warmRef.current && progress > WARM_AT) {
+      warmRef.current = true;
+      setWarm(true);
+    }
+  }, []);
+
+  useScrollProgress(sectionRef, handleProgress);
 
   useGsap(
     ({ gsap }) => {
@@ -268,9 +302,8 @@ export default function TripScene() {
         <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-2">
           <div>
             <div className="mb-5 overflow-hidden rounded-card">
-              <video
+              <SchemeVideo
                 src="/videos/truck-scheme-to-right.mp4"
-                autoPlay muted loop playsInline preload="metadata" aria-hidden
                 className="h-40 w-full object-cover"
               />
             </div>
@@ -288,9 +321,8 @@ export default function TripScene() {
 
           <div>
             <div className="mb-5 overflow-hidden rounded-card">
-              <video
+              <SchemeVideo
                 src="/videos/truck-scheme-to-left.mp4"
-                autoPlay muted loop playsInline preload="metadata" aria-hidden
                 className="h-40 w-full object-cover"
               />
             </div>
@@ -315,23 +347,25 @@ export default function TripScene() {
       <div className="sticky top-0 h-screen overflow-hidden">
         {/* Кадр «туди» */}
         <div ref={outWrapRef} className="absolute inset-0" style={{ willChange: 'transform' }}>
-          <video
+          <SchemeVideo
             src="/videos/truck-scheme-to-right.mp4"
-            autoPlay muted loop playsInline preload="auto" aria-hidden
+            active={phase === 'out'}
             className="h-full w-full object-cover"
             style={{ filter: 'var(--scheme-video-filter)' }}
           />
         </div>
 
-        {/* Кадр «назад» — до розвороту прихований */}
+        {/* Кадр «назад» — до розвороту прихований і навіть не завантажений */}
         <div
           ref={inWrapRef}
           className="absolute inset-0"
           style={{ willChange: 'transform', opacity: 0, visibility: 'hidden' }}
         >
-          <video
+          <SchemeVideo
             src="/videos/truck-scheme-to-left.mp4"
-            autoPlay muted loop playsInline preload="auto" aria-hidden
+            active={phase === 'in'}
+            defer
+            warm={warm}
             className="h-full w-full object-cover"
             style={{ filter: 'var(--scheme-video-filter)' }}
           />

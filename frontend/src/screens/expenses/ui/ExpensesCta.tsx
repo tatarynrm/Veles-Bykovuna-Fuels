@@ -8,17 +8,26 @@ import { usePrefersReducedMotion } from '@/shared/lib/usePrefersReducedMotion';
 import { appEntry } from '@/shared/config/site';
 import { CTA_FRAMES, TONE_VAR, TONE_SOFT } from '@/shared/config/expenses';
 import { t } from '@/lib/i18n';
+import FrameSequence, { type FrameSequenceHandle } from './FrameSequence';
 
-/** Скільки висоти сторінки «коштує» сцена: 5 екранів скролу на 4 кадри ролика. */
+/** Скільки висоти сторінки «коштує» сцена: 5 екранів скролу на 4 кадри розкадровки. */
 const SCENE_VH = 500;
 
 /**
- * Частка прогресу, яку займає сам ролик. Останні 20% скролу тримають відео на
- * останньому кадрі (звіт уже зібраний) і використовують той самий екран для
- * заклику до дії — так фінальна сцена рахунків стає й фоном для кнопок, а не
- * просто ще одним кадром розкадровки.
+ * Частка прогресу, яку займає сама розкадровка. Останні 20% скролу тримають
+ * останній кадр (звіт уже зібраний) і використовують той самий екран для
+ * заклику до дії — так фінальна сцена стає й фоном для кнопок, а не просто
+ * ще одним кадром.
  */
 const VIDEO_SPAN = 0.8;
+
+/** Скільки кадрів лежить у /public/frames/reports. */
+const FRAME_COUNT = 100;
+const FRAME_DIR = '/frames/reports';
+
+/** Кадр-представник кожного епізоду — для нерухомої версії. */
+const STILLS = [10, 32, 60, 95];
+const still = (n: number) => `${FRAME_DIR}/${String(n).padStart(3, '0')}.jpg`;
 
 function pad(n: number) {
   return String(n).padStart(2, '0');
@@ -40,20 +49,22 @@ function CtaButtons({ authed }: { authed: boolean }) {
 }
 
 /**
- * Фінал сторінки: розкадровка ролика `fules-reports.mp4` (каністра заливає
- * пальне → рахунки → чеки → звітність), синхронізована зі скролом.
+ * Фінал сторінки: розкадровка «каністра → рахунки → чеки → звітність»,
+ * синхронізована зі скролом.
  *
- * Відео не грає само — `currentTime` виставляється прямо з прогресу скролу
- * (`progress / VIDEO_SPAN * duration`), тож кадр на екрані завжди відповідає
- * тому, що людина щойно прогорнула, а не циклу програвання. Текст під кожним
- * кадром лежить в одній клітинці ґріда й перемикається `opacity`/`visibility`
- * — той самий прийом кросфейду, що й у TripScene, тільки тут по чотирьох
- * кадрах відео, а не по двох роликах.
+ * Кадри — окремі JPEG на канві, а не прокрутка відео по `currentTime`.
+ * У вихідному ролику три ключові кадри на 470, тож кожна перемотка змушувала
+ * декодер програти до трьохсот кадрів, а useScrollProgress міряє щокадру —
+ * саме від цього сторінка й підвисала. Показ окремого кадру такої ціни не має.
+ *
+ * Текст під кожним епізодом лежить в одній клітинці ґріда й перемикається
+ * `opacity`/`visibility` — той самий прийом кросфейду, що й у TripScene.
+ * Через React проходить лише зміна епізоду (чотири рази на сцену); і сам
+ * кадр, і смуга прогресу малюються повз стан.
  */
 export default function ExpensesCta() {
   const sectionRef = useRef<HTMLElement>(null);
-  const staticRef = useRef<HTMLElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const framesRef = useRef<FrameSequenceHandle>(null);
   const railRef = useRef<HTMLSpanElement>(null);
   const [phase, setPhase] = useState(0);
   const [authed, setAuthed] = useState(false);
@@ -64,50 +75,50 @@ export default function ExpensesCta() {
   }, []);
 
   const handleProgress = useCallback((progress: number) => {
+    // Смуга прогресу й кадр — це стилі двох елементів, стану вони не потребують.
     if (railRef.current) railRef.current.style.transform = `scaleX(${progress})`;
 
-    const video = videoRef.current;
-    const videoProgress = Math.min(1, progress / VIDEO_SPAN);
-    if (video && Number.isFinite(video.duration)) {
-      video.currentTime = videoProgress * video.duration;
-    }
+    const storyProgress = Math.min(1, progress / VIDEO_SPAN);
+    framesRef.current?.show(storyProgress);
 
     const next = progress >= VIDEO_SPAN
       ? CTA_FRAMES.length
-      : Math.min(CTA_FRAMES.length - 1, Math.floor(videoProgress * CTA_FRAMES.length));
+      : Math.min(CTA_FRAMES.length - 1, Math.floor(storyProgress * CTA_FRAMES.length));
     setPhase(prev => (prev === next ? prev : next));
   }, []);
 
   useScrollProgress(sectionRef, handleProgress);
 
-  /* Нерухома версія: відео грає звичайним циклом, усі кадри — одним списком. */
+  /* Нерухома версія: ті самі епізоди — статичними кадрами, одним списком. */
   if (reduced) {
     return (
-      <section ref={staticRef} className="px-5 py-24 text-center sm:px-8">
-        <div className="mx-auto mb-14 max-w-3xl overflow-hidden rounded-card">
-          <video
-            src="/videos/fules-reports.mp4"
-            autoPlay muted loop playsInline preload="metadata" aria-hidden
-            className="h-56 w-full object-cover sm:h-72"
-          />
-        </div>
-
+      <section className="px-5 py-24 text-center sm:px-8">
         <div className="mx-auto mb-14 grid max-w-4xl gap-6 text-left sm:grid-cols-2">
-          {CTA_FRAMES.map(frame => {
+          {CTA_FRAMES.map((frame, i) => {
             const Icon = frame.icon;
             return (
-              <div key={frame.id} className="glass-inset flex gap-3 p-4">
-                <span
-                  className="flex h-9 w-9 flex-none items-center justify-center rounded-xl"
-                  style={{ background: TONE_SOFT[frame.tone], color: TONE_VAR[frame.tone] }}
-                >
-                  <Icon size={17} />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-[13px] font-semibold leading-snug">{t(frame.title)}</p>
-                  <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    {t(frame.detail)}
-                  </p>
+              <div key={frame.id} className="glass-panel overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={still(STILLS[i])}
+                  alt=""
+                  aria-hidden
+                  loading="lazy"
+                  className="h-36 w-full object-cover"
+                />
+                <div className="flex gap-3 p-4">
+                  <span
+                    className="flex h-9 w-9 flex-none items-center justify-center rounded-xl"
+                    style={{ background: TONE_SOFT[frame.tone], color: TONE_VAR[frame.tone] }}
+                  >
+                    <Icon size={17} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-semibold leading-snug">{t(frame.title)}</p>
+                    <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                      {t(frame.detail)}
+                    </p>
+                  </div>
                 </div>
               </div>
             );
@@ -130,17 +141,18 @@ export default function ExpensesCta() {
   return (
     <section ref={sectionRef} className="relative" style={{ height: `${SCENE_VH}vh` }}>
       <div className="sticky top-0 h-screen overflow-hidden">
-        <video
-          ref={videoRef}
-          src="/videos/fules-reports.mp4"
-          muted
-          playsInline
-          preload="auto"
-          aria-hidden
-          className="absolute inset-0 h-full w-full object-cover"
-          style={{ filter: 'var(--scheme-video-filter)' }}
+        <FrameSequence
+          ref={framesRef}
+          count={FRAME_COUNT}
+          dir={FRAME_DIR}
+          className="absolute inset-0 h-full w-full"
         />
-        <div className="absolute inset-0" style={{ background: 'var(--scheme-scrim)' }} />
+        {/*
+          Пелена тут окрема від решти сторінки: кадри розкадровки — фотографічні,
+          а не лінійна схема, тож інверсія світлої теми до них не застосовується.
+          Щільність — по центру, бо текст стоїть саме там.
+        */}
+        <div className="absolute inset-0" style={{ background: 'var(--story-scrim)' }} />
 
         {/* Прогрес розкадровки */}
         <div className="absolute inset-x-0 top-0 h-0.5" style={{ background: 'var(--border-subtle)' }} aria-hidden>

@@ -1,3 +1,5 @@
+import { Fuel, Receipt, Route, Scale, type LucideIcon } from 'lucide-react';
+
 /**
  * Текстові поля тут — це КЛЮЧІ i18n, а не готовий текст: t() ставиться в
  * місці рендеру (`{t(h.title)}`). На рівні модуля переклад застряг би тією
@@ -5,6 +7,7 @@
  */
 export interface Horizon {
   id: string;
+  icon: LucideIcon;
   /** Ключ i18n. */
   phase: string;
   /** Ключ i18n. */
@@ -24,6 +27,7 @@ export interface Horizon {
 export const HORIZONS: Horizon[] = [
   {
     id: 'h1',
+    icon: Fuel,
     phase: 'landing.rm.h1.phase',
     title: 'landing.rm.h1.title',
     rationale: 'landing.rm.h1.rationale',
@@ -40,6 +44,7 @@ export const HORIZONS: Horizon[] = [
   },
   {
     id: 'h2',
+    icon: Receipt,
     phase: 'landing.rm.h2.phase',
     title: 'landing.rm.h2.title',
     rationale: 'landing.rm.h2.rationale',
@@ -55,6 +60,7 @@ export const HORIZONS: Horizon[] = [
   },
   {
     id: 'h3',
+    icon: Route,
     phase: 'landing.rm.h3.phase',
     title: 'landing.rm.h3.title',
     rationale: 'landing.rm.h3.rationale',
@@ -72,6 +78,7 @@ export const HORIZONS: Horizon[] = [
   },
   {
     id: 'h4',
+    icon: Scale,
     phase: 'landing.rm.h4.phase',
     title: 'landing.rm.h4.title',
     rationale: 'landing.rm.h4.rationale',
@@ -139,4 +146,12 @@ export const TONE_VAR: Record<Horizon['tone'], string> = {
   warn: 'var(--warn)',
   info: 'var(--info)',
   muted: 'var(--text-muted)',
+};
+
+/** Приглушений фон під іконку — той самий підхід, що й TONE_SOFT можливостей. */
+export const TONE_SOFT: Record<Horizon['tone'], string> = {
+  accent: 'var(--accent-soft)',
+  warn: 'var(--warn-soft)',
+  info: 'var(--info-soft)',
+  muted: 'var(--surface-inset)',
 };
