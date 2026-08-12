@@ -43,7 +43,7 @@ export function GuestBlockedPanel({
       <h2 className="text-sm font-semibold text-txt-primary">{title}</h2>
       <p className="max-w-md text-2xs leading-relaxed text-txt-secondary">{description}</p>
       <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-        <Link href="/ruptela/routes-tasks" className="btn btn-ghost">
+        <Link href="/workflow/ruptela/routes-tasks" className="btn btn-ghost">
           {t('guest.viewRoutes')}
         </Link>
         <Link href="/login" className="btn btn-warn">

@@ -10,17 +10,17 @@ import { t } from '@/lib/i18n';
 import ThemeToggleButton from './ThemeToggleButton';
 
 const TABS = [
-  { href: '/ruptela/fleet', label: 'common.myFleet', icon: Truck },
-  { href: '/ruptela/live', label: 'common.realTime', icon: Radio },
+  { href: '/workflow/ruptela/fleet', label: 'common.myFleet', icon: Truck },
+  { href: '/workflow/ruptela/live', label: 'common.realTime', icon: Radio },
   {
-    href: '/ruptela/create-trip',
+    href: '/workflow/ruptela/create-trip',
     label: 'common.createATrip',
     icon: PlusCircle,
     /** Writes to Ruptela — not offered to the read-only guest role. */
     staffOnly: true,
   },
-  { href: '/ruptela/routes-tasks', label: 'common.routesAndTasks', icon: Route },
-  { href: '/ruptela/insights', label: 'common.fmsReports', icon: BarChart3 },
+  { href: '/workflow/ruptela/routes-tasks', label: 'common.routesAndTasks', icon: Route },
+  { href: '/workflow/ruptela/insights', label: 'common.fmsReports', icon: BarChart3 },
 ];
 
 interface RuptelaShellProps {

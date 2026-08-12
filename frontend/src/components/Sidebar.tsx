@@ -37,36 +37,36 @@ interface SidebarProps {
 
 /** `tour` marks the element the onboarding overlay spotlights (see TourContext). */
 const primaryNav = [
-  { href: '/', label: 'common.dashboard', icon: Fuel, tour: 'nav-overview' },
-  { href: '/cards', label: 'common.fuelCards', icon: CreditCard, tour: 'nav-cards' },
-  { href: '/transactions', label: 'common.transactionLog', icon: History, tour: 'nav-transactions' },
-  { href: '/analytics', label: 'common.fuelAnalytics', icon: BarChart3, tour: 'nav-analytics' },
+  { href: '/workflow/dashboard', label: 'common.dashboard', icon: Fuel, tour: 'nav-overview' },
+  { href: '/workflow/cards', label: 'common.fuelCards', icon: CreditCard, tour: 'nav-cards' },
+  { href: '/workflow/transactions', label: 'common.transactionLog', icon: History, tour: 'nav-transactions' },
+  { href: '/workflow/analytics', label: 'common.fuelAnalytics', icon: BarChart3, tour: 'nav-analytics' },
   { href: '/calculator', label: 'calc.title', icon: Route, tour: 'nav-calculator' },
-  { href: '/merchants', label: 'common.stationNetwork', icon: MapPin, tour: 'nav-merchants' },
+  { href: '/workflow/merchants', label: 'common.stationNetwork', icon: MapPin, tour: 'nav-merchants' },
 ];
 
 const fleetNav = [
-  { href: '/fleet', label: 'nav.n3dMonitoring', icon: Boxes, tour: 'nav-fleet3d' },
+  { href: '/workflow/fleet', label: 'nav.n3dMonitoring', icon: Boxes, tour: 'nav-fleet3d' },
 ];
 
 const ruptelaNav = [
-  { href: '/ruptela/fleet', label: 'common.myFleet', icon: Truck, tour: 'nav-ruptela-fleet' },
-  { href: '/ruptela/live', label: 'common.realTime', icon: Radio, tour: 'nav-live' },
+  { href: '/workflow/ruptela/fleet', label: 'common.myFleet', icon: Truck, tour: 'nav-ruptela-fleet' },
+  { href: '/workflow/ruptela/live', label: 'common.realTime', icon: Radio, tour: 'nav-live' },
   {
-    href: '/ruptela/create-trip',
+    href: '/workflow/ruptela/create-trip',
     label: 'common.createATrip',
     icon: PlusCircle,
     tour: 'nav-create-trip',
     /** Writes to Ruptela — hidden for the read-only guest role. */
     staffOnly: true,
   },
-  { href: '/ruptela/routes-tasks', label: 'common.routesAndTasks', icon: Route, tour: 'nav-routes' },
-  { href: '/ruptela/insights', label: 'common.fmsReports', icon: BarChart3, tour: 'nav-insights' },
+  { href: '/workflow/ruptela/routes-tasks', label: 'common.routesAndTasks', icon: Route, tour: 'nav-routes' },
+  { href: '/workflow/ruptela/insights', label: 'common.fmsReports', icon: BarChart3, tour: 'nav-insights' },
 ];
 
 const systemNav = [
-  { href: '/api-console', label: 'nav.apiConsole', icon: Terminal, tour: 'nav-api' },
-  { href: '/ui-kit', label: 'nav.uiKit', icon: Boxes, tour: 'nav-uikit' },
+  { href: '/workflow/api-console', label: 'nav.apiConsole', icon: Terminal, tour: 'nav-api' },
+  { href: '/workflow/ui-kit', label: 'nav.uiKit', icon: Boxes, tour: 'nav-uikit' },
 ];
 
 const COLLAPSE_KEY = 'veles_sidebar_collapsed';
@@ -138,7 +138,7 @@ export default function Sidebar({ apiStatus }: SidebarProps) {
   };
 
   useEffect(() => {
-    if (pathname.startsWith('/ruptela')) setRuptelaOpen(true);
+    if (pathname.startsWith('/workflow/ruptela')) setRuptelaOpen(true);
   }, [pathname]);
 
   // Close the drawer whenever the route changes
@@ -241,7 +241,7 @@ export default function Sidebar({ apiStatus }: SidebarProps) {
           >
             {/* Той самий VelesLogo, що на вході й на заставці, — бренд усюди один. */}
             <Link
-              href="/dashboard"
+              href="/workflow/dashboard"
               data-tour="brand"
               title="VELES ERP · VELES BUKOVYNA FUELS"
               className="group flex min-w-0 items-center transition-transform duration-200 group-hover:scale-105"
@@ -339,7 +339,7 @@ export default function Sidebar({ apiStatus }: SidebarProps) {
                     onClick={() => setRuptelaOpen((v) => !v)}
                     aria-expanded={ruptelaOpen}
                     className={`flex w-full items-center justify-between rounded-control px-2.5 py-1.5 text-2xs font-semibold transition-colors ${
-                      pathname.startsWith('/ruptela')
+                      pathname.startsWith('/workflow/ruptela')
                         ? 'text-warn'
                         : 'text-txt-secondary hover:text-txt-primary'
                     }`}

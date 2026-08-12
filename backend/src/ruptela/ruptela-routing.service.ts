@@ -928,6 +928,9 @@ export class RuptelaRoutingService implements OnModuleInit {
     }
 console.log('Creating trip with parameters:', parameters);
 console.log('Creating trip with createTrip:', CREATE_TRIP);
+
+
+
     const data = await this.graphql<{ createTrip: any }>(CREATE_TRIP, { parameters });
     const trip = this.mapTrip(data.createTrip);
 

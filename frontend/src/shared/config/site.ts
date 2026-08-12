@@ -24,4 +24,4 @@ export const BRAND = {
 } as const;
 
 /** Куди веде головна дія: у дашборд, якщо сесія вже є. */
-export const appEntry = (authed: boolean) => (authed ? '/dashboard' : '/login');
+export const appEntry = (authed: boolean) => (authed ? '/workflow/dashboard' : '/login');

@@ -8,7 +8,7 @@ export default function RuptelaRootPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/ruptela/fleet');
+    router.replace('/workflow/ruptela/fleet');
   }, [router]);
 
   return (

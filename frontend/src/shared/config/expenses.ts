@@ -187,32 +187,32 @@ export interface PlatformBlock {
  */
 export const PLATFORM_BLOCKS: PlatformBlock[] = [
   {
-    id: 'cards', icon: CreditCard, status: 'live', tone: 'accent', href: '/cards',
+    id: 'cards', icon: CreditCard, status: 'live', tone: 'accent', href: '/workflow/cards',
     title: 'landing.exp.plat.cards.title',
     desc: 'landing.exp.plat.cards.desc',
   },
   {
-    id: 'tx', icon: Receipt, status: 'live', tone: 'accent', href: '/transactions',
+    id: 'tx', icon: Receipt, status: 'live', tone: 'accent', href: '/workflow/transactions',
     title: 'landing.exp.plat.tx.title',
     desc: 'landing.exp.plat.tx.desc',
   },
   {
-    id: 'analytics', icon: BarChart3, status: 'live', tone: 'accent', href: '/analytics',
+    id: 'analytics', icon: BarChart3, status: 'live', tone: 'accent', href: '/workflow/analytics',
     title: 'landing.exp.plat.analytics.title',
     desc: 'landing.exp.plat.analytics.desc',
   },
   {
-    id: 'vehicles', icon: Truck, status: 'live', tone: 'warn', href: '/ruptela/fleet',
+    id: 'vehicles', icon: Truck, status: 'live', tone: 'warn', href: '/workflow/ruptela/fleet',
     title: 'landing.exp.plat.vehicles.title',
     desc: 'landing.exp.plat.vehicles.desc',
   },
   {
-    id: 'live', icon: Radio, status: 'live', tone: 'warn', href: '/ruptela/live',
+    id: 'live', icon: Radio, status: 'live', tone: 'warn', href: '/workflow/ruptela/live',
     title: 'landing.exp.plat.live.title',
     desc: 'landing.exp.plat.live.desc',
   },
   {
-    id: 'trips', icon: Route, status: 'live', tone: 'warn', href: '/ruptela/trips',
+    id: 'trips', icon: Route, status: 'live', tone: 'warn', href: '/workflow/ruptela/routes-tasks',
     title: 'landing.exp.plat.trips.title',
     desc: 'landing.exp.plat.trips.desc',
   },

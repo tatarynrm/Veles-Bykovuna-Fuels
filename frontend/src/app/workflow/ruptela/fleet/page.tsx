@@ -205,7 +205,7 @@ export default function RuptelaFleetPage() {
             <span className="hidden sm:inline">{t('common.refresh')}</span>
           </button>
           {!isGuest && (
-            <Link href="/ruptela/create-trip" className="btn btn-warn">
+            <Link href="/workflow/ruptela/create-trip" className="btn btn-warn">
               <PlusCircle className="h-3.5 w-3.5" />
               <span>{t('common.newTrip')}</span>
             </Link>
@@ -266,7 +266,7 @@ export default function RuptelaFleetPage() {
               selectedVehicle={selectedVehicle}
               onSelectVehicle={(v) => setSelectedId(v.id)}
               canCreateTrip={!isGuest}
-              onCreateTrip={(vehicleId) => router.push(`/ruptela/create-trip?vehicleId=${vehicleId}`)}
+              onCreateTrip={(vehicleId) => router.push(`/workflow/ruptela/create-trip?vehicleId=${vehicleId}`)}
             />
 
             <p className="mt-3 text-micro text-txt-secondary">
@@ -413,7 +413,7 @@ export default function RuptelaFleetPage() {
                 </dl>
 
                 <Link
-                  href={`/ruptela/live?vehicle=${selectedVehicle.id}`}
+                  href={`/workflow/ruptela/live?vehicle=${selectedVehicle.id}`}
                   className="btn btn-warn w-full"
                 >
                   <Radio className="h-4 w-4" />
@@ -427,7 +427,7 @@ export default function RuptelaFleetPage() {
                   </button>
                   {!isGuest && (
                     <button
-                      onClick={() => router.push(`/ruptela/create-trip?vehicleId=${selectedVehicle.id}`)}
+                      onClick={() => router.push(`/workflow/ruptela/create-trip?vehicleId=${selectedVehicle.id}`)}
                       className="btn btn-ghost"
                     >
                       <PlusCircle className="h-4 w-4" />
@@ -556,7 +556,7 @@ export default function RuptelaFleetPage() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            router.push(`/ruptela/create-trip?vehicleId=${v.id}`);
+                            router.push(`/workflow/ruptela/create-trip?vehicleId=${v.id}`);
                           }}
                           className="btn btn-warn btn-sm"
                         >

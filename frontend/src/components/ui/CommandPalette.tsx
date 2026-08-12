@@ -135,21 +135,21 @@ export default function CommandPalette() {
     const go = (href: string) => () => router.push(href);
 
     return [
-      { id: 'nav-overview', label: t('common.dashboard'), group: 'nav.navigation', icon: Fuel, hint: '/', keywords: 'dashboard golovna zvedennia', run: go('/') },
-      { id: 'nav-cards', label: t('common.fuelCards'), group: 'nav.navigation', icon: CreditCard, hint: '/cards', keywords: 'cards kartky palyvni', run: go('/cards') },
-      { id: 'nav-tx', label: t('common.transactionLog'), group: 'nav.navigation', icon: History, hint: '/transactions', keywords: 'transactions zhurnal operacii cheky', run: go('/transactions') },
-      { id: 'nav-analytics', label: t('common.fuelAnalytics'), group: 'nav.navigation', icon: BarChart3, hint: '/analytics', keywords: 'analytics grafiky zvity statystyka', run: go('/analytics') },
-      { id: 'nav-merchants', label: t('common.stationNetwork'), group: 'nav.navigation', icon: MapPin, hint: '/merchants', keywords: 'merchants azs stancii mapa', run: go('/merchants') },
-      { id: 'nav-fleet3d', label: t('nav.n3dMonitoring'), group: 'nav.navigation', icon: Boxes, hint: '/fleet', keywords: 'fleet 3d diagnostyka truck', run: go('/fleet') },
-      { id: 'nav-ruptela-fleet', label: t('nav.myFleetTelematics'), group: 'nav.navigation', icon: Truck, hint: '/ruptela/fleet', keywords: 'ruptela avtopark telematyka gps', run: go('/ruptela/fleet') },
-      { id: 'nav-live', label: t('nav.realTimeWatchingVehicle'), group: 'nav.navigation', icon: Radio, hint: '/ruptela/live', keywords: 'live realnyi chas track monitoring gps', run: go('/ruptela/live') },
+      { id: 'nav-overview', label: t('common.dashboard'), group: 'nav.navigation', icon: Fuel, hint: '/workflow/dashboard', keywords: 'dashboard golovna zvedennia', run: go('/workflow/dashboard') },
+      { id: 'nav-cards', label: t('common.fuelCards'), group: 'nav.navigation', icon: CreditCard, hint: '/workflow/cards', keywords: 'cards kartky palyvni', run: go('/workflow/cards') },
+      { id: 'nav-tx', label: t('common.transactionLog'), group: 'nav.navigation', icon: History, hint: '/workflow/transactions', keywords: 'transactions zhurnal operacii cheky', run: go('/workflow/transactions') },
+      { id: 'nav-analytics', label: t('common.fuelAnalytics'), group: 'nav.navigation', icon: BarChart3, hint: '/workflow/analytics', keywords: 'analytics grafiky zvity statystyka', run: go('/workflow/analytics') },
+      { id: 'nav-merchants', label: t('common.stationNetwork'), group: 'nav.navigation', icon: MapPin, hint: '/workflow/merchants', keywords: 'merchants azs stancii mapa', run: go('/workflow/merchants') },
+      { id: 'nav-fleet3d', label: t('nav.n3dMonitoring'), group: 'nav.navigation', icon: Boxes, hint: '/workflow/fleet', keywords: 'fleet 3d diagnostyka truck', run: go('/workflow/fleet') },
+      { id: 'nav-ruptela-fleet', label: t('nav.myFleetTelematics'), group: 'nav.navigation', icon: Truck, hint: '/workflow/ruptela/fleet', keywords: 'ruptela avtopark telematyka gps', run: go('/workflow/ruptela/fleet') },
+      { id: 'nav-live', label: t('nav.realTimeWatchingVehicle'), group: 'nav.navigation', icon: Radio, hint: '/workflow/ruptela/live', keywords: 'live realnyi chas track monitoring gps', run: go('/workflow/ruptela/live') },
       // Creating a trip writes to Ruptela — a guest would be rejected by the server.
       ...(isGuest
         ? []
-        : [{ id: 'nav-trip-new', label: t('common.createATrip'), group: 'nav.navigation' as const, icon: PlusCircle, hint: '/ruptela/create-trip', keywords: 'trip poizdka nova reis', run: go('/ruptela/create-trip') }]),
-      { id: 'nav-routes', label: t('common.routesAndTasks'), group: 'nav.navigation', icon: Route, hint: '/ruptela/routes-tasks', keywords: 'routes marshrut zavdannia', run: go('/ruptela/routes-tasks') },
-      { id: 'nav-api', label: t('nav.apiConsole'), group: 'nav.navigation', icon: Terminal, hint: '/api-console', keywords: 'api konsol debug zapyty', run: go('/api-console') },
-      { id: 'nav-uikit', label: t('nav.uiKitComponentLibrary'), group: 'nav.navigation', icon: Boxes, hint: '/ui-kit', keywords: 'ui kit komponenty design system', run: go('/ui-kit') },
+        : [{ id: 'nav-trip-new', label: t('common.createATrip'), group: 'nav.navigation' as const, icon: PlusCircle, hint: '/workflow/ruptela/create-trip', keywords: 'trip poizdka nova reis', run: go('/workflow/ruptela/create-trip') }]),
+      { id: 'nav-routes', label: t('common.routesAndTasks'), group: 'nav.navigation', icon: Route, hint: '/workflow/ruptela/routes-tasks', keywords: 'routes marshrut zavdannia', run: go('/workflow/ruptela/routes-tasks') },
+      { id: 'nav-api', label: t('nav.apiConsole'), group: 'nav.navigation', icon: Terminal, hint: '/workflow/api-console', keywords: 'api konsol debug zapyty', run: go('/workflow/api-console') },
+      { id: 'nav-uikit', label: t('nav.uiKitComponentLibrary'), group: 'nav.navigation', icon: Boxes, hint: '/workflow/ui-kit', keywords: 'ui kit komponenty design system', run: go('/workflow/ui-kit') },
 
       {
         id: 'act-refresh',

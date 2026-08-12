@@ -291,7 +291,7 @@ function RoutesTasksView() {
               <span>{t('common.newTrip')}</span>
             </button>
           ) : (
-            <Link href="/ruptela/create-trip" className="btn btn-warn">
+            <Link href="/workflow/ruptela/create-trip" className="btn btn-warn">
               <PlusCircle className="h-3.5 w-3.5" />
               <span>{t('common.newTrip')}</span>
             </Link>
@@ -542,7 +542,7 @@ function RoutesTasksView() {
                 </button>
               ) : (
                 scope === 'active' && (
-                  <Link href="/ruptela/create-trip" className="btn btn-warn mt-4">
+                  <Link href="/workflow/ruptela/create-trip" className="btn btn-warn mt-4">
                     <PlusCircle className="h-3.5 w-3.5" />
                     {t('trip.createFirstOne')}
                   </Link>
@@ -679,7 +679,7 @@ function RoutesTasksView() {
                       <>
                         {/* Full editor: route, waypoints, tasks — the same form that creates trips */}
                         <Link
-                          href={`/ruptela/create-trip?edit=${selected.id}`}
+                          href={`/workflow/ruptela/create-trip?edit=${selected.id}`}
                           className="btn btn-warn"
                         >
                           <Route className="h-3.5 w-3.5" />

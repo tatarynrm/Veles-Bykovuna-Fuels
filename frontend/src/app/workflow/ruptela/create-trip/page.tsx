@@ -415,7 +415,7 @@ function CreateTripView() {
         : await apiSend<RuptelaTrip>('POST', '/api/ruptela/trips', payload);
       // The trip is in Ruptela now — the local draft has served its purpose.
       clearDraftStorage();
-      router.push(`/ruptela/routes-tasks?trip=${saved.id}`);
+      router.push(`/workflow/ruptela/routes-tasks?trip=${saved.id}`);
     } catch (err: any) {
       // The backend forwards Ruptela's own validation text — show it verbatim
       // instead of a generic failure message.
@@ -860,7 +860,7 @@ function CreateTripView() {
         </section>
 
         <div className="flex items-center justify-end gap-2 pb-4">
-          <Link href="/ruptela/routes-tasks" className="btn btn-ghost">
+          <Link href="/workflow/ruptela/routes-tasks" className="btn btn-ghost">
             {t('trip.cancel')}
           </Link>
           <button type="submit" disabled={submitting} className="btn btn-warn px-6 py-3">

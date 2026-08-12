@@ -51,7 +51,7 @@ export default function LoginPage() {
         await new Promise((resolve) => setTimeout(resolve, 5000));
 
         // 3. І тільки після цього ініціюємо перехід
-        router.push('/dashboard');
+        router.push('/workflow/dashboard');
       } else {
         setError(data.message || t('auth.incorrectUsernamePassword'));
         setLoading(false);
