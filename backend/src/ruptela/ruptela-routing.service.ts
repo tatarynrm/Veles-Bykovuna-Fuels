@@ -365,7 +365,8 @@ export class RuptelaRoutingService implements OnModuleInit {
     if (!this.apiKey) {
       throw new Error('RUPTELA_API_KEY is not configured');
     }
-
+console.log('VARIABLES', variables,'368 line');
+console.log('query', query,'369 line');
     const response = await this.client.post(
       `/routing?api_key=${this.apiKey}`,
       { query, variables },

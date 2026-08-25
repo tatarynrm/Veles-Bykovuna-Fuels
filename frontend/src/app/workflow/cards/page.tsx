@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PageShell, { AuthGate } from '@/components/PageShell';
 import CardsTable from '@/components/CardsTable';
-import { DateRange } from '@/components/DateRangePicker';
+import { DateRange, todayRange } from '@/components/DateRangePicker';
 import { SkeletonTable } from '@/components/Skeletons';
 import { useAuthGuard } from '@/lib/useAuthGuard';
 import { cachedList, hasFreshEnough, useApiRefreshing } from '@/lib/apiCache';
@@ -14,11 +14,7 @@ export default function CardsPage() {
   const revalidating = useApiRefreshing();
 
   const [activeBrand, setActiveBrand] = useState('ALL');
-  const [dateRange, setDateRange] = useState<DateRange>({
-    preset: 'ALL',
-    dateFrom: '',
-    dateTo: '',
-  });
+  const [dateRange, setDateRange] = useState<DateRange>(todayRange());
 
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);

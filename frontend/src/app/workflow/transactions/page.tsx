@@ -3,8 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PageShell, { AuthGate } from '@/components/PageShell';
 import TransactionsJournal from '@/components/TransactionsJournal';
-import { DateRange } from '@/components/DateRangePicker';
+import { DateRange, todayRange, isHeavyRange, rangeLabel } from '@/components/DateRangePicker';
 import { SkeletonTable } from '@/components/Skeletons';
+import DataLoader from '@/components/DataLoader';
 import { useAuthGuard } from '@/lib/useAuthGuard';
 import { cachedList, hasFreshEnough, useApiRefreshing } from '@/lib/apiCache';
 import { t } from '@/lib/i18n';
@@ -14,11 +15,7 @@ export default function TransactionsPage() {
   const revalidating = useApiRefreshing();
 
   const [activeBrand, setActiveBrand] = useState('ALL');
-  const [dateRange, setDateRange] = useState<DateRange>({
-    preset: 'ALL',
-    dateFrom: '',
-    dateTo: '',
-  });
+  const [dateRange, setDateRange] = useState<DateRange>(todayRange());
 
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -59,7 +56,15 @@ export default function TransactionsPage() {
       activeBrand={activeBrand}
       onSelectBrand={setActiveBrand}
     >
-      {loading ? <SkeletonTable /> : <TransactionsJournal transactions={transactions} />}
+      {loading ? (
+        isHeavyRange(dateRange) ? (
+          <DataLoader periodLabel={rangeLabel(dateRange)} />
+        ) : (
+          <SkeletonTable />
+        )
+      ) : (
+        <TransactionsJournal transactions={transactions} />
+      )}
     </PageShell>
   );
 }

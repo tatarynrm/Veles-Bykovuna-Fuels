@@ -1,0 +1,88 @@
+# Локалізація розділу «Нова Пошта» (nova.*).
+# Колонки: key <TAB> en <TAB> pl <TAB> de <TAB> ro <TAB> cs <TAB> sk <TAB> hu <TAB> fr <TAB> es
+nova.account	Nova Poshta account	Konto Nova Poshta	Nova-Poshta-Konto	Cont Nova Poshta	Účet Nova Poshta	Účet Nova Poshta	Nova Poshta fiók	Compte Nova Poshta	Cuenta de Nova Poshta
+nova.cargoSubtitle	Parcel parameters and payment	Parametry przesyłki i płatność	Sendungsparameter und Zahlung	Parametrii coletului și plata	Parametry zásilky a platba	Parametre zásielky a platba	Csomagparaméterek és fizetés	Paramètres du colis et paiement	Parámetros del envío y pago
+nova.cargoTitle	Cargo	Ładunek	Fracht	Marfă	Náklad	Náklad	Rakomány	Marchandise	Carga
+nova.change	change	zmień	ändern	schimbă	změnit	zmeniť	módosítás	modifier	cambiar
+nova.cityPlaceholder	Start typing a city…	Zacznij wpisywać miasto…	Stadt eingeben…	Începeți să tastați un oraș…	Začněte psát město…	Začnite písať mesto…	Kezdje el beírni a várost…	Commencez à saisir une ville…	Empiece a escribir una ciudad…
+nova.clear	Clear	Wyczyść	Leeren	Golește	Vymazat	Vymazať	Törlés	Effacer	Borrar
+nova.codAmount	Cash on delivery, ₴	Płatność za pobraniem, ₴	Nachnahme, ₴	Ramburs, ₴	Dobírka, ₴	Dobierka, ₴	Utánvét, ₴	Contre-remboursement, ₴	Contra reembolso, ₴
+nova.codLabel	Cash on delivery	Płatność za pobraniem	Nachnahme	Ramburs	Dobírka	Dobierka	Utánvét	Contre-remboursement	Contra reembolso
+nova.colActions	Actions	Działania	Aktionen	Acțiuni	Akce	Akcie	Műveletek	Actions	Acciones
+nova.colCity	City	Miasto	Stadt	Oraș	Město	Mesto	Város	Ville	Ciudad
+nova.colCost	Cost	Koszt	Kosten	Cost	Cena	Cena	Költség	Coût	Coste
+nova.colDate	Date	Data	Datum	Dată	Datum	Dátum	Dátum	Date	Fecha
+nova.colNumber	Number	Numer	Nummer	Număr	Číslo	Číslo	Szám	Numéro	Número
+nova.colState	Status	Status	Status	Stare	Stav	Stav	Állapot	Statut	Estado
+nova.copy	Copy	Kopiuj	Kopieren	Copiază	Kopírovat	Kopírovať	Másolás	Copier	Copiar
+nova.createAnother	Create another	Utwórz kolejną	Weitere erstellen	Creează alta	Vytvořit další	Vytvoriť ďalšiu	Új létrehozása	Créer un autre	Crear otro
+nova.createButton	Create waybill	Utwórz list przewozowy	Frachtbrief erstellen	Creează AWB	Vytvořit přepravní list	Vytvoriť prepravný list	Fuvarlevél létrehozása	Créer le bordereau	Crear albarán
+nova.createShipment	Create shipment	Utwórz przesyłkę	Sendung erstellen	Creează colet	Vytvořit zásilku	Vytvoriť zásielku	Küldemény létrehozása	Créer un envoi	Crear envío
+nova.createSubtitle	Creating a Nova Poshta express waybill	Tworzenie listu przewozowego ekspres Nova Poshta	Erstellung eines Nova-Poshta-Express-Frachtbriefs	Creare AWB expres Nova Poshta	Vytvoření expresního přepravního listu Nova Poshta	Vytvorenie expresného prepravného listu Nova Poshta	Nova Poshta expressz fuvarlevél létrehozása	Création d’un bordereau express Nova Poshta	Creación de un albarán exprés de Nova Poshta
+nova.createTitle	New shipment	Nowa przesyłka	Neue Sendung	Colet nou	Nová zásilka	Nová zásielka	Új küldemény	Nouvel envoi	Nuevo envío
+nova.createdSubtitle	Tracking number for printing and tracking	Numer przesyłki do wydruku i śledzenia	Sendungsnummer zum Drucken und Verfolgen	Numărul AWB pentru printare și urmărire	Číslo zásilky pro tisk a sledování	Číslo zásielky na tlač a sledovanie	Nyomkövetési szám nyomtatáshoz és követéshez	Numéro de suivi pour impression et suivi	Número de seguimiento para imprimir y rastrear
+nova.createdTitle	Waybill created	List przewozowy utworzony	Frachtbrief erstellt	AWB creat	Přepravní list vytvořen	Prepravný list vytvorený	Fuvarlevél létrehozva	Bordereau créé	Albarán creado
+nova.dateFrom	Date from	Data od	Datum von	Dată de la	Datum od	Dátum od	Dátum -tól	Date de début	Fecha desde
+nova.dateTo	Date to	Data do	Datum bis	Dată până la	Datum do	Dátum do	Dátum -ig	Date de fin	Fecha hasta
+nova.declaredCost	Declared value, ₴	Wartość zadeklarowana, ₴	Deklarierter Wert, ₴	Valoare declarată, ₴	Deklarovaná hodnota, ₴	Deklarovaná hodnota, ₴	Deklarált érték, ₴	Valeur déclarée, ₴	Valor declarado, ₴
+nova.delivered	Delivered	Odebrano	Zugestellt	Livrat	Doručeno	Doručené	Átvéve	Livré	Entregado
+nova.deliveryCost	Delivery cost	Koszt dostawy	Zustellkosten	Cost livrare	Cena dopravy	Cena dopravy	Szállítási költség	Frais de livraison	Coste de envío
+nova.description	Shipment description	Opis przesyłki	Sendungsbeschreibung	Descrierea coletului	Popis zásilky	Popis zásielky	Küldemény leírása	Description de l’envoi	Descripción del envío
+nova.descriptionPlaceholder	E.g.: auto parts	Np.: części samochodowe	Z. B.: Autoteile	De ex.: piese auto	Např.: autodíly	Napr.: autodiely	Pl.: autóalkatrészek	Ex. : pièces auto	Ej.: piezas de coche
+nova.estDelivery	Estimated delivery	Szacowana dostawa	Voraussichtliche Zustellung	Livrare estimată	Odhadované doručení	Odhadované doručenie	Becsült kézbesítés	Livraison estimée	Entrega estimada
+nova.firstName	First name	Imię	Vorname	Prenume	Jméno	Meno	Keresztnév	Prénom	Nombre
+nova.guestBlocked	Creating shipments is unavailable in guest mode — the waybill is written to a live Nova Poshta account.	W trybie gościa tworzenie przesyłek jest niedostępne — list przewozowy trafia do rzeczywistego konta Nova Poshta.	Im Gastmodus können keine Sendungen erstellt werden — der Frachtbrief wird in ein echtes Nova-Poshta-Konto geschrieben.	În modul invitat crearea coletelor este indisponibilă — AWB-ul se scrie într-un cont real Nova Poshta.	V režimu hosta není vytváření zásilek dostupné — přepravní list se zapisuje do reálného účtu Nova Poshta.	V režime hosťa nie je vytváranie zásielok dostupné — prepravný list sa zapisuje do reálneho účtu Nova Poshta.	Vendégmódban a küldemények létrehozása nem elérhető — a fuvarlevél egy élő Nova Poshta fiókba kerül.	La création d’envois est indisponible en mode invité — le bordereau est écrit dans un compte Nova Poshta réel.	La creación de envíos no está disponible en modo invitado: el albarán se escribe en una cuenta real de Nova Poshta.
+nova.lastName	Last name	Nazwisko	Nachname	Nume	Příjmení	Priezvisko	Vezetéknév	Nom	Apellido
+nova.loadingSender	Loading sender data…	Ładowanie danych nadawcy…	Absenderdaten werden geladen…	Se încarcă datele expeditorului…	Načítání údajů odesílatele…	Načítanie údajov odosielateľa…	Feladó adatainak betöltése…	Chargement des données de l’expéditeur…	Cargando datos del remitente…
+nova.middleName	Middle name	Drugie imię	Vatersname	Patronimic	Prostřední jméno	Stredné meno	Apai név	Deuxième prénom	Segundo nombre
+nova.next	Next	Dalej	Weiter	Următorul	Další	Ďalej	Tovább	Suivant	Siguiente
+nova.noShipments	No shipments	Brak przesyłek	Keine Sendungen	Fără colete	Žádné zásilky	Žiadne zásielky	Nincs küldemény	Aucun envoi	Sin envíos
+nova.noShipmentsHint	No waybills were created in the selected period. Change the date range.	W wybranym okresie nie utworzono żadnych listów przewozowych. Zmień zakres dat.	Im gewählten Zeitraum wurden keine Frachtbriefe erstellt. Ändern Sie den Datumsbereich.	În perioada selectată nu s-au creat AWB-uri. Schimbați intervalul de date.	Za zvolené období nebyly vytvořeny žádné přepravní listy. Změňte rozsah dat.	Za zvolené obdobie neboli vytvorené žiadne prepravné listy. Zmeňte rozsah dátumov.	A kiválasztott időszakban nem készült fuvarlevél. Módosítsa a dátumtartományt.	Aucun bordereau n’a été créé sur la période choisie. Modifiez la plage de dates.	No se creó ningún albarán en el período seleccionado. Cambie el rango de fechas.
+nova.nothingFound	Nothing found	Nic nie znaleziono	Nichts gefunden	Nimic găsit	Nic nenalezeno	Nič nenájdené	Nincs találat	Aucun résultat	No se ha encontrado nada
+nova.nothingFoundHint	Check the tracking numbers — they were not found in the Nova Poshta system	Sprawdź numery przesyłek — nie zostały znalezione w systemie Nova Poshta	Prüfen Sie die Sendungsnummern — sie wurden im Nova-Poshta-System nicht gefunden	Verificați numerele AWB — nu au fost găsite în sistemul Nova Poshta	Zkontrolujte čísla zásilek — nebyla nalezena v systému Nova Poshta	Skontrolujte čísla zásielok — neboli nájdené v systéme Nova Poshta	Ellenőrizze a nyomkövetési számokat — nem találhatók a Nova Poshta rendszerében	Vérifiez les numéros de suivi — introuvables dans le système Nova Poshta	Compruebe los números de seguimiento: no se encontraron en el sistema de Nova Poshta
+nova.novaPoshta	Nova Poshta	Nova Poshta	Nova Poshta	Nova Poshta	Nova Poshta	Nova Poshta	Nova Poshta	Nova Poshta	Nova Poshta
+nova.pageN	Page {v0}	Strona {v0}	Seite {v0}	Pagina {v0}	Strana {v0}	Strana {v0}	{v0}. oldal	Page {v0}	Página {v0}
+nova.parcelsCount	{v0} parcels	{v0} przes.	{v0} Sdg.	{v0} colete	{v0} zás.	{v0} zás.	{v0} küldem.	{v0} colis	{v0} envíos
+nova.payer	Payer	Płatnik	Zahler	Plătitor	Plátce	Platiteľ	Fizető fél	Payeur	Pagador
+nova.payerRecipient	Recipient	Odbiorca	Empfänger	Destinatar	Příjemce	Príjemca	Címzett	Destinataire	Destinatario
+nova.payerSender	Sender	Nadawca	Absender	Expeditor	Odesílatel	Odosielateľ	Feladó	Expéditeur	Remitente
+nova.phone	Phone	Telefon	Telefon	Telefon	Telefon	Telefón	Telefon	Téléphone	Teléfono
+nova.phoneHint	With a phone number Nova Poshta returns more data	Podając numer telefonu, Nova Poshta zwraca więcej danych	Mit einer Telefonnummer liefert Nova Poshta mehr Daten	Cu un număr de telefon Nova Poshta oferă mai multe date	S telefonním číslem vrací Nova Poshta více údajů	S telefónnym číslom vracia Nova Poshta viac údajov	Telefonszámmal a Nova Poshta több adatot ad vissza	Avec un numéro de téléphone, Nova Poshta renvoie plus de données	Con un número de teléfono, Nova Poshta devuelve más datos
+nova.pickCityFirst	Select a city first	Najpierw wybierz miasto	Wählen Sie zuerst eine Stadt	Selectați mai întâi orașul	Nejprve vyberte město	Najprv vyberte mesto	Először válasszon várost	Sélectionnez d’abord une ville	Seleccione primero una ciudad
+nova.pickWarehouse	Select a branch	Wybierz oddział	Filiale auswählen	Selectați o sucursală	Vyberte pobočku	Vyberte pobočku	Válasszon fiókot	Sélectionnez une agence	Seleccione una sucursal
+nova.prev	Back	Wstecz	Zurück	Înapoi	Zpět	Späť	Vissza	Précédent	Atrás
+nova.recipient	Recipient	Odbiorca	Empfänger	Destinatar	Příjemce	Príjemca	Címzett	Destinataire	Destinatario
+nova.recipientCity	Recipient’s city	Miasto odbiorcy	Stadt des Empfängers	Orașul destinatarului	Město příjemce	Mesto príjemcu	Címzett városa	Ville du destinataire	Ciudad del destinatario
+nova.recipientPhoneOptional	Recipient’s phone (optional)	Telefon odbiorcy (opcjonalnie)	Telefon des Empfängers (optional)	Telefonul destinatarului (opțional)	Telefon příjemce (nepovinné)	Telefón príjemcu (nepovinné)	Címzett telefonszáma (opcionális)	Téléphone du destinataire (facultatif)	Teléfono del destinatario (opcional)
+nova.recipientSubtitle	Private individual	Osoba prywatna	Privatperson	Persoană fizică	Soukromá osoba	Súkromná osoba	Magánszemély	Particulier	Persona particular
+nova.recipientTitle	Recipient	Odbiorca	Empfänger	Destinatar	Příjemce	Príjemca	Címzett	Destinataire	Destinatario
+nova.recipientWarehouse	Recipient’s branch	Oddział odbiorcy	Filiale des Empfängers	Sucursala destinatarului	Pobočka příjemce	Pobočka príjemcu	Címzett fiókja	Agence du destinataire	Sucursal del destinatario
+nova.redirectingTracking	Opening tracking…	Otwieranie śledzenia…	Sendungsverfolgung wird geöffnet…	Se deschide urmărirea…	Otevírání sledování…	Otváranie sledovania…	Nyomkövetés megnyitása…	Ouverture du suivi…	Abriendo el seguimiento…
+nova.refresh	Refresh	Odśwież	Aktualisieren	Actualizează	Obnovit	Obnoviť	Frissítés	Actualiser	Actualizar
+nova.scheduledDelivery	Scheduled delivery	Planowana dostawa	Geplante Zustellung	Livrare planificată	Plánované doručení	Plánované doručenie	Tervezett kézbesítés	Livraison prévue	Entrega programada
+nova.searching	Searching…	Wyszukiwanie…	Suche läuft…	Se caută…	Vyhledávání…	Vyhľadávanie…	Keresés…	Recherche…	Buscando…
+nova.seats	Pieces	Liczba miejsc	Anzahl Packstücke	Colete	Počet kusů	Počet kusov	Csomagok száma	Nombre de colis	N.º de bultos
+nova.sections	Nova Poshta sections	Sekcje Nova Poshta	Nova-Poshta-Bereiche	Secțiuni Nova Poshta	Sekce Nova Poshta	Sekcie Nova Poshta	Nova Poshta szekciók	Sections Nova Poshta	Secciones de Nova Poshta
+nova.senderCity	Sender’s city	Miasto nadania	Absenderstadt	Orașul expeditorului	Město odeslání	Mesto odoslania	Feladó városa	Ville d’expédition	Ciudad de origen
+nova.senderSubtitle	Determined by the account’s API key	Określone na podstawie klucza API konta	Anhand des API-Schlüssels des Kontos ermittelt	Determinat pe baza cheii API a contului	Určeno podle API klíče účtu	Určené podľa API kľúča účtu	A fiók API-kulcsa alapján meghatározva	Déterminé par la clé API du compte	Determinado por la clave API de la cuenta
+nova.senderTitle	Sender	Nadawca	Absender	Expeditor	Odesílatel	Odosielateľ	Feladó	Expéditeur	Remitente
+nova.senderWarehouse	Sender’s branch	Oddział nadania	Absenderfiliale	Sucursala expeditorului	Pobočka odeslání	Pobočka odoslania	Feladó fiókja	Agence d’expédition	Sucursal de origen
+nova.service	Service	Usługa	Dienst	Serviciu	Služba	Služba	Szolgáltatás	Service	Servicio
+nova.shipments	Shipments	Przesyłki	Sendungen	Colete	Zásilky	Zásielky	Küldemények	Envois	Envíos
+nova.shipmentsSubtitle	Registry of Nova Poshta waybills created for the period	Rejestr listów przewozowych Nova Poshta utworzonych w okresie	Verzeichnis der im Zeitraum erstellten Nova-Poshta-Frachtbriefe	Registrul AWB-urilor Nova Poshta create în perioada respectivă	Registr přepravních listů Nova Poshta vytvořených za dané období	Register prepravných listov Nova Poshta vytvorených za dané obdobie	A megadott időszakban létrehozott Nova Poshta fuvarlevelek jegyzéke	Registre des bordereaux Nova Poshta créés sur la période	Registro de albaranes de Nova Poshta creados en el período
+nova.shipmentsTitle	My shipments	Moje przesyłki	Meine Sendungen	Coletele mele	Moje zásilky	Moje zásielky	Küldeményeim	Mes envois	Mis envíos
+nova.show	Show	Pokaż	Anzeigen	Afișează	Zobrazit	Zobraziť	Mutat	Afficher	Mostrar
+nova.startTracking	Enter a tracking number	Wprowadź numer przesyłki	Sendungsnummer eingeben	Introduceți un număr AWB	Zadejte číslo zásilky	Zadajte číslo zásielky	Adjon meg egy nyomkövetési számot	Saisissez un numéro de suivi	Introduzca un número de seguimiento
+nova.startTrackingHint	Paste one or more tracking numbers to see their delivery status	Wklej jeden lub więcej numerów przesyłek, aby zobaczyć ich status doręczenia	Fügen Sie eine oder mehrere Sendungsnummern ein, um den Zustellstatus zu sehen	Inserați unul sau mai multe numere AWB pentru a vedea starea livrării	Vložte jedno nebo více čísel zásilek a zobrazte jejich stav doručení	Vložte jedno alebo viac čísel zásielok a zobrazte ich stav doručenia	Illesszen be egy vagy több nyomkövetési számot a kézbesítési állapot megtekintéséhez	Collez un ou plusieurs numéros de suivi pour voir leur statut de livraison	Pegue uno o varios números de seguimiento para ver su estado de entrega
+nova.svcWD	Branch → Address	Oddział → Adres	Filiale → Adresse	Sucursală → Adresă	Pobočka → Adresa	Pobočka → Adresa	Fiók → Cím	Agence → Adresse	Sucursal → Dirección
+nova.svcWW	Branch → Branch	Oddział → Oddział	Filiale → Filiale	Sucursală → Sucursală	Pobočka → Pobočka	Pobočka → Pobočka	Fiók → Fiók	Agence → Agence	Sucursal → Sucursal
+nova.trackButton	Track	Śledź	Verfolgen	Urmărește	Sledovat	Sledovať	Követés	Suivre	Rastrear
+nova.trackIt	Track	Śledź	Verfolgen	Urmărește	Sledovat	Sledovať	Követés	Suivre	Rastrear
+nova.tracking	Tracking	Śledzenie	Sendungsverfolgung	Urmărire	Sledování	Sledovanie	Nyomkövetés	Suivi	Seguimiento
+nova.trackingSubtitle	Real-time Nova Poshta shipment status by tracking number	Status przesyłek Nova Poshta w czasie rzeczywistym po numerze przesyłki	Nova-Poshta-Sendungsstatus in Echtzeit anhand der Sendungsnummer	Starea coletelor Nova Poshta în timp real după numărul AWB	Stav zásilek Nova Poshta v reálném čase podle čísla zásilky	Stav zásielok Nova Poshta v reálnom čase podľa čísla zásielky	Nova Poshta küldemények valós idejű állapota nyomkövetési szám alapján	Statut des envois Nova Poshta en temps réel par numéro de suivi	Estado de los envíos de Nova Poshta en tiempo real por número de seguimiento
+nova.trackingTitle	Parcel tracking	Śledzenie przesyłek	Sendungsverfolgung	Urmărire colete	Sledování zásilek	Sledovanie zásielok	Csomagkövetés	Suivi de colis	Seguimiento de paquetes
+nova.ttnHint	Multiple numbers — separated by comma, space, or new line	Kilka numerów — oddzielonych przecinkiem, spacją lub nową linią	Mehrere Nummern — getrennt durch Komma, Leerzeichen oder Zeilenumbruch	Mai multe numere — separate prin virgulă, spațiu sau linie nouă	Více čísel — oddělených čárkou, mezerou nebo novým řádkem	Viac čísel — oddelených čiarkou, medzerou alebo novým riadkom	Több szám — vesszővel, szóközzel vagy új sorral elválasztva	Plusieurs numéros — séparés par une virgule, un espace ou un retour à la ligne	Varios números, separados por coma, espacio o salto de línea
+nova.ttnNumbers	Tracking numbers	Numery przesyłek	Sendungsnummern	Numere AWB	Čísla zásilek	Čísla zásielok	Nyomkövetési számok	Numéros de suivi	Números de seguimiento
+nova.warehousePlaceholder	Branch number or address…	Numer lub adres oddziału…	Filialnummer oder Adresse…	Numărul sau adresa sucursalei…	Číslo nebo adresa pobočky…	Číslo alebo adresa pobočky…	Fiókszám vagy cím…	Numéro ou adresse de l’agence…	Número o dirección de la sucursal…
+nova.weight	Weight	Waga	Gewicht	Greutate	Hmotnost	Hmotnosť	Súly	Poids	Peso
+nova.weightKg	Weight, kg	Waga, kg	Gewicht, kg	Greutate, kg	Hmotnost, kg	Hmotnosť, kg	Súly, kg	Poids, kg	Peso, kg

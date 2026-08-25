@@ -4,8 +4,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import PageShell, { AuthGate } from '@/components/PageShell';
 import AnalyticsCharts from '@/components/AnalyticsCharts';
 import KpiCards from '@/components/KpiCards';
-import { DateRange } from '@/components/DateRangePicker';
+import { DateRange, todayRange, isHeavyRange, rangeLabel } from '@/components/DateRangePicker';
 import { SkeletonChart, SkeletonKpi } from '@/components/Skeletons';
+import DataLoader from '@/components/DataLoader';
 import { useAuthGuard } from '@/lib/useAuthGuard';
 import { cachedList, cachedObject, hasFreshEnough, useApiRefreshing } from '@/lib/apiCache';
 import { t } from '@/lib/i18n';
@@ -15,11 +16,7 @@ export default function AnalyticsPage() {
   const revalidating = useApiRefreshing();
 
   const [activeBrand, setActiveBrand] = useState('ALL');
-  const [dateRange, setDateRange] = useState<DateRange>({
-    preset: 'ALL',
-    dateFrom: '',
-    dateTo: '',
-  });
+  const [dateRange, setDateRange] = useState<DateRange>(todayRange());
 
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -65,10 +62,14 @@ export default function AnalyticsPage() {
       onSelectBrand={setActiveBrand}
     >
       {loading ? (
-        <div className="space-y-5">
-          <SkeletonKpi />
-          <SkeletonChart />
-        </div>
+        isHeavyRange(dateRange) ? (
+          <DataLoader periodLabel={rangeLabel(dateRange)} />
+        ) : (
+          <div className="space-y-5">
+            <SkeletonKpi />
+            <SkeletonChart />
+          </div>
+        )
       ) : (
         <div className="space-y-5">
           <KpiCards summary={summary} />

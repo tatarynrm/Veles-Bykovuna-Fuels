@@ -35,20 +35,25 @@ interface Transaction {
   reversal?: boolean;
   is_return?: boolean;
   is_shell?: boolean;
+  is_fuel?: boolean;
+  currency_code?: string;
+  source_amount?: number;
 }
 
 interface TransactionsJournalProps {
   transactions: Transaction[];
 }
 
-const TYPE_FILTERS = [
+// Базові типи OKKO (числові коди) з ключами перекладу. Типи Shell не хардкодимо:
+// їх багато (пальне, мийка, паркування, збори…), тож збираємо динамічно з даних —
+// кожен наявний тип отримує власний пункт фільтра.
+const BASE_TYPE_FILTERS = [
   { value: 'ALL', label: 'tx.allTransactionTypes' },
   { value: '737', label: 'tx.n737FillUpFull' },
   { value: '774', label: 'tx.n774FuelDebit' },
   { value: '775', label: 'tx.n775PartialFullReversal' },
   { value: '783', label: 'tx.n783VoucherReturn' },
   { value: '787', label: 'tx.n787PartialVoucherReturn' },
-  { value: 'SHELL_PURCHASE', label: 'tx.shellMobilityPurchase' },
 ];
 
 export default function TransactionsJournal({ transactions }: TransactionsJournalProps) {
@@ -57,6 +62,20 @@ export default function TransactionsJournal({ transactions }: TransactionsJourna
   const [typeFilter, setTypeFilter] = useState('ALL');
 
   const [basketTransId, setBasketTransId] = useState<string | null>(null);
+
+  // Список типів для фільтра: базові OKKO (перекладені) + усі типи, наявні в даних
+  // (переважно Shell — їхні описи вже українською й перекладу не потребують).
+  const typeOptions = useMemo(() => {
+    const options = BASE_TYPE_FILTERS.map((f) => ({ value: f.value, text: t(f.label) }));
+    const seen = new Set(BASE_TYPE_FILTERS.map((f) => f.value));
+    for (const tx of transactions) {
+      const code = tx.trans_type != null ? String(tx.trans_type) : '';
+      if (!code || seen.has(code)) continue;
+      seen.add(code);
+      options.push({ value: code, text: tx.trans_type_desc || code });
+    }
+    return options;
+  }, [transactions]);
 
   const filtered = useMemo(
     () =>
@@ -103,9 +122,9 @@ export default function TransactionsJournal({ transactions }: TransactionsJourna
             aria-label={t('tx.transactionType')}
             className="field field-sm w-auto"
           >
-            {TYPE_FILTERS.map((f) => (
+            {typeOptions.map((f) => (
               <option key={f.value} value={f.value}>
-                {t(f.label)}
+                {f.text}
               </option>
             ))}
           </select>
@@ -115,7 +134,7 @@ export default function TransactionsJournal({ transactions }: TransactionsJourna
             options={{
               filename: `transactions_${new Date().toISOString().slice(0, 10)}`,
               title: t('tx.refuellingTransactionLog'),
-              subtitle: t('tx.stationNetworkOKKOShell', { v0: TYPE_FILTERS.find((f) => f.value === typeFilter)?.label ?? typeFilter }),
+              subtitle: t('tx.stationNetworkOKKOShell', { v0: typeOptions.find((f) => f.value === typeFilter)?.text ?? typeFilter }),
               columns: [
                 { label: t('tx.transactionNumber'), key: 'trans_id', type: 'string' },
                 { label: t('tx.transactionDate'), key: 'trans_date', type: 'string' },
@@ -233,10 +252,14 @@ export default function TransactionsJournal({ transactions }: TransactionsJourna
                         )}
                       </td>
 
-                      <td className="num text-txt-primary">{formatNumber(tx.volume)} {t('unit.litre')}</td>
+                      <td className="num text-txt-primary">
+                        {tx.is_shell && !tx.is_fuel
+                          ? '—'
+                          : `${formatNumber(tx.volume)} ${t('unit.litre')}`}
+                      </td>
 
                       <td className="num text-txt-secondary">
-                        {tx.price ? formatCurrency(tx.price) : '—'}
+                        {tx.is_shell && !tx.is_fuel ? '—' : tx.price ? formatCurrency(tx.price) : '—'}
                       </td>
 
                       <td className="num">
@@ -246,6 +269,13 @@ export default function TransactionsJournal({ transactions }: TransactionsJourna
                           {isReturn ? '−' : ''}
                           {formatCurrency(tx.amnt_trans)}
                         </span>
+                        {tx.currency_code &&
+                          tx.currency_code !== 'UAH' &&
+                          typeof tx.source_amount === 'number' && (
+                            <p className="mt-0.5 text-micro text-txt-muted">
+                              {formatNumber(tx.source_amount)} {tx.currency_code}
+                            </p>
+                          )}
                         {tx.amount_discount > 0 && (
                           <p className="mt-0.5 flex items-center justify-end gap-1 text-micro text-accent">
                             <Tag className="h-2.5 w-2.5" />

@@ -5,8 +5,9 @@ import PageShell, { AuthGate } from '@/components/PageShell';
 import KpiCards, { KpiSecondary } from '@/components/KpiCards';
 import TransactionsJournal from '@/components/TransactionsJournal';
 import AnalyticsCharts from '@/components/AnalyticsCharts';
-import { DateRange } from '@/components/DateRangePicker';
+import { DateRange, todayRange, isHeavyRange, rangeLabel } from '@/components/DateRangePicker';
 import { SkeletonKpi, SkeletonTable, SkeletonChart } from '@/components/Skeletons';
+import DataLoader from '@/components/DataLoader';
 import { useAuthGuard } from '@/lib/useAuthGuard';
 import { cachedList, cachedObject, hasFreshEnough, useApiRefreshing } from '@/lib/apiCache';
 import { t } from '@/lib/i18n';
@@ -16,11 +17,7 @@ export default function OverviewPage() {
   const revalidating = useApiRefreshing();
 
   const [activeBrand, setActiveBrand] = useState('ALL');
-  const [dateRange, setDateRange] = useState<DateRange>({
-    preset: 'ALL',
-    dateFrom: '',
-    dateTo: '',
-  });
+  const [dateRange, setDateRange] = useState<DateRange>(todayRange());
 
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -89,11 +86,15 @@ export default function OverviewPage() {
       apiStatus={apiStatus}
     >
       {loading ? (
-        <div className="space-y-5">
-          <SkeletonKpi />
-          <SkeletonChart />
-          <SkeletonTable />
-        </div>
+        isHeavyRange(dateRange) ? (
+          <DataLoader periodLabel={rangeLabel(dateRange)} />
+        ) : (
+          <div className="space-y-5">
+            <SkeletonKpi />
+            <SkeletonChart />
+            <SkeletonTable />
+          </div>
+        )
       ) : (
         <div className="space-y-5">
           <KpiCards summary={summary} />

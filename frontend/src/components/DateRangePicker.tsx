@@ -22,6 +22,46 @@ const shift = (days: number) => {
   return d;
 };
 
+/**
+ * Дефолтний діапазон для всіх сторінок — СЬОГОДНІ. Швидко вантажиться і не тягне
+ * тисячі рядків Shell за весь період на першому відкритті. Збігається з пресетом
+ * 'TODAY' у списку, тож пункт одразу підсвічений.
+ */
+export const todayRange = (): DateRange => {
+  const today = toYmd(new Date());
+  return { preset: 'TODAY', dateFrom: today, dateTo: today };
+};
+
+/** Людяний підпис періоду (для лоадера/бейджів). Викликати на місці рендеру. */
+export const rangeLabel = (range: DateRange): string => {
+  switch (range.preset) {
+    case 'ALL':
+      return t('ui.allAvailableData');
+    case 'TODAY':
+      return t('common.today');
+    case 'LAST_7':
+      return t('ui.last7Days');
+    case 'LAST_30':
+      return t('ui.last30Days');
+    case 'THIS_MONTH':
+      return t('ui.currentMonth');
+    default:
+      return range.dateFrom || range.dateTo
+        ? `${range.dateFrom || '…'} — ${range.dateTo || '…'}`
+        : t('ui.customPeriod');
+  }
+};
+
+/** Чи діапазон «важкий» (весь період або довший за 31 день) — для показу лоадера. */
+export const isHeavyRange = (range: DateRange): boolean => {
+  if (range.preset === 'ALL' || (!range.dateFrom && !range.dateTo)) return true;
+  if (range.dateFrom && range.dateTo) {
+    const span = (new Date(range.dateTo).getTime() - new Date(range.dateFrom).getTime()) / 86400000;
+    return span > 31;
+  }
+  return false;
+};
+
 export default function DateRangePicker({ onDateChange, currentRange }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [customFrom, setCustomFrom] = useState(currentRange.dateFrom);

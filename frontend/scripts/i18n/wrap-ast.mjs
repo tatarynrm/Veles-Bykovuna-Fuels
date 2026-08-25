@@ -32,6 +32,8 @@ const EXCLUDE = [
   'src/lib/i18n.ts',
   'src/lib/ruptelaApiDocs.ts',
   'src/components/RuptelaApiDocs.tsx',
+  'src/lib/vendorApiDocs.ts',
+  'src/components/VendorApiDocs.tsx',
   'src/context/I18nContext.tsx',
   'src/components/LanguageSwitcher.tsx',
 ];

@@ -11,6 +11,7 @@ import { MerchantsModule } from './merchants/merchants.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { RuptelaModule } from './ruptela/ruptela.module';
+import { NovaPoshtaModule } from './novaposhta/novaposhta.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { RuptelaModule } from './ruptela/ruptela.module';
     TransactionsModule,
     AnalyticsModule,
     RuptelaModule,
+    NovaPoshtaModule,
   ],
   providers: [
     // Global, so a route added later is covered without anyone remembering to opt in.

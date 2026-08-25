@@ -25,6 +25,10 @@ import {
   PlusCircle,
   Route,
   Boxes,
+  Package,
+  PackageSearch,
+  PackagePlus,
+  BookOpen,
 } from 'lucide-react';
 import { t } from '@/lib/i18n';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -64,8 +68,22 @@ const ruptelaNav = [
   { href: '/workflow/ruptela/insights', label: 'common.fmsReports', icon: BarChart3, tour: 'nav-insights' },
 ];
 
+const novaPoshtaNav = [
+  { href: '/workflow/novaposhta/track', label: 'nova.tracking', icon: PackageSearch, tour: 'nav-np-track' },
+  { href: '/workflow/novaposhta/shipments', label: 'nova.shipments', icon: Boxes, tour: 'nav-np-shipments' },
+  {
+    href: '/workflow/novaposhta/create',
+    label: 'nova.createShipment',
+    icon: PackagePlus,
+    tour: 'nav-np-create',
+    /** Writes to the live Nova Poshta account — hidden for the read-only guest role. */
+    staffOnly: true,
+  },
+];
+
 const systemNav = [
   { href: '/workflow/api-console', label: 'nav.apiConsole', icon: Terminal, tour: 'nav-api' },
+  { href: '/workflow/api-docs', label: 'nav.apiDocs', icon: BookOpen, tour: 'nav-api-docs' },
   { href: '/workflow/ui-kit', label: 'nav.uiKit', icon: Boxes, tour: 'nav-uikit' },
 ];
 
@@ -100,6 +118,7 @@ export default function Sidebar({ apiStatus }: SidebarProps) {
   const { user, isGuest } = useSessionUser();
   const [isOpen, setIsOpen] = useState(false);
   const [ruptelaOpen, setRuptelaOpen] = useState(true);
+  const [novaPoshtaOpen, setNovaPoshtaOpen] = useState(true);
   /** Згорнутий стан діє лише на десктопі; у шухляді панель завжди повна. */
   const [collapsed, setCollapsed] = useState(() => collapsedCache ?? false);
   /**
@@ -139,6 +158,7 @@ export default function Sidebar({ apiStatus }: SidebarProps) {
 
   useEffect(() => {
     if (pathname.startsWith('/workflow/ruptela')) setRuptelaOpen(true);
+    if (pathname.startsWith('/workflow/novaposhta')) setNovaPoshtaOpen(true);
   }, [pathname]);
 
   // Close the drawer whenever the route changes
@@ -375,6 +395,91 @@ export default function Sidebar({ apiStatus }: SidebarProps) {
                             >
                               <SubIcon
                                 className={`h-3.5 w-3.5 shrink-0 ${active ? 'text-warn' : 'text-txt-muted'}`}
+                              />
+                              <span className="truncate">{t(sub.label)}</span>
+                            </Link>
+                          );
+                        })}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Nova Poshta parcels group — mirrors the Ruptela group, accent domain */}
+            <div
+              className={`glass-inset mt-1 ${isCollapsed ? 'p-0.5' : 'p-1'}`}
+              data-tour="nav-novaposhta"
+            >
+              {isCollapsed ? (
+                <div className="space-y-0.5">
+                  {novaPoshtaNav
+                    .filter((sub) => !(sub.staffOnly && isGuest))
+                    .map((sub) => {
+                      const active = pathname === sub.href;
+                      const SubIcon = sub.icon;
+                      return (
+                        <Link
+                          key={sub.href}
+                          href={sub.href}
+                          data-tour={sub.tour}
+                          title={t(sub.label)}
+                          className={`flex items-center justify-center rounded-control py-2 transition-colors ${
+                            active
+                              ? 'bg-accent/10 text-accent'
+                              : 'text-txt-secondary hover:bg-surface-hover hover:text-txt-primary'
+                          }`}
+                        >
+                          <SubIcon
+                            className={`h-4 w-4 ${active ? 'text-accent' : 'text-txt-muted'}`}
+                          />
+                        </Link>
+                      );
+                    })}
+                </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setNovaPoshtaOpen((v) => !v)}
+                    aria-expanded={novaPoshtaOpen}
+                    className={`flex w-full items-center justify-between rounded-control px-2.5 py-1.5 text-2xs font-semibold transition-colors ${
+                      pathname.startsWith('/workflow/novaposhta')
+                        ? 'text-accent'
+                        : 'text-txt-secondary hover:text-txt-primary'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Package className="h-3.5 w-3.5 text-accent" />
+                      <span>{t('nova.novaPoshta')}</span>
+                    </span>
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 text-txt-muted transition-transform duration-200 ${
+                        novaPoshtaOpen ? '' : '-rotate-90'
+                      }`}
+                    />
+                  </button>
+
+                  {novaPoshtaOpen && (
+                    <div className="mt-0.5 space-y-0.5 pl-1">
+                      {novaPoshtaNav
+                        .filter((sub) => !(sub.staffOnly && isGuest))
+                        .map((sub) => {
+                          const active = pathname === sub.href;
+                          const SubIcon = sub.icon;
+                          return (
+                            <Link
+                              key={sub.href}
+                              href={sub.href}
+                              data-tour={sub.tour}
+                              className={`flex items-center gap-2.5 rounded-control px-2.5 py-1.5 text-2xs transition-colors ${
+                                active
+                                  ? 'bg-accent/10 font-semibold text-accent'
+                                  : 'text-txt-secondary hover:bg-surface-hover hover:text-txt-primary'
+                              }`}
+                            >
+                              <SubIcon
+                                className={`h-3.5 w-3.5 shrink-0 ${active ? 'text-accent' : 'text-txt-muted'}`}
                               />
                               <span className="truncate">{t(sub.label)}</span>
                             </Link>

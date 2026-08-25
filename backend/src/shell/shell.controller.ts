@@ -38,7 +38,7 @@ export class ShellController {
     const merchants = await this.shellApiService.getShellMerchants();
 
     const totalSpendUah = transactions.reduce((sum, t) => sum + (t.GrossAmount || 0), 0);
-    const totalVolumeLiters = transactions.reduce((sum, t) => sum + (t.Quantity || 0), 0);
+    const totalVolumeLiters = transactions.reduce((sum, t) => sum + (t.FuelProduct ? t.Quantity || 0 : 0), 0);
     const activeCards = cards.filter(c => c.CardStatus === 'ACTIVE').length;
 
     return {

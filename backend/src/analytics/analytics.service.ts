@@ -31,7 +31,8 @@ export class AnalyticsService {
       const shellTx = this.filterByDateRange(rawShellTx, dateFrom, dateTo);
 
       const totalSpendUah = shellTx.reduce((sum, t) => sum + (t.GrossAmount || 0), 0);
-      const totalVolumeLiters = shellTx.reduce((sum, t) => sum + (t.Quantity || 0), 0);
+      // Літри рахуємо лише для пального: у зборів/комісій Quantity — це не літри.
+      const totalVolumeLiters = shellTx.reduce((sum, t) => sum + (t.FuelProduct ? t.Quantity || 0 : 0), 0);
       const activeCards = shellCards.filter(c => c.CardStatus === 'ACTIVE').length;
 
       return {
@@ -85,7 +86,7 @@ export class AnalyticsService {
     const shellTx = this.filterByDateRange(rawShellTx, dateFrom, dateTo);
 
     const shellSpend = shellTx.reduce((sum, t) => sum + (t.GrossAmount || 0), 0);
-    const shellVolume = shellTx.reduce((sum, t) => sum + (t.Quantity || 0), 0);
+    const shellVolume = shellTx.reduce((sum, t) => sum + (t.FuelProduct ? t.Quantity || 0 : 0), 0);
 
     return {
       brand: 'ALL',
@@ -124,7 +125,7 @@ export class AnalyticsService {
       for (const t of shellTx) {
         const key = `Shell: ${t.ProductName || 'Пальне Shell'}`;
         const existing = breakdownMap.get(key) || { product: key, volume: 0, spend: 0, count: 0, brand: 'Shell' };
-        existing.volume += t.Quantity || 0;
+        existing.volume += t.FuelProduct ? t.Quantity || 0 : 0;
         existing.spend += t.GrossAmount || 0;
         existing.count += 1;
         breakdownMap.set(key, existing);
@@ -158,7 +159,7 @@ export class AnalyticsService {
         const existing = trendsMap.get(dateKey) || { date: dateKey, spend: 0, volume: 0, okkoSpend: 0, shellSpend: 0 };
         existing.shellSpend += t.GrossAmount || 0;
         existing.spend += t.GrossAmount || 0;
-        existing.volume += t.Quantity || 0;
+        existing.volume += t.FuelProduct ? t.Quantity || 0 : 0;
         trendsMap.set(dateKey, existing);
       }
     }
