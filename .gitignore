@@ -29,3 +29,6 @@ Thumbs.db
 
 # Локальні налаштування Claude Code
 .claude/settings.local.json
+
+# Postman-колекції (містять реальний API-ключ — не комітимо)
+postman/

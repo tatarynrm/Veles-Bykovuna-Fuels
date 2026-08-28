@@ -98,6 +98,49 @@ export class OracleService implements OnModuleDestroy {
     }
   }
 
+  /**
+   * Викликає процедуру SetDateDelivered(pCodePost, pDocNumber, pDateDelivered) для
+   * кожної доставленої накладної. Процедура працює як upsert (запис/оновлення дати
+   * доставки за кодом пошти + номером). Один executeMany на весь батч, один commit.
+   */
+  async setDeliveredBatch(
+    rows: Array<{ number: string; deliveredAt: Date }>,
+    codePost?: string,
+  ): Promise<number> {
+    // Пишемо ЛИШЕ ті, де є дата доставки. Якщо дата null/невалідна — не викликаємо процедуру.
+    const valid = rows.filter(
+      (r) => r.number && r.deliveredAt instanceof Date && !isNaN(r.deliveredAt.getTime()),
+    );
+    if (!valid.length) return 0;
+
+    const pool = await this.getPool();
+    if (!pool) throw new Error('Oracle не налаштовано або пул недоступний');
+
+    const proc = this.configService.get<string>('ORACLE_DELIVERED_PROC') ?? 'P_POST.SetDateDelivered';
+    const code = codePost ?? this.configService.get<string>('ORACLE_POST_CODE') ?? 'NVP';
+
+    const conn = await pool.getConnection();
+    try {
+      const sql = `BEGIN ${proc}(pCodePost => :code, pDocNumber => :doc, pDateDelivered => :dt); END;`;
+      const binds = valid.map((r) => ({ code, doc: r.number, dt: r.deliveredAt }));
+      await conn.executeMany(sql, binds, {
+        autoCommit: true,
+        bindDefs: {
+          code: { type: oracledb.STRING, maxSize: 32 },
+          doc: { type: oracledb.STRING, maxSize: 64 },
+          dt: { type: oracledb.DATE },
+        },
+      });
+      return valid.length;
+    } finally {
+      try {
+        await conn.close();
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
   /** select kod, pip from os */
   async getOs(): Promise<OsRow[]> {
     const rows = await this.run<Record<string, any>>('SELECT kod, pip FROM os');

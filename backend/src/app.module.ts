@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ReadOnlyGuard } from './auth/read-only.guard';
 import { OkkoModule } from './okko/okko.module';
 import { ShellModule } from './shell/shell.module';
@@ -19,6 +20,7 @@ import { OracleModule } from './oracle/oracle.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ScheduleModule.forRoot(),
     OkkoModule,
     ShellModule,
     AuthModule,

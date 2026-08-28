@@ -3,14 +3,27 @@ import {
   NovaPoshtaApiService,
   CreateShipmentInput,
 } from './novaposhta-api.service';
+import { NovaPoshtaSyncService } from './novaposhta-sync.service';
 
 @Controller('api/novaposhta')
 export class NovaPoshtaController {
-  constructor(private readonly novaposhta: NovaPoshtaApiService) {}
+  constructor(
+    private readonly novaposhta: NovaPoshtaApiService,
+    private readonly syncService: NovaPoshtaSyncService,
+  ) {}
 
   @Get('status')
   getStatus() {
     return this.novaposhta.getStatus();
+  }
+
+  /**
+   * Ручний запуск синхронізації дат доставки в Oracle (те саме, що робить крон
+   * кожні 20 хв). Зручно для першого backfill і дебагу.
+   */
+  @Post('sync-deliveries')
+  syncDeliveries() {
+    return this.syncService.sync();
   }
 
   /**

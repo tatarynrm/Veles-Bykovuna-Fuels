@@ -229,6 +229,62 @@ export class NovaPoshtaApiService {
   /** Delivered statuses in Nova Poshta's StatusCode taxonomy. */
   private static DELIVERED_CODES = new Set(['9', '10', '11']);
 
+  /**
+   * `getDocumentList` уже містить StateId і RecipientDateTime (фактичну дату вручення),
+   * тож окремий трекінг не потрібен. StateId 9/10/11 = отримано.
+   */
+  private static DELIVERED_STATE_IDS = new Set(['9', '10', '11']);
+
+  /** Парсер дати НП «DD.MM.YYYY HH:MM:SS» (RecipientDateTime) → Date, або null. */
+  private static parseNpDateTime(value?: string): Date | null {
+    const s = (value ?? '').trim();
+    if (!s || s.startsWith('0001')) return null;
+    const m = /^(\d{2})\.(\d{2})\.(\d{4})[ T](\d{2}):(\d{2}):(\d{2})$/.exec(s);
+    if (m) {
+      const [, d, mo, y, h, mi, se] = m;
+      return new Date(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(se));
+    }
+    const iso = new Date(s.replace(' ', 'T'));
+    return isNaN(iso.getTime()) ? null : iso;
+  }
+
+  /**
+   * Наші доставлені відправлення за період: пагінує getDocumentList і повертає
+   * пари { номер ТТН, дата вручення } лише для отриманих (StateId 9/10/11).
+   * Використовується крон-джобом синхронізації дат доставки в Oracle.
+   */
+  async collectDeliveries(
+    dateFrom: string, // DD.MM.YYYY
+    dateTo: string, // DD.MM.YYYY
+  ): Promise<Array<{ number: string; deliveredAt: Date }>> {
+    const out: Array<{ number: string; deliveredAt: Date }> = [];
+    const limit = 200;
+    let page = 1;
+
+    for (;;) {
+      const rows = await this.call<any>('InternetDocument', 'getDocumentList', {
+        DateTimeFrom: dateFrom,
+        DateTimeTo: dateTo,
+        Page: String(page),
+        GetFullList: '0',
+        Limit: String(limit),
+      });
+
+      for (const r of rows) {
+        if (!NovaPoshtaApiService.DELIVERED_STATE_IDS.has(String(r.StateId ?? ''))) continue;
+        const number = NovaPoshtaApiService.text(r.IntDocNumber ?? r.Number);
+        const deliveredAt = NovaPoshtaApiService.parseNpDateTime(r.RecipientDateTime);
+        if (number && deliveredAt) out.push({ number, deliveredAt });
+      }
+
+      if (rows.length < limit) break; // остання сторінка
+      page += 1;
+      if (page > 100) break; // запобіжник (до 20 000 накладних за вікно)
+    }
+
+    return out;
+  }
+
   /* ── tracking (monitoring) ──────────────────────────────────────────── */
 
   async track(
