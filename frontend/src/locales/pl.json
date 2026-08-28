@@ -1851,5 +1851,20 @@
   "unit.litre": "l",
   "unit.secondsShort": "s",
   "vdocs.subtitle": "Integracja OKKO i Shell: trasy bramki, żądania do dostawców, formaty i jednostki",
-  "vdocs.title": "Dokumentacja API dostawców"
+  "vdocs.title": "Dokumentacja API dostawców",
+  "nav.oracle": "Baza Oracle",
+  "oracle.title": "Oracle · Dane",
+  "oracle.subtitle": "Bezpośrednie połączenie z Oracle: SELECT kod, pip FROM os",
+  "oracle.tableOs": "Tabela OS",
+  "oracle.rows": "wierszy",
+  "oracle.colKod": "Kod",
+  "oracle.colPip": "Imię i nazwisko",
+  "oracle.searchPlaceholder": "Szukaj wg kodu lub nazwiska…",
+  "oracle.noMatches": "Nic nie znaleziono",
+  "oracle.noMatchesHint": "Spróbuj innego zapytania",
+  "oracle.notConfigured": "Oracle nie skonfigurowany",
+  "oracle.notConfiguredHint": "Ustaw ORACLE_USER, ORACLE_PASSWORD i ORACLE_CONNECT_STRING w backend/.env",
+  "oracle.queryError": "Błąd zapytania Oracle",
+  "oracle.noRows": "Brak wierszy",
+  "oracle.noRowsHint": "Zapytanie wykonane, ale tabela os jest pusta"
 }

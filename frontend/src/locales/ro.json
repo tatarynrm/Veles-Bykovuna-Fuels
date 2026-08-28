@@ -1851,5 +1851,20 @@
   "unit.litre": "L",
   "unit.secondsShort": "s",
   "vdocs.subtitle": "Integrarea OKKO și Shell: rutele gateway-ului, cererile upstream, formate și unități",
-  "vdocs.title": "Documentația API a furnizorilor"
+  "vdocs.title": "Documentația API a furnizorilor",
+  "nav.oracle": "Baza Oracle",
+  "oracle.title": "Oracle · Date",
+  "oracle.subtitle": "Conexiune directă Oracle: SELECT kod, pip FROM os",
+  "oracle.tableOs": "Tabelul OS",
+  "oracle.rows": "rânduri",
+  "oracle.colKod": "Cod",
+  "oracle.colPip": "Nume complet",
+  "oracle.searchPlaceholder": "Caută după cod sau nume…",
+  "oracle.noMatches": "Nimic găsit",
+  "oracle.noMatchesHint": "Încercați altă căutare",
+  "oracle.notConfigured": "Oracle neconfigurat",
+  "oracle.notConfiguredHint": "Setați ORACLE_USER, ORACLE_PASSWORD și ORACLE_CONNECT_STRING în backend/.env",
+  "oracle.queryError": "Eroare interogare Oracle",
+  "oracle.noRows": "Niciun rând",
+  "oracle.noRowsHint": "Interogare rulată, dar tabelul os este gol"
 }

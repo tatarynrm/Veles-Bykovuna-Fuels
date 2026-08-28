@@ -1851,5 +1851,20 @@
   "unit.litre": "l",
   "unit.secondsShort": "s",
   "vdocs.subtitle": "Integrace OKKO a Shell: cesty brány, upstream požadavky, formáty a jednotky",
-  "vdocs.title": "Dokumentace API dodavatelů"
+  "vdocs.title": "Dokumentace API dodavatelů",
+  "nav.oracle": "Databáze Oracle",
+  "oracle.title": "Oracle · Data",
+  "oracle.subtitle": "Přímé připojení k Oracle: SELECT kod, pip FROM os",
+  "oracle.tableOs": "Tabulka OS",
+  "oracle.rows": "řádků",
+  "oracle.colKod": "Kód",
+  "oracle.colPip": "Jméno",
+  "oracle.searchPlaceholder": "Hledat podle kódu nebo jména…",
+  "oracle.noMatches": "Nic nenalezeno",
+  "oracle.noMatchesHint": "Zkuste jiný dotaz",
+  "oracle.notConfigured": "Oracle není nakonfigurován",
+  "oracle.notConfiguredHint": "Nastavte ORACLE_USER, ORACLE_PASSWORD a ORACLE_CONNECT_STRING v backend/.env",
+  "oracle.queryError": "Chyba dotazu Oracle",
+  "oracle.noRows": "Žádné řádky",
+  "oracle.noRowsHint": "Dotaz proběhl, ale tabulka os je prázdná"
 }

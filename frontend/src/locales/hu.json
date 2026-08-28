@@ -1851,5 +1851,20 @@
   "unit.litre": "l",
   "unit.secondsShort": "mp",
   "vdocs.subtitle": "OKKO és Shell integráció: átjáró útvonalak, upstream kérések, formátumok és egységek",
-  "vdocs.title": "Szolgáltatói API-dokumentáció"
+  "vdocs.title": "Szolgáltatói API-dokumentáció",
+  "nav.oracle": "Oracle adatbázis",
+  "oracle.title": "Oracle · Adatok",
+  "oracle.subtitle": "Közvetlen Oracle-kapcsolat: SELECT kod, pip FROM os",
+  "oracle.tableOs": "OS tábla",
+  "oracle.rows": "sor",
+  "oracle.colKod": "Kód",
+  "oracle.colPip": "Név",
+  "oracle.searchPlaceholder": "Keresés kód vagy név szerint…",
+  "oracle.noMatches": "Nincs találat",
+  "oracle.noMatchesHint": "Próbáljon másik keresést",
+  "oracle.notConfigured": "Az Oracle nincs beállítva",
+  "oracle.notConfiguredHint": "Állítsa be az ORACLE_USER, ORACLE_PASSWORD és ORACLE_CONNECT_STRING értékeket a backend/.env fájlban",
+  "oracle.queryError": "Oracle lekérdezési hiba",
+  "oracle.noRows": "Nincsenek sorok",
+  "oracle.noRowsHint": "A lekérdezés lefutott, de az os tábla üres"
 }

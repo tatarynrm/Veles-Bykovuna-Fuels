@@ -1851,5 +1851,20 @@
   "unit.litre": "л",
   "unit.secondsShort": "с",
   "vdocs.subtitle": "Інтеграція OKKO та Shell: маршрути шлюзу, запити до вендорів, формати й одиниці",
-  "vdocs.title": "Документація API вендорів"
+  "vdocs.title": "Документація API вендорів",
+  "nav.oracle": "Oracle БД",
+  "oracle.title": "Oracle · Дані",
+  "oracle.subtitle": "Пряме підключення до Oracle: SELECT kod, pip FROM os",
+  "oracle.tableOs": "Таблиця OS",
+  "oracle.rows": "рядків",
+  "oracle.colKod": "Код",
+  "oracle.colPip": "ПІП",
+  "oracle.searchPlaceholder": "Пошук за кодом або ПІП…",
+  "oracle.noMatches": "Нічого не знайдено",
+  "oracle.noMatchesHint": "Спробуйте змінити запит пошуку",
+  "oracle.notConfigured": "Oracle не налаштовано",
+  "oracle.notConfiguredHint": "Задайте ORACLE_USER, ORACLE_PASSWORD і ORACLE_CONNECT_STRING у backend/.env",
+  "oracle.queryError": "Помилка запиту до Oracle",
+  "oracle.noRows": "Немає рядків",
+  "oracle.noRowsHint": "Запит виконано, але таблиця os порожня"
 }

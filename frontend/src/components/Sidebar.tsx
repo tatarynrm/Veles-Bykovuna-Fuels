@@ -29,6 +29,7 @@ import {
   PackageSearch,
   PackagePlus,
   BookOpen,
+  Database,
 } from 'lucide-react';
 import { t } from '@/lib/i18n';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -84,6 +85,7 @@ const novaPoshtaNav = [
 const systemNav = [
   { href: '/workflow/api-console', label: 'nav.apiConsole', icon: Terminal, tour: 'nav-api' },
   { href: '/workflow/api-docs', label: 'nav.apiDocs', icon: BookOpen, tour: 'nav-api-docs' },
+  { href: '/workflow/oracle', label: 'nav.oracle', icon: Database, tour: 'nav-oracle' },
   { href: '/workflow/ui-kit', label: 'nav.uiKit', icon: Boxes, tour: 'nav-uikit' },
 ];
 

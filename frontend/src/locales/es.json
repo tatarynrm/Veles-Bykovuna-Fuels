@@ -1851,5 +1851,20 @@
   "unit.litre": "l",
   "unit.secondsShort": "s",
   "vdocs.subtitle": "Integración de OKKO y Shell: rutas de la pasarela, solicitudes upstream, formatos y unidades",
-  "vdocs.title": "Documentación de la API de proveedores"
+  "vdocs.title": "Documentación de la API de proveedores",
+  "nav.oracle": "Base de datos Oracle",
+  "oracle.title": "Oracle · Datos",
+  "oracle.subtitle": "Conexión directa a Oracle: SELECT kod, pip FROM os",
+  "oracle.tableOs": "Tabla OS",
+  "oracle.rows": "filas",
+  "oracle.colKod": "Código",
+  "oracle.colPip": "Nombre completo",
+  "oracle.searchPlaceholder": "Buscar por código o nombre…",
+  "oracle.noMatches": "Sin resultados",
+  "oracle.noMatchesHint": "Pruebe otra búsqueda",
+  "oracle.notConfigured": "Oracle no configurado",
+  "oracle.notConfiguredHint": "Configure ORACLE_USER, ORACLE_PASSWORD y ORACLE_CONNECT_STRING en backend/.env",
+  "oracle.queryError": "Error de consulta Oracle",
+  "oracle.noRows": "Sin filas",
+  "oracle.noRowsHint": "Consulta ejecutada, pero la tabla os está vacía"
 }

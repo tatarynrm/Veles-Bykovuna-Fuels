@@ -1851,5 +1851,20 @@
   "unit.litre": "l",
   "unit.secondsShort": "s",
   "vdocs.subtitle": "OKKO- und Shell-Integration: Gateway-Routen, Upstream-Anfragen, Formate und Einheiten",
-  "vdocs.title": "Anbieter-API-Dokumentation"
+  "vdocs.title": "Anbieter-API-Dokumentation",
+  "nav.oracle": "Oracle-DB",
+  "oracle.title": "Oracle · Daten",
+  "oracle.subtitle": "Direkte Oracle-Verbindung: SELECT kod, pip FROM os",
+  "oracle.tableOs": "Tabelle OS",
+  "oracle.rows": "Zeilen",
+  "oracle.colKod": "Code",
+  "oracle.colPip": "Name",
+  "oracle.searchPlaceholder": "Suche nach Code oder Name…",
+  "oracle.noMatches": "Nichts gefunden",
+  "oracle.noMatchesHint": "Versuchen Sie eine andere Suche",
+  "oracle.notConfigured": "Oracle nicht konfiguriert",
+  "oracle.notConfiguredHint": "Setzen Sie ORACLE_USER, ORACLE_PASSWORD und ORACLE_CONNECT_STRING in backend/.env",
+  "oracle.queryError": "Oracle-Abfragefehler",
+  "oracle.noRows": "Keine Zeilen",
+  "oracle.noRowsHint": "Abfrage ausgeführt, aber die Tabelle os ist leer"
 }

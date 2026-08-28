@@ -1851,5 +1851,20 @@
   "unit.litre": "L",
   "unit.secondsShort": "s",
   "vdocs.subtitle": "OKKO and Shell integration: gateway routes, upstream requests, formats and units",
-  "vdocs.title": "Vendor API documentation"
+  "vdocs.title": "Vendor API documentation",
+  "nav.oracle": "Oracle DB",
+  "oracle.title": "Oracle · Data",
+  "oracle.subtitle": "Direct Oracle connection: SELECT kod, pip FROM os",
+  "oracle.tableOs": "OS table",
+  "oracle.rows": "rows",
+  "oracle.colKod": "Code",
+  "oracle.colPip": "Full name",
+  "oracle.searchPlaceholder": "Search by code or name…",
+  "oracle.noMatches": "Nothing found",
+  "oracle.noMatchesHint": "Try a different search query",
+  "oracle.notConfigured": "Oracle not configured",
+  "oracle.notConfiguredHint": "Set ORACLE_USER, ORACLE_PASSWORD and ORACLE_CONNECT_STRING in backend/.env",
+  "oracle.queryError": "Oracle query error",
+  "oracle.noRows": "No rows",
+  "oracle.noRowsHint": "Query ran, but the os table is empty"
 }
