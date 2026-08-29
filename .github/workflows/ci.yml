@@ -1,0 +1,48 @@
+name: CI
+
+# Build, lint and test both apps on every push and PR. The backend and frontend
+# are independent npm projects (no workspace), so each runs in its own job with
+# its own working directory and dependency cache.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend · build + test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+  frontend:
+    name: Frontend · typecheck + i18n
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      # Full type-check. `next build` is intentionally not run in CI: it shares
+      # .next with the dev server and the static export needs runtime env, so a
+      # standalone tsc pass is the reliable gate here. (`next lint` is skipped —
+      # the repo has no ESLint config yet; wire one up before adding it here.)
+      - run: npx tsc --noEmit
+      - run: npm run i18n:check

@@ -1,6 +1,7 @@
 import { BadGatewayException, BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
+import { TtlCache } from '../common/swr-cache';
 
 /**
  * FMS REST API surface beyond live telemetry: reports, registries and account
@@ -26,11 +27,6 @@ export interface FmCollection<T> {
   continuation_token: string | number | null;
 }
 
-interface CacheEntry {
-  data: unknown;
-  at: number;
-}
-
 const REGISTRY_TTL_MS = 5 * 60_000;
 
 @Injectable()
@@ -39,7 +35,8 @@ export class RuptelaInsightsService {
   private readonly client: AxiosInstance;
   private readonly apiKey: string;
 
-  private readonly registryCache = new Map<string, CacheEntry>();
+  /** Registries that change rarely (geozones, groups, users, drivers) — 5-min memoize. */
+  private readonly registryCache = new TtlCache(REGISTRY_TTL_MS);
 
   constructor(private readonly configService: ConfigService) {
     this.apiKey = this.configService.get<string>('RUPTELA_API_KEY') ?? '';
@@ -119,12 +116,8 @@ export class RuptelaInsightsService {
     };
   }
 
-  private async cached<T>(key: string, load: () => Promise<T>): Promise<T> {
-    const hit = this.registryCache.get(key);
-    if (hit && Date.now() - hit.at < REGISTRY_TTL_MS) return hit.data as T;
-    const data = await load();
-    this.registryCache.set(key, { data, at: Date.now() });
-    return data;
+  private cached<T>(key: string, load: () => Promise<T>): Promise<T> {
+    return this.registryCache.wrap(key, load);
   }
 
   private static requireRange(from?: string, to?: string): { from: string; to: string } {

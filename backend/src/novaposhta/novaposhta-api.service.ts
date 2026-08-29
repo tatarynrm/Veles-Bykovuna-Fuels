@@ -354,9 +354,6 @@ export class NovaPoshtaApiService {
       GetFullList: '0',
       Limit: String(limit),
     });
-    setTimeout(() => {
-      console.log(rows, 'ROWS ------ ')
-    }, 3000)
     const items = rows.map((r) => {
       const settlement = r.SettlmentAddressData ?? {};
       return {

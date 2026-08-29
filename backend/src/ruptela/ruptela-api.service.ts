@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
+import { SwrCache, InflightMap } from '../common/swr-cache';
 
 /**
  * Every field here is read straight off the fm-track API. `null` means the device
@@ -137,11 +138,14 @@ export class RuptelaApiService {
   private isConnectedToLiveApi = false;
   private lastConnectionCheck: string = new Date().toISOString();
 
-  // Assembled fleet snapshot (positions + CAN), stale-while-revalidate
-  private fleetCache: RuptelaVehicle[] | null = null;
-  private fleetCacheTimestamp = 0;
+  // Assembled fleet snapshot (positions + CAN), stale-while-revalidate.
+  // The loader throws on failure, so a cold error keeps `fetchedAt` at 0 and the
+  // next poll retries rather than caching an empty snapshot for the TTL.
   private readonly FLEET_CACHE_TTL_MS = 30_000;
-  private isFetchingFleet = false;
+  private readonly fleetCache = new SwrCache<'fleet', RuptelaVehicle[]>(
+    () => this.FLEET_CACHE_TTL_MS,
+    () => [],
+  );
 
   // vehicle id -> driver full name, resolved from the last trip's driver_ids.
   // Refreshed far less often than telemetry: crew assignments change by the day, not the second.
@@ -159,7 +163,7 @@ export class RuptelaApiService {
    * watching the same truck poll on the same 5 s clock, and fm-track answers 429
    * long before it answers slowly — identical requests share one upstream call.
    */
-  private inflightTracks = new Map<string, Promise<RuptelaVehicleTrack>>();
+  private readonly inflightTracks = new InflightMap<RuptelaVehicleTrack>();
 
   // Persistent trips store with real trip records
   constructor(private configService: ConfigService) {
@@ -194,10 +198,11 @@ export class RuptelaApiService {
       lastCheck: this.lastConnectionCheck,
       documentationUrl: 'https://www.fmsdocumentation.com/uk/api/',
       status: this.isConnectedToLiveApi ? 'ONLINE' : 'UNREACHABLE',
-      vehiclesInSnapshot: this.fleetCache?.length ?? 0,
-      snapshotAgeSeconds: this.fleetCacheTimestamp
-        ? Math.round((Date.now() - this.fleetCacheTimestamp) / 1000)
-        : null,
+      vehiclesInSnapshot: this.fleetCache.peek('fleet')?.data.length ?? 0,
+      snapshotAgeSeconds: (() => {
+        const at = this.fleetCache.peek('fleet')?.fetchedAt ?? 0;
+        return at > 0 ? Math.round((Date.now() - at) / 1000) : null;
+      })(),
       driversResolved: this.vehicleDriverCache.size,
       lastError: this.lastFleetError,
     };
@@ -262,26 +267,31 @@ export class RuptelaApiService {
    * from turning into ~65 upstream requests a tick.
    */
   async getVehicles(): Promise<RuptelaVehicle[]> {
-    const age = Date.now() - this.fleetCacheTimestamp;
-
-    if (this.fleetCache !== null && age < this.FLEET_CACHE_TTL_MS) {
-      return this.fleetCache;
+    // Fleet policy: at most one blocking call, ever. Only the very first request
+    // (no entry yet) waits for a load; once any attempt has run — success or
+    // failure — every later poll is served from the entry and refreshes behind
+    // it, so an upstream outage never hangs the 5 s-polling fleet page.
+    const entry = this.fleetCache.peek('fleet');
+    if (entry) {
+      const fresh = Date.now() - entry.fetchedAt < this.FLEET_CACHE_TTL_MS;
+      if (!fresh && !entry.refreshing) this.refreshFleet().catch(() => {});
+      return entry.data;
     }
 
-    if (this.fleetCache !== null) {
-      // Serve the stale snapshot now, refresh behind it.
-      this.refreshFleet().catch(() => {});
-      return this.fleetCache;
-    }
-
-    await this.refreshFleet();
-    return this.fleetCache ?? [];
+    const first = await this.fleetCache.readSafe('fleet', () => this.loadFleet());
+    return first.data;
   }
 
-  private async refreshFleet(): Promise<void> {
-    if (this.isFetchingFleet) return;
-    this.isFetchingFleet = true;
+  private refreshFleet(): Promise<void> {
+    return this.fleetCache.refresh('fleet', () => this.loadFleet());
+  }
 
+  /**
+   * Assemble the fleet snapshot. Throws on upstream failure so the cache does not
+   * advance its timestamp; the connection/error flags are set here as a side effect
+   * (they feed the status endpoint), matching the previous refreshFleet().
+   */
+  private async loadFleet(): Promise<RuptelaVehicle[]> {
     try {
       const objects = await this.fetchLastCoordinates();
       this.isConnectedToLiveApi = true;
@@ -390,21 +400,21 @@ export class RuptelaApiService {
         } as RuptelaVehicle;
       });
 
-      this.fleetCache = vehicles;
-      this.fleetCacheTimestamp = Date.now();
       this.logger.log(`Ruptela fleet snapshot refreshed: ${vehicles.length} vehicles`);
 
       // Driver names are resolved on a slower clock and merged into the next snapshot.
       if (Date.now() - this.vehicleDriverTimestamp > this.DRIVER_CACHE_TTL_MS) {
         this.refreshVehicleDrivers(vehicles.map((v) => v.id)).catch(() => {});
       }
+
+      return vehicles;
     } catch (error) {
       this.isConnectedToLiveApi = false;
       this.lastFleetError = error.message;
       this.logger.error(`Ruptela fleet refresh failed: ${error.message}`);
-      if (this.fleetCache === null) this.fleetCache = [];
-    } finally {
-      this.isFetchingFleet = false;
+      // Rethrow so the cache keeps `fetchedAt` at 0 (cold) or its prior value
+      // (stale) instead of storing an empty snapshot — the next poll retries.
+      throw error;
     }
   }
 
@@ -640,18 +650,12 @@ export class RuptelaApiService {
     if (fromMs >= toMs) return empty('Некоректний діапазон: "from" не раніше за "to"');
 
     const key = `${objectId}|${from}|${to}|${limit}`;
-    const inflight = this.inflightTracks.get(key);
-    if (inflight) return inflight;
-
-    const request = this.fetchVehicleTrack(objectId, from, to, limit)
-      .catch((error) => {
+    return this.inflightTracks.run(key, () =>
+      this.fetchVehicleTrack(objectId, from, to, limit).catch((error) => {
         this.logger.warn(`Ruptela live track failed for ${objectId}: ${error.message}`);
         return empty(error.message);
-      })
-      .finally(() => this.inflightTracks.delete(key));
-
-    this.inflightTracks.set(key, request);
-    return request;
+      }),
+    );
   }
 
   private async fetchVehicleTrack(

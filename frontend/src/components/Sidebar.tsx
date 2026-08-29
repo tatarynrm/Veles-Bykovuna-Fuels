@@ -51,7 +51,7 @@ const primaryNav = [
 ];
 
 const fleetNav = [
-  { href: '/workflow/fleet', label: 'nav.n3dMonitoring', icon: Boxes, tour: 'nav-fleet3d' },
+  { href: '/workflow/fleet-demo', label: 'nav.n3dMonitoring', icon: Boxes, tour: 'nav-fleet3d' },
 ];
 
 const ruptelaNav = [

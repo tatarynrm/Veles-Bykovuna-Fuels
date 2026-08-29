@@ -1,6 +1,7 @@
 import { Controller, Get, Query, Param } from '@nestjs/common';
 import { OkkoApiService } from '../okko/okko-api.service';
 import { ShellApiService } from '../shell/shell-api.service';
+import { TransactionsQueryDto } from './dto/transactions-query.dto';
 
 @Controller('api/transactions')
 export class TransactionsController {
@@ -10,16 +11,10 @@ export class TransactionsController {
   ) {}
 
   @Get()
-  async getAllTransactions(
-    @Query('date_from') dateFrom?: string,
-    @Query('date_to') dateTo?: string,
-    @Query('brand') brand?: string,
-    @Query('trans_type') transType?: string,
-    @Query('page') pageStr?: string,
-    @Query('size') sizeStr?: string,
-  ) {
-    const page = Math.max(1, parseInt(pageStr || '1', 10));
-    const size = Math.max(1, parseInt(sizeStr || '10', 10));
+  async getAllTransactions(@Query() query: TransactionsQueryDto) {
+    const { date_from: dateFrom, date_to: dateTo, brand, trans_type: transType } = query;
+    const page = Math.max(1, query.page ?? 1);
+    const size = Math.max(1, query.size ?? 10);
 
     let okkoTx: any[] = [];
     let shellTx: any[] = [];

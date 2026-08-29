@@ -30,10 +30,11 @@ const CYRILLIC = /[Ѐ-ӿ]/;
 const EXCLUDE = [
   'src/locales/',
   'src/lib/i18n.ts',
-  'src/lib/ruptelaApiDocs.ts',
+  'src/shared/config/ruptelaApiDocs.ts',
   'src/components/RuptelaApiDocs.tsx',
-  'src/lib/vendorApiDocs.ts',
+  'src/shared/config/vendorApiDocs.ts',
   'src/components/VendorApiDocs.tsx',
+  'src/shared/ui/api-reference/ApiReference.tsx',
   'src/context/I18nContext.tsx',
   'src/components/LanguageSwitcher.tsx',
 ];

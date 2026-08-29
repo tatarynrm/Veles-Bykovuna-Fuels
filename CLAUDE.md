@@ -4,13 +4,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Fleet-fuel ERP dashboard for ТОВ "Велес Буковина". A NestJS backend proxies three external
-vendor APIs (OKKO fuel cards, Shell Mobility B2B cards, Ruptela/fm-track telematics) and
-normalizes them into one shape; a Next.js App Router frontend renders the dashboard.
-UI text is authored in Ukrainian and translated at runtime into English, Polish and German —
-write new user-facing strings in Ukrainian and wrap them in `t()` (see *Localisation* below).
+Fleet-fuel ERP dashboard for ТОВ "Велес Буковина". A NestJS backend proxies several external
+vendor APIs — OKKO fuel cards, Shell Mobility B2B cards, Ruptela/fm-track telematics (+ its
+Routing & Tasking GraphQL), Nova Poshta parcels — and normalizes them into one shape; it also
+talks to an on-prem **Oracle** database for delivery-date write-back. A Next.js App Router
+frontend renders the dashboard. UI text is authored in Ukrainian and translated at runtime
+into English, Polish and German — write new user-facing strings in Ukrainian and wrap them in
+`t()` (see *Localisation* below).
 
-Not a git repository. No test suite, no linter config beyond `next lint`.
+Git repository (`main`). Backend tests run on Jest (`npm test`); the frontend has no test
+suite yet, and no linter config beyond `next lint`.
+
+### Architecture direction (decided)
+
+The frontend is **mid-migration to Feature-Sliced Design (FSD)** and the chosen direction is
+to **finish that migration**, not to keep two paradigms. The marketing surface already lives
+in FSD layers (`screens/` → `widgets/` → `shared/`); the workflow (ERP) surface is still on
+the legacy flat layout (`components/`, `lib/`, `context/`, `utils/`) and is being moved into
+`features/` incrementally. Rules for anything new or touched:
+
+- **New workflow feature** → a slice under `features/<feature>/` with `ui/` (components) and
+  `model/` (hooks, data-fetching, state). A route file under `app/workflow/<feature>/page.tsx`
+  should be a thin composition that imports from its slice — target ≤ ~200 lines.
+- **Shared, feature-agnostic code** → `shared/` (`shared/lib` for hooks/utilities,
+  `shared/ui` for primitives, `shared/config` for static data/content).
+- **Do not add new files to the flat `components/` / `lib/` grab-bag.** Existing files there
+  migrate opportunistically when a task already touches them.
+- The dependency rule points one way: `app` → `features` → `widgets` → `shared`. A `shared`
+  module must never import from `features`.
 
 ## Commands
 
@@ -19,8 +40,12 @@ Backend (`backend/`, NestJS, listens on **3001**):
 npm run start:dev      # watch mode — the normal dev loop
 npm run build          # nest build -> dist/
 npm run start:prod     # node dist/main
+npm test               # jest — unit tests for the pure mappers + cache primitives
 npm run format         # prettier over src/**/*.ts
 ```
+Tests are Jest specs colocated as `*.spec.ts` (excluded from the build). `GET /api/health`
+reports which vendors are configured. CI (`.github/workflows/ci.yml`) runs the backend
+build+test and a frontend `tsc --noEmit` + `i18n:check` on every push/PR.
 
 Frontend (`frontend/`, Next.js 14, listens on **3000**):
 ```
@@ -42,6 +67,16 @@ corrupts its chunks (`Cannot find module './230.js'`). Stop dev, `rm -rf .next`,
 
 `src/<vendor>/<vendor>-api.service.ts` are the only places that talk to an external API.
 Everything else consumes their normalized TypeScript interfaces.
+
+**Pure mapping is being split into `<vendor>/<vendor>.mapper.ts`** — the normalized
+interfaces, unit conversions, dictionaries and per-row `map*` functions, with no axios/Nest
+dependency so they are unit-tested in isolation (`*.mapper.spec.ts`). Done for **OKKO**
+(`okko.mapper.ts`: kopiykas/millilitre conversions, derived price, `parseTransactionType`,
+CHST dictionary) and **Shell** (`shell.mapper.ts`: `YYYYMMDD`→ISO, PascalCase→snake_case,
+`parseShellTransactionType`, card/merchant derivation). The `*-api.service.ts` keeps only the
+HTTP client, auth, caching and orchestration, and re-exports the mapper's types for
+backward compatibility. Apply the same split to the remaining heavy vendors (Ruptela,
+Nova Poshta) when a task touches their mapping.
 
 - **`okko/okko-api.service.ts`** — REST against `gw-online.okko.ua:9443/api/erp/v2/*` with
   `X-API-KEY` and `rejectUnauthorized: false` (their cert fails validation). Two unit
@@ -125,6 +160,28 @@ Everything else consumes their normalized TypeScript interfaces.
   dispatcher-local flag, returned with `local_only: true`. Mutations patch the cache
   directly, so a created/edited trip shows up without waiting for a refetch.
 
+- **`novaposhta/novaposhta-api.service.ts`** — the Nova Poshta JSON API (parcel courier).
+  Tracks parcels (`track`), lists the account's own waybills by date range (`shipments`),
+  searches cities/warehouses, resolves the sender from the API key, and **creates express
+  waybills** (`POST /api/novaposhta/shipments`, blocked for guest by `ReadOnlyGuard` because
+  it writes to the live account). Dates go out as `DD.MM.YYYY`. Delivered states are `StateId`
+  9/10/11.
+- **`novaposhta/novaposhta-sync.service.ts`** — a `@Cron('0 */20 * * * *')` job (warmed 10 s
+  after boot) that pulls **our** shipments for the last **40 days**, keeps the delivered ones,
+  and calls the Oracle `SetDateDelivered` procedure for each. The 40-day window is deliberately
+  wider than the 20-min step so a missed tick self-heals, and the procedure is idempotent. An
+  in-process `running` flag prevents overlapping ticks; multi-instance would need a leader lock.
+- **`oracle/oracle.service.ts`** — `node-oracledb` in **THIN mode** (no Instant Client), lazy
+  connection pool (`poolMax: 4`) created on first query. Imported with `import oracledb =
+  require('oracledb')` because `esModuleInterop` is off. Only **named SQL from code** runs —
+  no arbitrary SQL from outside; binds are parameterised. `setDeliveredBatch()` is one
+  `executeMany` + commit calling the delivery-date proc; `getOs()` reads the `os` reference
+  table. Oracle keys come back UPPERCASE and are normalised to lowercase. No secrets in code —
+  `ORACLE_USER` / `ORACLE_PASSWORD` / `ORACLE_CONNECT_STRING` from env, missing → vendor
+  disabled with a warning (same convention as the other vendors).
+- **`contracts/contracts.controller.ts`** — thin passthrough to `OkkoApiService.getContracts()`
+  (OKKO is the only vendor exposing contract metadata); it owns no service of its own.
+
 Cross-vendor endpoints (`transactions`, `cards`, `merchants`, `analytics`) take a
 `brand=ALL|OKKO|SHELL` query param, fan out to the relevant services, map Shell's PascalCase
 fields onto the OKKO snake_case shape, concatenate, then **paginate in memory**
@@ -133,6 +190,16 @@ fields onto the OKKO snake_case shape, concatenate, then **paginate in memory**
 Every vendor call is wrapped in try/catch that logs and **returns an empty array**. A dead
 upstream therefore surfaces as zeroed KPIs, never an error response — check backend logs,
 not HTTP status, when data looks missing.
+
+**Caching primitives live in `common/swr-cache.ts`** — do not hand-roll a fourth copy. Three
+shapes are provided and used across the Ruptela services: `SwrCache<K,T>` (keyed
+stale-while-revalidate with a `refreshing` guard, error retention, `read`/`readSafe`/`refresh`/
+`mutate`/`peek`) backs the routing active/archive trips and the fleet snapshot; `TtlCache`
+(plain memoize-with-expiry) backs the insights registries; `InflightMap` (in-flight
+de-duplication) backs the live-track requests. Two cold-miss policies exist on purpose:
+routing blocks until the first successful load, while the fleet snapshot blocks **at most
+once** (its `getVehicles` peeks first, so an outage never hangs the 5 s-polling page) — keep
+that distinction if you touch either.
 
 `auth/auth.controller.ts` is a stub: credentials come from env (`AUTH_ADMIN_USER` /
 `AUTH_ADMIN_PASSWORD`; passwordless demo logins `okko`/`shell`/`demo` only when
@@ -150,10 +217,28 @@ drop that header and the server-side ban stops working. The frontend mirror is
 `isGuestUser()` / `permissionsOf()` in `src/lib/useAuthGuard.ts` (`useSessionUser()` for
 chrome that must not redirect); guest-facing copy lives in `components/GuestLock.tsx`.
 
-### Frontend: page-level fetching through a thin lib layer
+### Frontend: route groups + page-level fetching through a thin lib layer
+
+`src/app/` is split into two route groups with different jobs — and, currently, two
+different architectures (see *Architecture direction* above):
+
+- **`(marketing)/`** — the public landing / calculator / expenses / future-plans /
+  integrations pages. Already on **FSD**: each route file is a thin wrapper around a
+  `screens/<name>` slice, which composes `widgets/` and `shared/`.
+- **`workflow/`** — the authenticated ERP app (dashboard, cards, transactions, analytics,
+  merchants, the amber `ruptela/*` telematics section, `novaposhta/*`, `oracle`, the API
+  docs/console, the `ui-kit` gallery). Still on the **legacy flat layout**; being migrated to
+  `features/` per the direction above. The `workflow/` URL prefix is real — links and the
+  command palette use `/workflow/...`.
 
 Every page under `src/app/` is a `'use client'` component. The shared pieces:
 
+- `src/shared/contracts/` — the **single source of truth** for the normalized API shapes the
+  frontend consumes (`ruptela.ts`, `novaposhta.ts`), mirroring the NestJS adapters. Pure types
+  only; `@/lib/ruptela` and `@/lib/novaposhta` import from here and re-export, so the shapes are
+  defined once. Runtime (label maps, formatters, fetch helpers) stays in `lib/`. There is no
+  cross-process package (kept deliberately simple): backend and frontend still hold parallel
+  copies, so a shape change is a two-file edit — this module is where the frontend half lives.
 - `src/lib/api.ts` — `apiGet` / `apiSend` / `apiList` / `apiObject` / `unwrapList`.
   `apiList` tolerates *both* response shapes: collection endpoints (`/api/cards`,
   `/api/merchants`, `/api/transactions`) return `{items,total,page,size,totalPages}`, while
@@ -191,9 +276,10 @@ spotlight. Sidebar markup is rendered **twice** (desktop rail + mobile drawer), 
 overlay spotlights the first match that actually has a size. Steps can be marked
 `guestOnly` / `staffOnly`.
 
-`/fleet` (1100+ lines) is a standalone 3D truck-diagnostics view with **local mock state
-only** — it never calls the backend. `/ruptela/fleet` is the real telematics view.
-`/ruptela/live` watches **one** vehicle: it polls `/coordinates` on a dispatcher-chosen
+`/workflow/fleet-demo` (1100+ lines) is a standalone 3D truck-diagnostics view with **local
+mock state only** — it never calls the backend (renamed from `/workflow/fleet` so the name no
+longer collides with the real telematics view). `/workflow/ruptela/fleet` is the real
+telematics view. `/workflow/ruptela/live` watches **one** vehicle: it polls `/coordinates` on a dispatcher-chosen
 interval (3/5/10/30 s), keeps an incremental client-side buffer keyed by `datetime`, trims it
 to the selected window (15 хв–3 год), and draws the track on `RuptelaLiveTrackMap`. When the
 chosen window is empty it widens **once** to 24 h and says so, rather than showing a blank
@@ -302,7 +388,7 @@ npm run i18n:rename -- old.key new.key
 ```
 
 Deliberately **not** translated: vendor data arriving from the backend (vehicle names, OKKO
-transaction descriptions), code comments, and `lib/ruptelaApiDocs.ts` + `RuptelaApiDocs.tsx` —
+transaction descriptions), code comments, and `shared/config/ruptelaApiDocs.ts` + `RuptelaApiDocs.tsx` —
 the Ruptela integration reference for developers, listed in `EXCLUDE`. Strings that are type
 discriminators or matching heuristics are exempted per-file with `i18n-ignore-props:` /
 `i18n-ignore-raw:` pragmas.

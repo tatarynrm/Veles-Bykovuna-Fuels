@@ -8,6 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
 import { randomUUID } from 'crypto';
+import { SwrCache, SwrEntry } from '../common/swr-cache';
 
 /**
  * Ruptela Routing & Tasking (RnT) GraphQL API.
@@ -306,13 +307,6 @@ const DELETE_TRIP = `
 
 /* ── Cache ─────────────────────────────────────────────────────────────── */
 
-interface CacheEntry {
-  data: RuptelaTrip[];
-  fetchedAt: number;
-  refreshing: boolean;
-  error: string | null;
-}
-
 @Injectable()
 export class RuptelaRoutingService implements OnModuleInit {
   private readonly logger = new Logger(RuptelaRoutingService.name);
@@ -324,7 +318,10 @@ export class RuptelaRoutingService implements OnModuleInit {
   /** The archive costs ~30s and barely changes — refresh rarely. */
   private readonly ARCHIVE_TTL_MS = 15 * 60_000;
 
-  private readonly cache = new Map<'active' | 'archive', CacheEntry>();
+  private readonly cache = new SwrCache<'active' | 'archive', RuptelaTrip[]>(
+    (scope) => this.ttlFor(scope),
+    () => [],
+  );
 
   /**
    * Waypoint todos are read-only in the RnT schema: there is no mutation that
@@ -365,8 +362,6 @@ export class RuptelaRoutingService implements OnModuleInit {
     if (!this.apiKey) {
       throw new Error('RUPTELA_API_KEY is not configured');
     }
-console.log('VARIABLES', variables,'368 line');
-console.log('query', query,'369 line');
     const response = await this.client.post(
       `/routing?api_key=${this.apiKey}`,
       { query, variables },
@@ -547,13 +542,13 @@ console.log('query', query,'369 line');
     return scope === 'active' ? this.ACTIVE_TTL_MS : this.ARCHIVE_TTL_MS;
   }
 
-  private async refresh(scope: 'active' | 'archive'): Promise<void> {
-    const existing = this.cache.get(scope);
-    if (existing?.refreshing) return;
+  /** Force a scope refresh (used for warm-on-boot). Delegates to the shared cache. */
+  private refresh(scope: 'active' | 'archive'): Promise<void> {
+    return this.cache.refresh(scope, () => this.loadTrips(scope));
+  }
 
-    if (existing) existing.refreshing = true;
-    else this.cache.set(scope, { data: [], fetchedAt: 0, refreshing: true, error: null });
-
+  /** The upstream load for one scope — the only thing the cache does not own. */
+  private async loadTrips(scope: 'active' | 'archive'): Promise<RuptelaTrip[]> {
     const started = Date.now();
     try {
       const states = scope === 'active' ? ACTIVE_STATES : ARCHIVE_STATES;
@@ -562,22 +557,11 @@ console.log('query', query,'369 line');
       });
 
       const trips = (data.tripList ?? []).map((t) => this.mapTrip(t));
-      this.cache.set(scope, {
-        data: trips,
-        fetchedAt: Date.now(),
-        refreshing: false,
-        error: null,
-      });
-
       this.logger.log(
         `RnT ${scope} trips refreshed: ${trips.length} in ${Date.now() - started}ms`,
       );
+      return trips;
     } catch (error: any) {
-      const entry = this.cache.get(scope);
-      if (entry) {
-        entry.refreshing = false;
-        entry.error = error.message;
-      }
       this.logger.error(`RnT ${scope} refresh failed: ${error.message}`);
       throw error;
     }
@@ -587,23 +571,8 @@ console.log('query', query,'369 line');
    * Stale-while-revalidate. A caller never waits for a refresh when any data
    * exists — the only blocking path is the very first archive request.
    */
-  private async read(scope: 'active' | 'archive'): Promise<CacheEntry> {
-    const entry = this.cache.get(scope);
-    const fresh = entry && Date.now() - entry.fetchedAt < this.ttlFor(scope);
-
-    if (entry && entry.fetchedAt > 0) {
-      if (!fresh && !entry.refreshing) {
-        this.refresh(scope).catch(() => {
-          /* stale data is still served; the error lands on the entry */
-        });
-      }
-      return entry;
-    }
-
-    await this.refresh(scope);
-    return (
-      this.cache.get(scope) ?? { data: [], fetchedAt: 0, refreshing: false, error: null }
-    );
+  private read(scope: 'active' | 'archive'): Promise<SwrEntry<RuptelaTrip[]>> {
+    return this.cache.read(scope, () => this.loadTrips(scope));
   }
 
   /** Applies a mutation result to the cache so the next read is already correct. */
@@ -612,7 +581,7 @@ console.log('query', query,'369 line');
       trip.state && ARCHIVE_STATES.includes(trip.state) ? 'archive' : 'active';
 
     for (const key of ['active', 'archive'] as const) {
-      const entry = this.cache.get(key);
+      const entry = this.cache.peek(key);
       if (!entry) continue;
       const index = entry.data.findIndex((t) => t.id === trip.id);
       if (key === scope) {
@@ -625,10 +594,10 @@ console.log('query', query,'369 line');
   }
 
   private removeCached(id: string): void {
-    for (const entry of this.cache.values()) {
+    this.cache.forEach((entry) => {
       const index = entry.data.findIndex((t) => t.id === id);
       if (index !== -1) entry.data.splice(index, 1);
-    }
+    });
   }
 
   /* ── filtering / sorting / facets ───────────────────────────────────── */
@@ -927,8 +896,6 @@ console.log('query', query,'369 line');
         notifyDrivers: Boolean(input.notifyDrivers),
       };
     }
-console.log('Creating trip with parameters:', parameters);
-console.log('Creating trip with createTrip:', CREATE_TRIP);
 
 
 
@@ -991,11 +958,6 @@ console.log('Creating trip with createTrip:', CREATE_TRIP);
 
     const data = await this.graphql<{ updateTrip: any }>(UPDATE_TRIP, { parameters });
 
-console.log(parameters,'UPDATE TRIP PARAMETRS');
-console.log(data,'data from TRIP PARAMETRS');
-
-
-    console.log('Updating trip with data:', data);
     const trip = this.mapTrip(data.updateTrip);
 
     this.upsertCached(trip);
@@ -1050,9 +1012,9 @@ console.log(data,'data from TRIP PARAMETRS');
   }
 
   getStatus() {
-    const active = this.cache.get('active');
-    const archive = this.cache.get('archive');
-    const age = (entry?: CacheEntry) =>
+    const active = this.cache.peek('active');
+    const archive = this.cache.peek('archive');
+    const age = (entry?: SwrEntry<RuptelaTrip[]>) =>
       entry && entry.fetchedAt > 0
         ? Math.round((Date.now() - entry.fetchedAt) / 1000)
         : null;

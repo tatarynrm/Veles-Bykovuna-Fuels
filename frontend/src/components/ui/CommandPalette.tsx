@@ -140,7 +140,7 @@ export default function CommandPalette() {
       { id: 'nav-tx', label: t('common.transactionLog'), group: 'nav.navigation', icon: History, hint: '/workflow/transactions', keywords: 'transactions zhurnal operacii cheky', run: go('/workflow/transactions') },
       { id: 'nav-analytics', label: t('common.fuelAnalytics'), group: 'nav.navigation', icon: BarChart3, hint: '/workflow/analytics', keywords: 'analytics grafiky zvity statystyka', run: go('/workflow/analytics') },
       { id: 'nav-merchants', label: t('common.stationNetwork'), group: 'nav.navigation', icon: MapPin, hint: '/workflow/merchants', keywords: 'merchants azs stancii mapa', run: go('/workflow/merchants') },
-      { id: 'nav-fleet3d', label: t('nav.n3dMonitoring'), group: 'nav.navigation', icon: Boxes, hint: '/workflow/fleet', keywords: 'fleet 3d diagnostyka truck', run: go('/workflow/fleet') },
+      { id: 'nav-fleet3d', label: t('nav.n3dMonitoring'), group: 'nav.navigation', icon: Boxes, hint: '/workflow/fleet-demo', keywords: 'fleet 3d diagnostyka truck', run: go('/workflow/fleet-demo') },
       { id: 'nav-ruptela-fleet', label: t('nav.myFleetTelematics'), group: 'nav.navigation', icon: Truck, hint: '/workflow/ruptela/fleet', keywords: 'ruptela avtopark telematyka gps', run: go('/workflow/ruptela/fleet') },
       { id: 'nav-live', label: t('nav.realTimeWatchingVehicle'), group: 'nav.navigation', icon: Radio, hint: '/workflow/ruptela/live', keywords: 'live realnyi chas track monitoring gps', run: go('/workflow/ruptela/live') },
       // Creating a trip writes to Ruptela — a guest would be rejected by the server.
