@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 
 export type CapabilityTone = 'accent' | 'warn' | 'info';
-
+// opk
 /** Ідентифікатор визначає, яку сцену інфографіки малювати. */
 export type CapabilityId =
   | 'fuel-cards' | 'analytics' | 'telematics' | 'live-track'
