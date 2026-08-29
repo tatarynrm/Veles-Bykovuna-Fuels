@@ -54,6 +54,12 @@ npm run build
 npm run lint
 ```
 
+Root orchestrator (`package.json` at the repo root — no deps, just delegates to the two
+apps for deploys): `npm run build` builds both (backend `dist/` + frontend `.next/`),
+`npm run deploy` = build + `pm2 restart all`, `npm run deploy:reload` = build +
+`pm2 startOrReload ecosystem.config.js` (scoped, zero-downtime). PM2 processes are defined in
+`ecosystem.config.js` (backend :7001, frontend :7002); see `DEPLOY.md`.
+
 Both must run for the app to work. The backend host lives in one place —
 `src/lib/api.ts` (`NEXT_PUBLIC_API_URL`, defaulting to `http://localhost:3001`). Do not
 reintroduce hardcoded hosts in components.

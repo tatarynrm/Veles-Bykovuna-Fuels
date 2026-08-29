@@ -1,0 +1,21 @@
+{
+  "name": "veles-bykovuna-fuels",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Root orchestrator for the Veles Bykovuna Fuels ERP — build and (re)start the NestJS backend + Next.js frontend under PM2 from one place.",
+  "scripts": {
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "install:all": "npm --prefix backend ci && npm --prefix frontend ci",
+    "test": "npm --prefix backend test",
+    "start": "pm2 start ecosystem.config.js && pm2 save",
+    "restart": "pm2 restart all",
+    "reload": "pm2 startOrReload ecosystem.config.js && pm2 save",
+    "stop": "pm2 stop ecosystem.config.js",
+    "status": "pm2 status",
+    "logs": "pm2 logs",
+    "deploy": "npm run build && pm2 restart all",
+    "deploy:reload": "npm run build && pm2 startOrReload ecosystem.config.js && pm2 save"
+  }
+}

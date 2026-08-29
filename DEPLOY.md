@@ -53,6 +53,43 @@ pm2 save
 
 ## 4. Оновлення
 
+З кореня репозиторію тепер працює `npm run …` — root `package.json` оркеструє обидва
+застосунки (нічого встановлювати в корені не треба, скрипти лише делегують у `backend/`
+та `frontend/`):
+
+```bash
+cd veles-bykovuna-fuels
+git pull --ff-only
+npm run deploy          # npm run build (backend + frontend) → pm2 restart all
+```
+
+`npm run build` збирає **сервер** (`backend` → `dist/`) і **клієнт** (`frontend` → `.next/`),
+далі `pm2 restart all` перезапускає процеси на новій збірці.
+
+Повний перелік root-скриптів:
+
+| Команда | Що робить |
+|---|---|
+| `npm run build` | збірка backend + frontend |
+| `npm run build:backend` / `build:frontend` | збірка лише одного |
+| `npm run install:all` | `npm ci` в обох застосунках (після зміни залежностей) |
+| `npm run start` | перший запуск: `pm2 start ecosystem.config.js` + `pm2 save` |
+| `npm run deploy` | **build → `pm2 restart all`** (те, що потрібно щодня) |
+| `npm run deploy:reload` | build → `pm2 startOrReload ecosystem.config.js` (нуль-даунтайм) |
+| `npm run restart` / `reload` / `stop` / `status` / `logs` | обгортки над PM2 |
+| `npm test` | юніт-тести бекенда |
+
+**`restart all` vs `reload`:**
+- `npm run deploy` (`pm2 restart all`) — просто й швидко; перезапускає **всі** PM2-процеси
+  на машині й підхоплює нову збірку. Не перечитує `ecosystem.config.js`, тож зміни портів/env
+  у ньому не застосує. Годиться, коли міняється лише код.
+- `npm run deploy:reload` (`pm2 startOrReload ecosystem.config.js`) — зачіпає **лише** процеси
+  цього застосунку, перечитує конфіг (застосовує нові порти/env), працює без даунтайму й
+  піднімає процеси, якщо їх ще не запущено. Якщо на сервері крутяться й інші PM2-застосунки —
+  користуйтесь цим варіантом, а не `restart all`.
+
+Або одразу з git-pull і `npm ci` — старий скрипт лишається робочим:
+
 ```bash
 cd veles-bykovuna-fuels && ./deploy.sh
 ```
