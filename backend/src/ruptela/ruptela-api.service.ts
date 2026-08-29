@@ -658,6 +658,33 @@ export class RuptelaApiService {
     );
   }
 
+  /**
+   * Raw coordinate records for the GPS-history sync (→ p_gps.AddGps), oldest-first.
+   *
+   * Unlike getVehicleTrack (which keeps the NEWEST `limit` for a live view), this
+   * returns the OLDEST `limit` records from `from` in a single page, so a backlog is
+   * walked forward incrementally without skipping the middle. The vendor returns the
+   * items oldest-first and caps them at `limit` (≤1000). Records are handed back
+   * untouched — the caller maps the ecodrive/CAN fields the AddGps procedure needs,
+   * which `mapTrackPoint` drops. Reuses the shared 429 backoff.
+   */
+  async getRawCoordinates(
+    objectId: string,
+    fromIso: string,
+    toIso: string,
+    limit: number,
+  ): Promise<any[]> {
+    if (!this.apiKey) throw new Error('RUPTELA_API_KEY не налаштовано');
+    const response = await this.getWithRetry(`/objects/${objectId}/coordinates`, {
+      version: '2',
+      from_datetime: fromIso,
+      to_datetime: toIso,
+      limit: Math.min(Math.max(Math.trunc(limit) || 1, 1), 1000),
+      api_key: this.apiKey,
+    });
+    return response.data?.items ?? [];
+  }
+
   private async fetchVehicleTrack(
     objectId: string,
     from: string,

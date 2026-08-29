@@ -177,16 +177,38 @@ Nova Poshta) when a task touches their mapping.
   and calls the Oracle `SetDateDelivered` procedure for each. The 40-day window is deliberately
   wider than the 20-min step so a missed tick self-heals, and the procedure is idempotent. An
   in-process `running` flag prevents overlapping ticks; multi-instance would need a leader lock.
-- **`oracle/oracle.service.ts`** — `node-oracledb` in **THIN mode** (no Instant Client), lazy
-  connection pool (`poolMax: 4`) created on first query. Imported with `import oracledb =
-  require('oracledb')` because `esModuleInterop` is off. Only **named SQL from code** runs —
-  no arbitrary SQL from outside; binds are parameterised. `setDeliveredBatch()` is one
-  `executeMany` + commit calling the delivery-date proc; `getOs()` reads the `os` reference
-  table. Oracle keys come back UPPERCASE and are normalised to lowercase. No secrets in code —
-  `ORACLE_USER` / `ORACLE_PASSWORD` / `ORACLE_CONNECT_STRING` from env, missing → vendor
-  disabled with a warning (same convention as the other vendors).
+- **`oracle/oracle.service.ts`** — the **pure Oracle access layer** (`node-oracledb`, THIN
+  mode, no Instant Client), lazy connection pool (`poolMax: 4`). Imported with `import oracledb
+  = require('oracledb')` because `esModuleInterop` is off. It exposes only generics — `query()`
+  (SELECT → objects) and `withConnection(fn)` (borrow a pooled connection for a transaction) —
+  and **holds no business SQL**. Every feature keeps its SQL in a repository next to its code:
+  `oracle/os.repository.ts` (`getOs`, the `os` demo), `novaposhta/deliveries.repository.ts`
+  (`setDeliveredBatch` — the delivery-date `executeMany`), `gps/gps.repository.ts` (below). Add
+  a repository, not a method on OracleService. Oracle keys come back UPPERCASE; repositories
+  normalise them. No secrets in code — `ORACLE_USER` / `ORACLE_PASSWORD` /
+  `ORACLE_CONNECT_STRING` from env, missing → vendor disabled with a warning.
 - **`contracts/contracts.controller.ts`** — thin passthrough to `OkkoApiService.getContracts()`
   (OKKO is the only vendor exposing contract metadata); it owns no service of its own.
+- **`gps/gps-sync.service.ts`** — periodic GPS-history sync **Ruptela coordinates → Oracle
+  `p_gps.AddGps`**. A `@Cron('0 * * * * *')` cycle (running-guard, warmed after boot) walks the
+  vehicle list from `GpsRepository.getVehicles()` (the `tz`/`gpsprov` join; `datlast =
+  to_char(max(dat))`) **one vehicle at a time** — Ruptela rate-limits (429), so no fan-out.
+  Per vehicle it reads the **oldest** ≤`GPS_SYNC_LIMIT` (999) points after `datlast` via
+  `RuptelaApiService.getRawCoordinates()` (raw items — keeps the ecodrive/CAN fields
+  `mapTrackPoint` drops), maps them in `gps.mapper.ts` (types in `gps.types.ts`), and writes
+  each through `GpsRepository.addGpsBatch()` (the `p_gps.AddGps` block + binds live in the
+  repository; OracleService only lends the connection). A backlog catches up over successive
+  passes. **Timezone:**
+  Oracle stores points in local wall-clock (UTC+`RUPTELA_TZ_OFFSET_HOURS`, default 3), Ruptela
+  speaks UTC — dates cross the boundary as **strings** (`TO_DATE` in the block, `TO_CHAR` on
+  read) so it is process-TZ-independent, matching the old Pascal `lDatFrom - 3h + 1s`. Gated by
+  `GPS_SYNC_ENABLED` (writes to the live DB). If Ruptela is **unreachable** (a network-level
+  error, not a 429 or an HTTP error with a body), the cycle stops and backs off for
+  `RUPTELA_RETRY_COOLDOWN_MIN` (default 10) minutes instead of retrying every minute. Live
+  per-vehicle progress is kept in memory and surfaced at `GET /api/gps/progress` (+
+  `POST /api/gps/sync` to run a pass; blocked for guest), which the
+  **`/workflow/ruptela/realtime-coordinates`** page polls to visualise the ingest (no manual-run
+  button — the cron keeps it going and the page shows the cooldown when Ruptela is down).
 
 Cross-vendor endpoints (`transactions`, `cards`, `merchants`, `analytics`) take a
 `brand=ALL|OKKO|SHELL` query param, fan out to the relevant services, map Shell's PascalCase

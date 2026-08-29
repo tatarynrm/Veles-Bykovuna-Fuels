@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { NovaPoshtaApiService } from './novaposhta-api.service';
 import { OracleService } from '../oracle/oracle.service';
+import { DeliveriesRepository } from './deliveries.repository';
 
 /**
  * Крон-синхронізація дат доставки Нової Пошти → Oracle.
@@ -26,6 +27,7 @@ export class NovaPoshtaSyncService implements OnModuleInit {
   constructor(
     private readonly np: NovaPoshtaApiService,
     private readonly oracle: OracleService,
+    private readonly deliveries: DeliveriesRepository,
   ) {}
 
   onModuleInit() {
@@ -56,7 +58,7 @@ export class NovaPoshtaSyncService implements OnModuleInit {
       const { from, to } = NovaPoshtaSyncService.window();
       const deliveries = await this.np.collectDeliveries(from, to);
       // Записуємо лише ті, де є дата доставки (setDeliveredBatch відфільтрує null/невалідні).
-      const written = deliveries.length > 0 ? await this.oracle.setDeliveredBatch(deliveries) : 0;
+      const written = deliveries.length > 0 ? await this.deliveries.setDeliveredBatch(deliveries) : 0;
       this.logger.log(
         `SetDateDelivered: записано ${written} доставлених накладних (з датою) за ${from}–${to} (${Date.now() - started}ms)`,
       );

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Truck, PlusCircle, Route, Radio, Sun, Moon, BarChart3 } from 'lucide-react';
+import { Truck, PlusCircle, Route, Radio, Sun, Moon, BarChart3, DownloadCloud } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { useSessionUser } from '@/lib/useAuthGuard';
 import { t } from '@/lib/i18n';
@@ -21,6 +21,7 @@ const TABS = [
   },
   { href: '/workflow/ruptela/routes-tasks', label: 'common.routesAndTasks', icon: Route },
   { href: '/workflow/ruptela/insights', label: 'common.fmsReports', icon: BarChart3 },
+  { href: '/workflow/ruptela/realtime-coordinates', label: 'telematics.gpsRealtime', icon: DownloadCloud },
 ];
 
 interface RuptelaShellProps {

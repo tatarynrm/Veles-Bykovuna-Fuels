@@ -16,6 +16,7 @@ export const EXCLUDE = [
   'src/shared/config/vendorApiDocs.ts',
   'src/components/VendorApiDocs.tsx',
   'src/shared/ui/api-reference/ApiReference.tsx',
+  'src/app/workflow/ruptela/realtime-coordinates/page.tsx',
   'src/components/VendorLogos.tsx',
   'src/screens/calculator/index.tsx',
   'src/context/I18nContext.tsx',

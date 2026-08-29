@@ -15,6 +15,7 @@ import { RuptelaModule } from './ruptela/ruptela.module';
 import { NovaPoshtaModule } from './novaposhta/novaposhta.module';
 import { OracleModule } from './oracle/oracle.module';
 import { HealthModule } from './health/health.module';
+import { GpsModule } from './gps/gps.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { HealthModule } from './health/health.module';
     NovaPoshtaModule,
     OracleModule,
     HealthModule,
+    GpsModule,
   ],
   providers: [
     // Global, so a route added later is covered without anyone remembering to opt in.

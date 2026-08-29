@@ -4,15 +4,13 @@ import { ConfigService } from '@nestjs/config';
 // тож default-імпорт дав би undefined. Використовуємо import-equals.
 import oracledb = require('oracledb');
 
-export interface OsRow {
-  kod: string | number | null;
-  pip: string | null;
-}
-
 /**
- * Підключення до Oracle через node-oracledb у THIN-режимі (без Oracle Instant Client —
- * чистий JS, працює на Node 14.6+). З'єднання беруться з пулу, який створюється лениво
- * при першому запиті. Креденшили — лише з .env, у коді жодних секретів.
+ * Pure Oracle **access layer** (node-oracledb, THIN mode — no Instant Client).
+ * Owns the lazy connection pool and generic execution primitives ONLY. It holds
+ * **no business SQL**: every feature keeps its own SQL in a repository next to the
+ * code that uses it (e.g. `gps/gps.repository.ts`, `novaposhta/deliveries.repository.ts`,
+ * `oracle/os.repository.ts`) and calls `query` / `withConnection` here. Credentials
+ * come from .env; nothing is hardcoded, and a missing config disables the vendor.
  */
 @Injectable()
 export class OracleService implements OnModuleDestroy {
@@ -73,82 +71,37 @@ export class OracleService implements OnModuleDestroy {
   }
 
   /**
-   * Виконати іменований запит. SQL — лише з коду (жодного довільного SQL ззовні),
-   * binds — параметризовані. Повертає рядки як обʼєкти з нижнім регістром ключів.
+   * Borrow a pooled connection for one unit of work and always release it. The
+   * callback owns commit/rollback (autoCommit is off unless it opts in), so a
+   * repository can batch many statements in a single transaction.
    */
-  private async run<T = any>(sql: string, binds: oracledb.BindParameters = {}): Promise<T[]> {
+  async withConnection<T>(fn: (conn: oracledb.Connection) => Promise<T>): Promise<T> {
     const pool = await this.getPool();
     if (!pool) throw new Error('Oracle не налаштовано або пул недоступний');
 
-    let conn: oracledb.Connection | undefined;
+    const conn = await pool.getConnection();
     try {
-      conn = await pool.getConnection();
-      const result = await conn.execute<T>(sql, binds, {
-        outFormat: oracledb.OUT_FORMAT_OBJECT,
-      });
-      return (result.rows ?? []) as T[];
+      return await fn(conn);
     } finally {
-      if (conn) {
-        try {
-          await conn.close();
-        } catch {
-          /* ignore close errors */
-        }
+      try {
+        await conn.close();
+      } catch {
+        /* ignore close errors */
       }
     }
   }
 
   /**
-   * Викликає процедуру SetDateDelivered(pCodePost, pDocNumber, pDateDelivered) для
-   * кожної доставленої накладної. Процедура працює як upsert (запис/оновлення дати
-   * доставки за кодом пошти + номером). Один executeMany на весь батч, один commit.
+   * Run a parameterised query and return the rows as objects. SQL comes from the
+   * calling repository (never arbitrary input); Oracle returns UPPERCASE keys.
    */
-  async setDeliveredBatch(
-    rows: Array<{ number: string; deliveredAt: Date }>,
-    codePost?: string,
-  ): Promise<number> {
-    // Пишемо ЛИШЕ ті, де є дата доставки. Якщо дата null/невалідна — не викликаємо процедуру.
-    const valid = rows.filter(
-      (r) => r.number && r.deliveredAt instanceof Date && !isNaN(r.deliveredAt.getTime()),
-    );
-    if (!valid.length) return 0;
-
-    const pool = await this.getPool();
-    if (!pool) throw new Error('Oracle не налаштовано або пул недоступний');
-
-    const proc = this.configService.get<string>('ORACLE_DELIVERED_PROC') ?? 'P_POST.SetDateDelivered';
-    const code = codePost ?? this.configService.get<string>('ORACLE_POST_CODE') ?? 'NVP';
-
-    const conn = await pool.getConnection();
-    try {
-      const sql = `BEGIN ${proc}(pCodePost => :code, pDocNumber => :doc, pDateDelivered => :dt); END;`;
-      const binds = valid.map((r) => ({ code, doc: r.number, dt: r.deliveredAt }));
-      await conn.executeMany(sql, binds, {
-        autoCommit: true,
-        bindDefs: {
-          code: { type: oracledb.STRING, maxSize: 32 },
-          doc: { type: oracledb.STRING, maxSize: 64 },
-          dt: { type: oracledb.DATE },
-        },
+  async query<T = any>(sql: string, binds: oracledb.BindParameters = {}): Promise<T[]> {
+    return this.withConnection(async (conn) => {
+      const result = await conn.execute<T>(sql, binds, {
+        outFormat: oracledb.OUT_FORMAT_OBJECT,
       });
-      return valid.length;
-    } finally {
-      try {
-        await conn.close();
-      } catch {
-        /* ignore */
-      }
-    }
-  }
-
-  /** select kod, pip from os */
-  async getOs(): Promise<OsRow[]> {
-    const rows = await this.run<Record<string, any>>('SELECT kod, pip FROM os');
-    // Oracle повертає ключі у верхньому регістрі (KOD/PIP) — нормалізуємо.
-    return rows.map((r) => ({
-      kod: r.KOD ?? r.kod ?? null,
-      pip: r.PIP ?? r.pip ?? null,
-    }));
+      return (result.rows ?? []) as T[];
+    });
   }
 
   async onModuleDestroy(): Promise<void> {
