@@ -5,15 +5,16 @@ import { OracleService } from '../oracle/oracle.service';
 import { DeliveriesRepository } from './deliveries.repository';
 
 /**
- * Крон-синхронізація дат доставки Нової Пошти → Oracle.
+ * Крон-синхронізація статусів Нової Пошти → Oracle.
  *
- * Кожні 3 год бере НАШІ відправлення за останні 40 днів (getDocumentList),
- * відбирає доставлені (StateId 9/10/11) і для кожного викликає процедуру
- * SetDateDelivered('NVP', номерТТН, датаДоставки) — вона працює як upsert.
+ * Кожні 3 год бере НАШІ відправлення за останні 40 днів (getDocumentList) і для
+ * КОЖНОГО (будь-який статус, не лише доставлені) викликає процедуру
+ * p_post.SetStatus('NVP', номерТТН, statusId, statusName, датаСтатусу, датаСтарту,
+ * датаДоставки, місто, відділення, pErr) — вона працює як upsert.
  *
  * Свідомо просто: лише крон, без BullMQ і без локів. Вікно (40 днів) навмисно
  * ширше за крок (3 год) — це дає самозагоєння пропущених тіків, а сама процедура
- * ідемпотентна (повторний виклик лише перезапише ту саму дату). In-process guard
+ * ідемпотентна (повторний виклик лише перезапише той самий статус). In-process guard
  * не дає тікам накладатися. Для кількох інстансів згодом — див. обговорення в
  * історії (лідер-лок в Oracle або окремий worker з 1 реплікою).
  */
@@ -93,7 +94,7 @@ export class NovaPoshtaSyncService implements OnModuleInit {
       return { delivered: 0, skipped: true };
     }
     if (!this.oracle.isConfigured()) {
-      this.logger.warn('Oracle не налаштовано — синк дат доставки НП вимкнено');
+      this.logger.warn('Oracle не налаштовано — синк статусів НП вимкнено');
       return { delivered: 0, skipped: true };
     }
 
@@ -102,18 +103,18 @@ export class NovaPoshtaSyncService implements OnModuleInit {
     this.startedAt = started;
     const { from, to } = NovaPoshtaSyncService.window();
     try {
-      const deliveries = await this.np.collectDeliveries(from, to);
-      // Записуємо лише ті, де є дата доставки (setDeliveredBatch відфільтрує null/невалідні).
-      const written = deliveries.length > 0 ? await this.deliveries.setDeliveredBatch(deliveries) : 0;
+      const statuses = await this.np.collectStatuses(from, to);
+      // Пушимо повний статус КОЖНОГО відправлення за вікно (upsert p_post.SetStatus).
+      const written = statuses.length > 0 ? await this.deliveries.setStatusBatch(statuses) : 0;
       const durationMs = Date.now() - started;
       this.logger.log(
-        `SetDateDelivered: записано ${written} доставлених накладних (з датою) за ${from}–${to} (${durationMs}ms)`,
+        `SetStatus: записано ${written}/${statuses.length} статусів накладних за ${from}–${to} (${durationMs}ms)`,
       );
       this.lastRun = {
         at: new Date().toISOString(),
         from,
         to,
-        collected: deliveries.length,
+        collected: statuses.length,
         written,
         durationMs,
         ok: true,
@@ -122,7 +123,7 @@ export class NovaPoshtaSyncService implements OnModuleInit {
       return { delivered: written };
     } catch (error) {
       // Наступний тік доллє — вікно 40 днів самовідновлюване.
-      this.logger.error(`Синхронізація дат доставки НП впала: ${error.message}`);
+      this.logger.error(`Синхронізація статусів НП впала: ${error.message}`);
       this.lastRun = {
         at: new Date().toISOString(),
         from,

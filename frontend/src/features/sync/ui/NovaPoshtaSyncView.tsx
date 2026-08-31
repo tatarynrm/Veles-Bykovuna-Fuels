@@ -1,9 +1,9 @@
 'use client';
 
 /**
- * Статус синхронізації дат доставки Нової Пошти → Oracle (SetDateDelivered).
- * Крон працює кожні 20 хв без per-item прогресу, тож показуємо стан ОСТАННЬОГО
- * прогону: коли, за яке вікно, скільки доставлених зібрано і записано.
+ * Статус синхронізації статусів Нової Пошти → Oracle (p_post.SetStatus).
+ * Крон працює без per-item прогресу, тож показуємо стан ОСТАННЬОГО прогону:
+ * коли, за яке вікно, скільки статусів зібрано і записано.
  * Опитує GET /api/novaposhta/sync-status раз на 20 с. Технічний ops-екран.
  */
 
@@ -64,7 +64,7 @@ export default function NovaPoshtaSyncView() {
   return (
     <SyncShell
       title="Синхронізація Нової Пошти"
-      subtitle="Дати доставки → Oracle (SetDateDelivered), кроном кожні 20 хв · оновлення раз на 20 с"
+      subtitle="Статуси відправлень → Oracle (p_post.SetStatus), кроном кожні 3 год · оновлення раз на 20 с"
       status={statusChip}
     >
       {error && (
@@ -96,7 +96,7 @@ export default function NovaPoshtaSyncView() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <div className="stat">
           <span className="micro-label flex items-center gap-1.5">
-            <PackageCheck className="h-3 w-3" /> Записано дат
+            <PackageCheck className="h-3 w-3" /> Записано статусів
           </span>
           <span className="mt-1 block text-xl font-semibold tabular text-accent">
             {last ? last.written.toLocaleString('uk-UA') : NO_DATA}
@@ -156,7 +156,7 @@ export default function NovaPoshtaSyncView() {
         ) : !last ? (
           <p className="py-8 text-center text-2xs text-txt-muted">
             Ще не було жодного прогону від старту сервісу. Перший — за ~10 с після запуску,
-            далі кожні 20 хв.
+            далі кожні 3 год.
           </p>
         ) : (
           <div className="space-y-3 px-4 py-4">
@@ -181,7 +181,7 @@ export default function NovaPoshtaSyncView() {
 
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-2xs sm:grid-cols-4">
               <div>
-                <dt className="micro-label">Зібрано доставлених</dt>
+                <dt className="micro-label">Зібрано статусів</dt>
                 <dd className="mt-0.5 tabular font-semibold text-txt-primary">
                   {last.collected.toLocaleString('uk-UA')}
                 </dd>

@@ -3,9 +3,9 @@ import {
   Logger,
   BadGatewayException,
   BadRequestException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import axios, { AxiosInstance } from 'axios';
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import axios, { AxiosInstance } from "axios";
 
 /**
  * Nova Poshta (Нова Пошта) integration.
@@ -115,6 +115,24 @@ export interface NovaPoshtaShipment {
   history: NovaPoshtaTrackingHistoryEntry[];
 }
 
+/**
+ * One shipment's current status, ready for the Oracle `p_post.SetStatus` upsert.
+ * Assembled from `getDocumentList` (our own register) — no per-parcel tracking call.
+ */
+export interface NovaPoshtaStatusUpsert {
+  number: string;
+  statusId: string | null;
+  statusName: string | null;
+  /** When the current status was set (best-effort from the register). */
+  dateStatus: Date | null;
+  /** Waybill creation date. */
+  dateStart: Date | null;
+  /** Hand-over date — only for delivered parcels, else null. */
+  dateDelivered: Date | null;
+  city: string | null;
+  warehouse: string | null;
+}
+
 export interface NovaPoshtaCity {
   ref: string;
   name: string;
@@ -161,7 +179,7 @@ export interface CreateShipmentInput {
   /** WarehouseWarehouse (склад-склад) by default. */
   serviceType?: string;
   /** Who pays: Sender | Recipient (default Recipient). */
-  payerType?: 'Sender' | 'Recipient';
+  payerType?: "Sender" | "Recipient";
   /** Cash on delivery amount, UAH — 0/undefined = none. */
   backwardMoney?: number;
 }
@@ -180,20 +198,20 @@ export class NovaPoshtaApiService {
   private readonly apiKey: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.apiKey = this.configService.get<string>('NOVAPOSHTA_API_KEY') ?? '';
+    this.apiKey = this.configService.get<string>("NOVAPOSHTA_API_KEY") ?? "";
     const baseUrl =
-      this.configService.get<string>('NOVAPOSHTA_BASE_URL') ??
-      'https://api.novaposhta.ua/v2.0/json/';
+      this.configService.get<string>("NOVAPOSHTA_BASE_URL") ??
+      "https://api.novaposhta.ua/v2.0/json/";
 
     this.client = axios.create({
       baseURL: baseUrl,
       timeout: 20_000,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
 
     if (!this.apiKey) {
       this.logger.warn(
-        'NOVAPOSHTA_API_KEY is not set — Nova Poshta integration is disabled',
+        "NOVAPOSHTA_API_KEY is not set — Nova Poshta integration is disabled",
       );
     }
   }
@@ -206,10 +224,10 @@ export class NovaPoshtaApiService {
     methodProperties: Record<string, unknown> = {},
   ): Promise<T[]> {
     if (!this.apiKey) {
-      throw new BadRequestException('NOVAPOSHTA_API_KEY не налаштовано');
+      throw new BadRequestException("NOVAPOSHTA_API_KEY не налаштовано");
     }
 
-    const response = await this.client.post<NpEnvelope<T>>('', {
+    const response = await this.client.post<NpEnvelope<T>>("", {
       apiKey: this.apiKey,
       modelName,
       calledMethod,
@@ -220,8 +238,8 @@ export class NovaPoshtaApiService {
     // Nova Poshta answers 200 even on failure — the truth is in `success`.
     if (!body?.success) {
       const message =
-        [...(body?.errors ?? []), ...(body?.warnings ?? [])].join('; ') ||
-        'Нова Пошта відхилила запит без пояснення';
+        [...(body?.errors ?? []), ...(body?.warnings ?? [])].join("; ") ||
+        "Нова Пошта відхилила запит без пояснення";
       throw new BadGatewayException(`Нова Пошта: ${message}`);
     }
 
@@ -231,39 +249,46 @@ export class NovaPoshtaApiService {
   /* ── helpers ────────────────────────────────────────────────────────── */
 
   private static num(value: unknown): number | null {
-    if (value === null || value === undefined || value === '') return null;
-    const n = typeof value === 'string' ? Number(value) : (value as number);
-    return typeof n === 'number' && Number.isFinite(n) ? n : null;
+    if (value === null || value === undefined || value === "") return null;
+    const n = typeof value === "string" ? Number(value) : (value as number);
+    return typeof n === "number" && Number.isFinite(n) ? n : null;
   }
 
   private static text(value: unknown): string | null {
-    if (typeof value !== 'string') return value == null ? null : String(value);
+    if (typeof value !== "string") return value == null ? null : String(value);
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : null;
   }
 
   /** Delivered statuses in Nova Poshta's StatusCode taxonomy. */
-  private static DELIVERED_CODES = new Set(['9', '10', '11']);
+  private static DELIVERED_CODES = new Set(["9", "10", "11"]);
 
   /** «Прибув у відділення / поштомат» — parcel is physically at the destination. */
-  private static ARRIVED_CODES = new Set(['7', '8']);
+  private static ARRIVED_CODES = new Set(["7", "8"]);
 
   /**
    * `getDocumentList` уже містить StateId і RecipientDateTime (фактичну дату вручення),
    * тож окремий трекінг не потрібен. StateId 9/10/11 = отримано.
    */
-  private static DELIVERED_STATE_IDS = new Set(['9', '10', '11']);
+  private static DELIVERED_STATE_IDS = new Set(["9", "10", "11"]);
 
   /** Парсер дати НП «DD.MM.YYYY HH:MM:SS» (RecipientDateTime) → Date, або null. */
   private static parseNpDateTime(value?: string): Date | null {
-    const s = (value ?? '').trim();
-    if (!s || s.startsWith('0001')) return null;
+    const s = (value ?? "").trim();
+    if (!s || s.startsWith("0001")) return null;
     const m = /^(\d{2})\.(\d{2})\.(\d{4})[ T](\d{2}):(\d{2}):(\d{2})$/.exec(s);
     if (m) {
       const [, d, mo, y, h, mi, se] = m;
-      return new Date(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(se));
+      return new Date(
+        Number(y),
+        Number(mo) - 1,
+        Number(d),
+        Number(h),
+        Number(mi),
+        Number(se),
+      );
     }
-    const iso = new Date(s.replace(' ', 'T'));
+    const iso = new Date(s.replace(" ", "T"));
     return isNaN(iso.getTime()) ? null : iso;
   }
 
@@ -273,35 +298,50 @@ export class NovaPoshtaApiService {
    * `HH:MM DD.MM.YYYY` (час спереду). Розбираємо всі → Date (локальний час), або null.
    */
   private static parseFlexibleNpDate(value?: string): Date | null {
-    const s = (value ?? '').trim();
-    if (!s || s.startsWith('0001')) return null;
+    const s = (value ?? "").trim();
+    if (!s || s.startsWith("0001")) return null;
     const mk = (y: number, mo: number, d: number, h = 0, mi = 0, se = 0) => {
       const dt = new Date(y, mo - 1, d, h, mi, se);
       return isNaN(dt.getTime()) ? null : dt;
     };
     let m: RegExpExecArray | null;
     // DD[.-]MM[.-]YYYY [HH:MM[:SS]]
-    if ((m = /^(\d{2})[.\-](\d{2})[.\-](\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(s))) {
+    if (
+      (m =
+        /^(\d{2})[.\-](\d{2})[.\-](\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(
+          s,
+        ))
+    ) {
       const [, d, mo, y, h, mi, se] = m;
       return mk(+y, +mo, +d, +(h ?? 0), +(mi ?? 0), +(se ?? 0));
     }
     // YYYY-MM-DD[ T]HH:MM[:SS]
-    if ((m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(s))) {
+    if (
+      (m =
+        /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(
+          s,
+        ))
+    ) {
       const [, y, mo, d, h, mi, se] = m;
       return mk(+y, +mo, +d, +(h ?? 0), +(mi ?? 0), +(se ?? 0));
     }
     // HH:MM[:SS] DD.MM.YYYY (час спереду)
-    if ((m = /^(\d{2}):(\d{2})(?::(\d{2}))?[ ](\d{2})[.\-](\d{2})[.\-](\d{4})$/.exec(s))) {
+    if (
+      (m =
+        /^(\d{2}):(\d{2})(?::(\d{2}))?[ ](\d{2})[.\-](\d{2})[.\-](\d{4})$/.exec(
+          s,
+        ))
+    ) {
       const [, h, mi, se, d, mo, y] = m;
       return mk(+y, +mo, +d, +h, +mi, +(se ?? 0));
     }
-    const iso = new Date(s.replace(' ', 'T'));
+    const iso = new Date(s.replace(" ", "T"));
     return isNaN(iso.getTime()) ? null : iso;
   }
 
   /** «YYYY-MM-DD HH:MM:SS» — стабільний формат, який фронт (formatDateTime) точно розбере. */
   private static toWallClock(d: Date): string {
-    const p = (n: number) => String(n).padStart(2, '0');
+    const p = (n: number) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
   }
 
@@ -319,17 +359,22 @@ export class NovaPoshtaApiService {
    */
   private static synthesizeHistory(r: any): NovaPoshtaTrackingHistoryEntry[] {
     const statusCode = NovaPoshtaApiService.text(r.StatusCode);
-    const delivered = statusCode ? NovaPoshtaApiService.DELIVERED_CODES.has(statusCode) : false;
-    const arrived = statusCode ? NovaPoshtaApiService.ARRIVED_CODES.has(statusCode) : false;
+    const delivered = statusCode
+      ? NovaPoshtaApiService.DELIVERED_CODES.has(statusCode)
+      : false;
+    const arrived = statusCode
+      ? NovaPoshtaApiService.ARRIVED_CODES.has(statusCode)
+      : false;
     const citySender = NovaPoshtaApiService.text(r.CitySender);
     const cityRecipient = NovaPoshtaApiService.text(r.CityRecipient);
     const whSender = NovaPoshtaApiService.text(r.WarehouseSender);
     const whRecipient = NovaPoshtaApiService.text(r.WarehouseRecipient);
 
-    const candidates: Array<NovaPoshtaTrackingHistoryEntry & { _t: number }> = [];
+    const candidates: Array<NovaPoshtaTrackingHistoryEntry & { _t: number }> =
+      [];
     const push = (
       raw: any,
-      entry: Omit<NovaPoshtaTrackingHistoryEntry, 'datetime'>,
+      entry: Omit<NovaPoshtaTrackingHistoryEntry, "datetime">,
     ) => {
       const d = NovaPoshtaApiService.parseFlexibleNpDate(
         NovaPoshtaApiService.text(raw) ?? undefined,
@@ -347,16 +392,16 @@ export class NovaPoshtaApiService {
 
     // 1) Створено — електронний документ.
     push(r.DateCreated, {
-      status_code: '1',
-      status: 'Відправлення створено',
+      status_code: "1",
+      status: "Відправлення створено",
       city: citySender,
-      warehouse: whSender ?? 'Електронний документ створено',
+      warehouse: whSender ?? "Електронний документ створено",
     });
 
     // 2) Вирушило (окрема дата початку руху, якщо НП її віддала — часто порожня).
     push(r.DateMoving, {
-      status_code: '5',
-      status: 'Відправлення прямує до міста призначення',
+      status_code: "5",
+      status: "Відправлення прямує до міста призначення",
       city: citySender,
       warehouse: null,
     });
@@ -366,8 +411,10 @@ export class NovaPoshtaApiService {
     //    вручених воно менше за RecipientDateTime. Тож це окремий, більш ранній крок.
     if (delivered || arrived) {
       push(r.ActualDeliveryDate ?? r.TrackingUpdateDate ?? r.DateScan, {
-        status_code: '7',
-        status: arrived ? (status ?? 'Прибув у відділення') : 'Прибув у відділення',
+        status_code: "7",
+        status: arrived
+          ? (status ?? "Прибув у відділення")
+          : "Прибув у відділення",
         city: cityRecipient,
         warehouse: whRecipient,
       });
@@ -377,7 +424,7 @@ export class NovaPoshtaApiService {
     if (delivered) {
       push(r.RecipientDateTime ?? r.DateScan ?? r.TrackingUpdateDate, {
         status_code: statusCode,
-        status: status ?? 'Відправлення отримано',
+        status: status ?? "Відправлення отримано",
         city: cityRecipient,
         warehouse: whRecipient,
       });
@@ -397,7 +444,7 @@ export class NovaPoshtaApiService {
     const seen = new Set<string>();
     const out: NovaPoshtaTrackingHistoryEntry[] = [];
     for (const c of candidates) {
-      const key = `${Math.floor(c._t / 60000)}|${c.status_code ?? ''}`;
+      const key = `${Math.floor(c._t / 60000)}|${c.status_code ?? ""}`;
       if (seen.has(key)) continue;
       seen.add(key);
       const { _t, ...entry } = c;
@@ -411,28 +458,55 @@ export class NovaPoshtaApiService {
    * пари { номер ТТН, дата вручення } лише для отриманих (StateId 9/10/11).
    * Використовується крон-джобом синхронізації дат доставки в Oracle.
    */
-  async collectDeliveries(
+  async collectStatuses(
     dateFrom: string, // DD.MM.YYYY
     dateTo: string, // DD.MM.YYYY
-  ): Promise<Array<{ number: string; deliveredAt: Date }>> {
-    const out: Array<{ number: string; deliveredAt: Date }> = [];
+  ): Promise<NovaPoshtaStatusUpsert[]> {
+    // 1) Реєстр (getDocumentList): які накладні + дата САМОГО документа (dateStart).
+    const base: Array<NovaPoshtaStatusUpsert & { phone: string | null }> = [];
     const limit = 200;
     let page = 1;
 
-    for (; ;) {
-      const rows = await this.call<any>('InternetDocument', 'getDocumentList', {
+    for (;;) {
+      const rows = await this.call<any>("InternetDocument", "getDocumentList", {
         DateTimeFrom: dateFrom,
         DateTimeTo: dateTo,
         Page: String(page),
-        GetFullList: '0',
+        GetFullList: "0",
         Limit: String(limit),
       });
 
       for (const r of rows) {
-        if (!NovaPoshtaApiService.DELIVERED_STATE_IDS.has(String(r.StateId ?? ''))) continue;
         const number = NovaPoshtaApiService.text(r.IntDocNumber ?? r.Number);
-        const deliveredAt = NovaPoshtaApiService.parseNpDateTime(r.RecipientDateTime);
-        if (number && deliveredAt) out.push({ number, deliveredAt });
+        if (!number) continue;
+
+        const statusId = NovaPoshtaApiService.text(r.StateId);
+        const delivered = statusId
+          ? NovaPoshtaApiService.DELIVERED_STATE_IDS.has(statusId)
+          : false;
+        const deliveredAt = NovaPoshtaApiService.parseNpDateTime(
+          r.RecipientDateTime,
+        );
+        // pDateStart = дата самого документа (коли створили накладну в кабінеті).
+        // Це DateTime (== CreateTime), а НЕ EWDateCreated (мить формування ЕН, ~2 год
+        // пізніше — саме її показує «Створено» в історії руху).
+        const dateStart = NovaPoshtaApiService.parseNpDateTime(r.DateTime);
+
+        base.push({
+          number,
+          statusId,
+          statusName: NovaPoshtaApiService.text(r.StateName),
+          // dateStatus поки null — реєстр НЕ містить дати поточного статусу
+          // (DateLastUpdatedStatus = дата створення). Заповнюємо з трекінгу нижче.
+          dateStatus: null,
+          dateStart,
+          dateDelivered: delivered ? deliveredAt : null,
+          city: NovaPoshtaApiService.text(r.CityRecipientDescription),
+          warehouse: NovaPoshtaApiService.text(r.RecipientAddressDescription),
+          phone: NovaPoshtaApiService.text(
+            r.RecipientsPhone ?? r.RecipientContactPhone,
+          ),
+        });
       }
 
       if (rows.length < limit) break; // остання сторінка
@@ -440,7 +514,38 @@ export class NovaPoshtaApiService {
       if (page > 100) break; // запобіжник (до 20 000 накладних за вікно)
     }
 
-    return out;
+    // 2) Дата ПОТОЧНОГО статусу (у відділенні / забрали / в дорозі) є лише в трекінгу
+    //    (getStatusDocuments). Тректимо чанками по 100 і беремо час ОСТАННЬОГО кроку
+    //    історії руху — це і є мить, коли статус став поточним.
+    const statusAt = new Map<string, Date | null>();
+    const CHUNK = 100;
+    for (let i = 0; i < base.length; i += CHUNK) {
+      const slice = base.slice(i, i + CHUNK);
+      try {
+        const tracked = await this.track(
+          slice.map((b) => ({ number: b.number, phone: b.phone ?? undefined })),
+        );
+        for (const t of tracked) {
+          const last = t.history[t.history.length - 1];
+          statusAt.set(
+            t.number,
+            last ? NovaPoshtaApiService.parseFlexibleNpDate(last.datetime) : null,
+          );
+        }
+      } catch (e) {
+        // Чанк без статус-дат — не критично: спрацює запасний варіант нижче.
+        this.logger.warn(
+          `collectStatuses: трек чанку (${slice.length}) впав — ${e.message}`,
+        );
+      }
+    }
+
+    // dateStatus: час останнього кроку історії; якщо трек не дав — дата вручення,
+    // інакше дата документа (щоб поле не лишалось порожнім).
+    return base.map(({ phone, ...b }) => ({
+      ...b,
+      dateStatus: statusAt.get(b.number) ?? b.dateDelivered ?? b.dateStart,
+    }));
   }
 
   /* ── tracking (monitoring) ──────────────────────────────────────────── */
@@ -451,17 +556,17 @@ export class NovaPoshtaApiService {
     const documents = parcels
       .map((p) => ({
         DocumentNumber: NovaPoshtaApiService.text(p.number),
-        Phone: NovaPoshtaApiService.text(p.phone) ?? '',
+        Phone: NovaPoshtaApiService.text(p.phone) ?? "",
       }))
       .filter((d) => d.DocumentNumber);
 
     if (documents.length === 0) {
-      throw new BadRequestException('Вкажіть щонайменше один номер ТТН');
+      throw new BadRequestException("Вкажіть щонайменше один номер ТТН");
     }
 
     const rows = await this.call<any>(
-      'TrackingDocument',
-      'getStatusDocuments',
+      "TrackingDocument",
+      "getStatusDocuments",
       { Documents: documents },
     );
 
@@ -482,7 +587,7 @@ export class NovaPoshtaApiService {
           }))
         : NovaPoshtaApiService.synthesizeHistory(r);
       return {
-        number: NovaPoshtaApiService.text(r.Number) ?? '',
+        number: NovaPoshtaApiService.text(r.Number) ?? "",
         status: NovaPoshtaApiService.text(r.Status),
         status_code: statusCode,
         city_sender: NovaPoshtaApiService.text(r.CitySender),
@@ -518,21 +623,25 @@ export class NovaPoshtaApiService {
     limit?: number;
   }): Promise<{ items: NovaPoshtaShipment[]; page: number; limit: number }> {
     const page = Math.max(1, Math.trunc(params.page ?? 1) || 1);
-    const limit = Math.min(Math.max(Math.trunc(params.limit ?? 50) || 50, 1), 100);
+    const limit = Math.min(
+      Math.max(Math.trunc(params.limit ?? 50) || 50, 1),
+      100,
+    );
 
-    const rows = await this.call<any>('InternetDocument', 'getDocumentList', {
+    const rows = await this.call<any>("InternetDocument", "getDocumentList", {
       DateTimeFrom: params.dateFrom,
       DateTimeTo: params.dateTo,
       Page: String(page),
-      GetFullList: '0',
+      GetFullList: "0",
       Limit: String(limit),
     });
+    console.log(rows, "ROWS");
 
     const items = rows.map((r) => {
       const settlement = r.SettlmentAddressData ?? {};
       return {
         ref: NovaPoshtaApiService.text(r.Ref),
-        number: NovaPoshtaApiService.text(r.IntDocNumber ?? r.Number) ?? '',
+        number: NovaPoshtaApiService.text(r.IntDocNumber ?? r.Number) ?? "",
         date_created: NovaPoshtaApiService.text(r.DateTime),
         cost: NovaPoshtaApiService.num(r.CostOnSite ?? r.Cost),
         weight: NovaPoshtaApiService.num(r.Weight),
@@ -574,12 +683,17 @@ export class NovaPoshtaApiService {
     if (items.length > 0) {
       try {
         const tracked = await this.track(
-          items.map((i) => ({ number: i.number, phone: i.recipient_phone ?? undefined })),
+          items.map((i) => ({
+            number: i.number,
+            phone: i.recipient_phone ?? undefined,
+          })),
         );
         historyByNumber = new Map(tracked.map((tr) => [tr.number, tr.history]));
       } catch (e) {
         // Історія — не критична: якщо трек упав, віддаємо список без неї.
-        this.logger.warn(`Не вдалося прикріпити історію до відправлень: ${e.message}`);
+        this.logger.warn(
+          `Не вдалося прикріпити історію до відправлень: ${e.message}`,
+        );
       }
     }
     const itemsWithHistory: NovaPoshtaShipment[] = items.map((i) => ({
@@ -596,15 +710,15 @@ export class NovaPoshtaApiService {
     const query = NovaPoshtaApiService.text(find);
     if (!query) return [];
 
-    const rows = await this.call<any>('Address', 'getCities', {
+    const rows = await this.call<any>("Address", "getCities", {
       FindByString: query,
       Limit: String(Math.min(Math.max(limit, 1), 50)),
-      Page: '1',
+      Page: "1",
     });
 
     return rows.map((r) => ({
-      ref: NovaPoshtaApiService.text(r.Ref) ?? '',
-      name: NovaPoshtaApiService.text(r.Description) ?? '',
+      ref: NovaPoshtaApiService.text(r.Ref) ?? "",
+      name: NovaPoshtaApiService.text(r.Description) ?? "",
       area: NovaPoshtaApiService.text(r.AreaDescription),
       settlement_type: NovaPoshtaApiService.text(r.SettlementTypeDescription),
     }));
@@ -617,18 +731,18 @@ export class NovaPoshtaApiService {
   ): Promise<NovaPoshtaWarehouse[]> {
     const ref = NovaPoshtaApiService.text(cityRef);
     if (!ref) {
-      throw new BadRequestException('Не вказано місто (CityRef)');
+      throw new BadRequestException("Не вказано місто (CityRef)");
     }
 
-    const rows = await this.call<any>('Address', 'getWarehouses', {
+    const rows = await this.call<any>("Address", "getWarehouses", {
       CityRef: ref,
-      FindByString: NovaPoshtaApiService.text(find) ?? '',
+      FindByString: NovaPoshtaApiService.text(find) ?? "",
       Limit: String(Math.min(Math.max(limit, 1), 100)),
-      Page: '1',
+      Page: "1",
     });
 
     return rows.map((r) => ({
-      ref: NovaPoshtaApiService.text(r.Ref) ?? '',
+      ref: NovaPoshtaApiService.text(r.Ref) ?? "",
       number: NovaPoshtaApiService.text(r.Number),
       description: NovaPoshtaApiService.text(r.Description),
       short_address: NovaPoshtaApiService.text(r.ShortAddress),
@@ -645,9 +759,9 @@ export class NovaPoshtaApiService {
    */
   async resolveSender(): Promise<NovaPoshtaSender> {
     const counterparties = await this.call<any>(
-      'Counterparty',
-      'getCounterparties',
-      { CounterpartyProperty: 'Sender', Page: '1' },
+      "Counterparty",
+      "getCounterparties",
+      { CounterpartyProperty: "Sender", Page: "1" },
     );
     const sender = counterparties[0];
     const counterpartyRef = NovaPoshtaApiService.text(sender?.Ref);
@@ -657,9 +771,9 @@ export class NovaPoshtaApiService {
     let phone: string | null = null;
     if (counterpartyRef) {
       const contacts = await this.call<any>(
-        'Counterparty',
-        'getCounterpartyContactPersons',
-        { Ref: counterpartyRef, Page: '1' },
+        "Counterparty",
+        "getCounterpartyContactPersons",
+        { Ref: counterpartyRef, Page: "1" },
       );
       const contact = contacts[0];
       contactRef = NovaPoshtaApiService.text(contact?.Ref);
@@ -696,25 +810,25 @@ export class NovaPoshtaApiService {
     const sender = await this.resolveSender();
     if (!sender.counterparty_ref || !sender.contact_ref || !sender.phone) {
       throw new BadGatewayException(
-        'Не вдалося визначити відправника за API-ключем Нової Пошти',
+        "Не вдалося визначити відправника за API-ключем Нової Пошти",
       );
     }
 
     const senderCity = NovaPoshtaApiService.text(senderCityRef);
     const senderWarehouse = NovaPoshtaApiService.text(senderWarehouseRef);
     if (!senderCity || !senderWarehouse) {
-      throw new BadRequestException('Оберіть місто та відділення відправника');
+      throw new BadRequestException("Оберіть місто та відділення відправника");
     }
 
     // 1. Recipient counterparty (private person). Nova Poshta returns the
     //    counterparty ref plus a ContactPerson ref in the same response.
-    const recipients = await this.call<any>('Counterparty', 'save', {
+    const recipients = await this.call<any>("Counterparty", "save", {
       FirstName: input.recipientFirstName,
-      MiddleName: input.recipientMiddleName ?? '',
+      MiddleName: input.recipientMiddleName ?? "",
       LastName: input.recipientLastName,
       Phone: input.recipientPhone,
-      CounterpartyType: 'PrivatePerson',
-      CounterpartyProperty: 'Recipient',
+      CounterpartyType: "PrivatePerson",
+      CounterpartyProperty: "Recipient",
     });
     const recipient = recipients[0];
     const recipientRef = NovaPoshtaApiService.text(recipient?.Ref);
@@ -723,23 +837,23 @@ export class NovaPoshtaApiService {
     );
     if (!recipientRef || !recipientContactRef) {
       throw new BadGatewayException(
-        'Нова Пошта не повернула отримувача — перевірте ПІБ і телефон',
+        "Нова Пошта не повернула отримувача — перевірте ПІБ і телефон",
       );
     }
 
     // 2. The waybill itself.
     const today = new Date();
-    const dateStr = `${String(today.getDate()).padStart(2, '0')}.${String(
+    const dateStr = `${String(today.getDate()).padStart(2, "0")}.${String(
       today.getMonth() + 1,
-    ).padStart(2, '0')}.${today.getFullYear()}`;
+    ).padStart(2, "0")}.${today.getFullYear()}`;
 
     const properties: Record<string, unknown> = {
-      PayerType: input.payerType ?? 'Recipient',
-      PaymentMethod: 'Cash',
+      PayerType: input.payerType ?? "Recipient",
+      PaymentMethod: "Cash",
       DateTime: dateStr,
-      CargoType: 'Parcel',
+      CargoType: "Parcel",
       Weight: String(input.weight),
-      ServiceType: input.serviceType ?? 'WarehouseWarehouse',
+      ServiceType: input.serviceType ?? "WarehouseWarehouse",
       SeatsAmount: String(input.seatsAmount ?? 1),
       Description: input.description,
       Cost: String(input.cost),
@@ -761,23 +875,23 @@ export class NovaPoshtaApiService {
     if (input.backwardMoney && input.backwardMoney > 0) {
       properties.BackwardDeliveryData = [
         {
-          PayerType: 'Recipient',
-          CargoType: 'Money',
+          PayerType: "Recipient",
+          CargoType: "Money",
           RedeliveryString: String(input.backwardMoney),
         },
       ];
     }
 
     const created = await this.call<any>(
-      'InternetDocument',
-      'save',
+      "InternetDocument",
+      "save",
       properties,
     );
     const doc = created[0];
     const number = NovaPoshtaApiService.text(doc?.IntDocNumber);
     const ref = NovaPoshtaApiService.text(doc?.Ref);
     if (!number || !ref) {
-      throw new BadGatewayException('Нова Пошта не повернула номер накладної');
+      throw new BadGatewayException("Нова Пошта не повернула номер накладної");
     }
 
     this.logger.log(`Nova Poshta shipment created: ${number}`);

@@ -187,10 +187,16 @@ Nova Poshta) when a task touches their mapping.
   delivery-phase graph inline and the movement timeline on expand with **no per-row request** —
   a tracking failure degrades to an empty history, never a failed list.
 - **`novaposhta/novaposhta-sync.service.ts`** — a `@Cron('0 0 */3 * * *')` job (every 3 h,
-  warmed 10 s after boot) that pulls **our** shipments for the last **40 days**, keeps the
-  delivered ones, and calls the Oracle `SetDateDelivered` procedure for each. The 40-day window
-  is deliberately wider than the 3-h step so a missed tick self-heals, and the procedure is
-  idempotent. An
+  warmed 10 s after boot) that pulls **our** shipments for the last **40 days** and upserts the
+  **current status of every one of them** (any state, not only delivered) into Oracle via
+  `p_post.SetStatus(pCodePost, pDocNumber, pStatusId, pStatusName, pDateStatus, pDateStart,
+  pDateDelivered, pCity, pWareHouse, pErr)` — one `executeMany` batch. Status data is assembled by
+  `collectStatuses` straight from `getDocumentList` (no per-parcel tracking call); `pDateDelivered`
+  is filled only for delivered states (9/10/11). SetStatus reports failures through its `pErr`
+  **IN OUT** arg rather than by raising, so `setStatusBatch` binds it `BIND_INOUT` and logs any
+  non-empty message (the procedure name is overridable with `ORACLE_STATUS_PROC`, post code with
+  `ORACLE_POST_CODE`). The 40-day window is deliberately wider than the 3-h step so a missed tick
+  self-heals, and the procedure is idempotent. An
   in-process `running` flag prevents overlapping ticks; multi-instance would need a leader lock.
   The last run (when, window, collected/written, duration, ok/error) plus the `running` flag are
   kept in memory and surfaced at `GET /api/novaposhta/sync-status`, which the
