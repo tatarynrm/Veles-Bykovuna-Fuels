@@ -171,12 +171,31 @@ Nova Poshta) when a task touches their mapping.
   searches cities/warehouses, resolves the sender from the API key, and **creates express
   waybills** (`POST /api/novaposhta/shipments`, blocked for guest by `ReadOnlyGuard` because
   it writes to the live account). Dates go out as `DD.MM.YYYY`. Delivered states are `StateId`
-  9/10/11.
-- **`novaposhta/novaposhta-sync.service.ts`** — a `@Cron('0 */20 * * * *')` job (warmed 10 s
-  after boot) that pulls **our** shipments for the last **40 days**, keeps the delivered ones,
-  and calls the Oracle `SetDateDelivered` procedure for each. The 40-day window is deliberately
-  wider than the 20-min step so a missed tick self-heals, and the procedure is idempotent. An
+  9/10/11. **Movement history:** the live `getStatusDocuments` response carries **no**
+  `TrackingUpdateHistory` array (verified against a real TTN) — only a flat current status plus
+  assorted date fields. So `track()` maps `TrackingUpdateHistory` when a proxy/mock supplies it,
+  otherwise **synthesizes** a coarse timeline (`synthesizeHistory`) from the dates NP does return:
+  Створено (`DateCreated`) → [В дорозі (`DateMoving`)] → Прибув у відділення (`ActualDeliveryDate`)
+  → Отримано (`RecipientDateTime`). Two traps live here: those date fields come back in **mixed
+  formats** on different keys (`DD-MM-YYYY`, `DD.MM.YYYY`, `YYYY-MM-DD`, even `HH:MM DD.MM.YYYY`) —
+  parse via `parseFlexibleNpDate` and re-emit a normalized `YYYY-MM-DD HH:MM:SS` so the frontend
+  can format it; and **`ActualDeliveryDate` is the branch-arrival time, not the hand-over** — the
+  actual pickup is `RecipientDateTime`, so they are two distinct steps. NP exposes no per-hub scan
+  trace via the API, so this is as full as it gets without recording status snapshots over time.
+  `listShipments` **embeds** each waybill's `history` (and `state_id`) by batch-tracking the whole
+  page in one `getStatusDocuments` call, so the `/workflow/novaposhta/shipments` list shows the
+  delivery-phase graph inline and the movement timeline on expand with **no per-row request** —
+  a tracking failure degrades to an empty history, never a failed list.
+- **`novaposhta/novaposhta-sync.service.ts`** — a `@Cron('0 0 */3 * * *')` job (every 3 h,
+  warmed 10 s after boot) that pulls **our** shipments for the last **40 days**, keeps the
+  delivered ones, and calls the Oracle `SetDateDelivered` procedure for each. The 40-day window
+  is deliberately wider than the 3-h step so a missed tick self-heals, and the procedure is
+  idempotent. An
   in-process `running` flag prevents overlapping ticks; multi-instance would need a leader lock.
+  The last run (when, window, collected/written, duration, ok/error) plus the `running` flag are
+  kept in memory and surfaced at `GET /api/novaposhta/sync-status`, which the
+  **`/workflow/sync/novaposhta`** page polls (every 20 s). There is no per-item progress — it is
+  one batch call, so the page shows last-run status, not a live table like GPS.
 - **`oracle/oracle.service.ts`** — the **pure Oracle access layer** (`node-oracledb`, THIN
   mode, no Instant Client), lazy connection pool (`poolMax: 4`). Imported with `import oracledb
   = require('oracledb')` because `esModuleInterop` is off. It exposes only generics — `query()`
@@ -207,8 +226,9 @@ Nova Poshta) when a task touches their mapping.
   `RUPTELA_RETRY_COOLDOWN_MIN` (default 10) minutes instead of retrying every minute. Live
   per-vehicle progress is kept in memory and surfaced at `GET /api/gps/progress` (+
   `POST /api/gps/sync` to run a pass; blocked for guest), which the
-  **`/workflow/ruptela/realtime-coordinates`** page polls to visualise the ingest (no manual-run
+  **`/workflow/sync/gps`** page polls (every 20 s) to visualise the ingest (no manual-run
   button — the cron keeps it going and the page shows the cooldown when Ruptela is down).
+  The old `/workflow/ruptela/realtime-coordinates` URL now redirects here.
 
 Cross-vendor endpoints (`transactions`, `cards`, `merchants`, `analytics`) take a
 `brand=ALL|OKKO|SHELL` query param, fan out to the relevant services, map Shell's PascalCase
@@ -257,7 +277,12 @@ different architectures (see *Architecture direction* above):
   merchants, the amber `ruptela/*` telematics section, `novaposhta/*`, `oracle`, the API
   docs/console, the `ui-kit` gallery). Still on the **legacy flat layout**; being migrated to
   `features/` per the direction above. The `workflow/` URL prefix is real — links and the
-  command palette use `/workflow/...`.
+  command palette use `/workflow/...`. The **«Синхронізація з базою»** section
+  (`workflow/sync/{gps,novaposhta}`, its own sidebar group above the fleet) is the first slice
+  landed under FSD: `features/sync/` with `ui/` (`SyncShell` + the two views) and `model/`
+  (`usePolledStatus` — a 20 s poller, `types.ts`); the route files are thin. Both views are
+  Ukrainian-only ops screens (in the i18n `EXCLUDE`); only the shell tabs / sidebar labels are
+  translated (`sync.*`, `nav.dbSync`).
 
 Every page under `src/app/` is a `'use client'` component. The shared pieces:
 

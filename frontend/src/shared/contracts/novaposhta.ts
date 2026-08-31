@@ -8,6 +8,16 @@
  * live in `@/lib/novaposhta`, which re-exports everything here.
  */
 
+/** One movement-history entry of a parcel (TrackingUpdateHistory rows). */
+export interface NovaPoshtaTrackingHistoryEntry {
+  status_code: string | null;
+  status: string | null;
+  /** «YYYY-MM-DD HH:MM:SS» as Nova Poshta returns it. */
+  datetime: string | null;
+  city: string | null;
+  warehouse: string | null;
+}
+
 export interface NovaPoshtaTracking {
   number: string;
   status: string | null;
@@ -25,6 +35,8 @@ export interface NovaPoshtaTracking {
   actual_delivery_date: string | null;
   delivered: boolean;
   phone_recipient: string | null;
+  /** Movement timeline (TrackingUpdateHistory), oldest-first as НП returns it. */
+  history: NovaPoshtaTrackingHistoryEntry[];
   error: string | null;
 }
 
@@ -42,11 +54,15 @@ export interface NovaPoshtaShipment {
   city_recipient: string | null;
   warehouse_recipient: string | null;
   state_name: string | null;
+  /** StatusCode taxonomy id (StateId) — drives the delivery-phase graph. */
+  state_id: string | null;
   payer_type: string | null;
   description: string | null;
   additional_information: string | null;
   note: string | null;
   scheduled_delivery_date: string | null;
+  /** Movement timeline, embedded so the list needs no per-row tracking call. */
+  history: NovaPoshtaTrackingHistoryEntry[];
 }
 
 export interface NovaPoshtaCity {

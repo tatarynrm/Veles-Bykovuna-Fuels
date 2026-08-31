@@ -17,9 +17,15 @@ export class NovaPoshtaController {
     return this.novaposhta.getStatus();
   }
 
+  /** Live status of the delivery-date sync (last run + whether one is in progress). */
+  @Get('sync-status')
+  getSyncStatus() {
+    return this.syncService.getSyncStatus();
+  }
+
   /**
    * Ручний запуск синхронізації дат доставки в Oracle (те саме, що робить крон
-   * кожні 20 хв). Зручно для першого backfill і дебагу.
+   * кожні 3 год). Зручно для першого backfill і дебагу.
    */
   @Post('sync-deliveries')
   syncDeliveries() {

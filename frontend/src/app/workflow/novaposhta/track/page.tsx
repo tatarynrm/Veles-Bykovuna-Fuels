@@ -24,8 +24,12 @@ import {
   Package,
   Clock,
   Trash2,
+  History,
+  ChevronDown,
 } from 'lucide-react';
 import { t } from '@/lib/i18n';
+import type { NovaPoshtaTrackingHistoryEntry } from '@/lib/novaposhta';
+import { MovementTimeline } from '@/components/NovaPoshtaTimeline';
 
 const RECENT_KEY = 'veles_np_recent';
 
@@ -311,7 +315,44 @@ function TrackingCard({ row }: { row: NovaPoshtaTracking }) {
           icon={CheckCircle2}
         />
       </dl>
+
+      {row.history.length > 0 && <HistoryTimeline entries={row.history} />}
     </article>
+  );
+}
+
+/**
+ * Рух посилки (TrackingUpdateHistory) — згорнутий за замовчуванням, бо історія
+ * буває довга. НП віддає записи від найстарішого; показуємо найновіший згори.
+ */
+function HistoryTimeline({ entries }: { entries: NovaPoshtaTrackingHistoryEntry[] }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="mt-3 border-t border-bdr-subtle pt-3">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between text-2xs font-medium text-txt-secondary transition-colors hover:text-txt-primary"
+      >
+        <span className="flex items-center gap-1.5">
+          <History className="h-3.5 w-3.5 text-txt-muted" />
+          {t('nova.movementHistory')} ({entries.length})
+        </span>
+        <ChevronDown
+          className={`h-3.5 w-3.5 text-txt-muted transition-transform duration-200 ${
+            open ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
+
+      {open && (
+        <div className="mt-2.5">
+          <MovementTimeline entries={entries} />
+        </div>
+      )}
+    </div>
   );
 }
 

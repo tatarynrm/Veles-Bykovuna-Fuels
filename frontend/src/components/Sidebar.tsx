@@ -30,6 +30,7 @@ import {
   PackagePlus,
   BookOpen,
   Database,
+  DownloadCloud,
 } from 'lucide-react';
 import { t } from '@/lib/i18n';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -48,6 +49,12 @@ const primaryNav = [
   { href: '/workflow/analytics', label: 'common.fuelAnalytics', icon: BarChart3, tour: 'nav-analytics' },
   { href: '/calculator', label: 'calc.title', icon: Route, tour: 'nav-calculator' },
   { href: '/workflow/merchants', label: 'common.stationNetwork', icon: MapPin, tour: 'nav-merchants' },
+];
+
+/** Фонові закачки у базу (Oracle) — GPS-історія та дати доставки Нової Пошти. */
+const syncNav = [
+  { href: '/workflow/sync/gps', label: 'sync.gpsToOracle', icon: DownloadCloud, tour: 'nav-sync-gps' },
+  { href: '/workflow/sync/novaposhta', label: 'sync.npToOracle', icon: Package, tour: 'nav-sync-np' },
 ];
 
 const fleetNav = [
@@ -311,6 +318,13 @@ export default function Sidebar({ apiStatus }: SidebarProps) {
           <SectionLabel>{t('nav.overview')}</SectionLabel>
           <div className="space-y-0.5">
             {primaryNav.map((item) => (
+              <NavLink key={item.href} {...item} />
+            ))}
+          </div>
+
+          <SectionLabel>{t('nav.dbSync')}</SectionLabel>
+          <div className="space-y-0.5" data-tour="nav-sync">
+            {syncNav.map((item) => (
               <NavLink key={item.href} {...item} />
             ))}
           </div>

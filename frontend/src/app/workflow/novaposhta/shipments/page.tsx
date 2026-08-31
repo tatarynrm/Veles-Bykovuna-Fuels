@@ -18,9 +18,11 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   PackageSearch,
 } from 'lucide-react';
 import { t } from '@/lib/i18n';
+import { DeliveryStepper, MovementTimeline } from '@/components/NovaPoshtaTimeline';
 
 /** ISO YYYY-MM-DD for the native date inputs. */
 function isoDate(d: Date): string {
@@ -39,6 +41,16 @@ export default function NovaPoshtaShipmentsPage() {
   const [rows, setRows] = useState<NovaPoshtaShipment[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Which rows are expanded to show the full movement timeline (data is embedded). */
+  const [openRows, setOpenRows] = useState<Set<string>>(new Set());
+
+  const toggleRow = useCallback((number: string) => {
+    setOpenRows((prev) => {
+      const next = new Set(prev);
+      next.has(number) ? next.delete(number) : next.add(number);
+      return next;
+    });
+  }, []);
 
   const load = useCallback(
     async (pageNum: number) => {
@@ -53,6 +65,7 @@ export default function NovaPoshtaShipmentsPage() {
         });
         setRows(res.items);
         setPage(res.page);
+        setOpenRows(new Set());
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
         setRows([]);
@@ -156,8 +169,10 @@ export default function NovaPoshtaShipmentsPage() {
                     ),
                   ),
                 );
+                const open = openRows.has(r.number);
                 return (
-                  <tr key={r.ref ?? r.number}>
+                  <React.Fragment key={r.ref ?? r.number}>
+                  <tr className={open ? 'bg-surface-inset/30' : undefined}>
                     <td className="font-mono font-medium text-txt-primary">{r.number}</td>
                     <td className="whitespace-nowrap text-txt-secondary">
                       {r.date_created ? formatDate(r.date_created) : NO_DATA}
@@ -194,7 +209,11 @@ export default function NovaPoshtaShipmentsPage() {
                       )}
                     </td>
                     <td>
-                      <span className="badge badge-neutral">{r.state_name ?? NO_DATA}</span>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="badge badge-neutral w-fit">{r.state_name ?? NO_DATA}</span>
+                        {/* «Де зараз посилка» — графік одразу, без відкриття */}
+                        <DeliveryStepper code={r.state_id} compact />
+                      </div>
                     </td>
                     <td className="text-right text-txt-secondary">
                       {r.weight != null ? `${r.weight} ${t('unit.kg')}` : NO_DATA}
@@ -203,15 +222,41 @@ export default function NovaPoshtaShipmentsPage() {
                       {r.cost_on_site != null ? formatCurrency(r.cost_on_site) : NO_DATA}
                     </td>
                     <td className="text-right">
-                      <Link
-                        href={`/workflow/novaposhta/track?numbers=${r.number}`}
-                        className="btn btn-ghost btn-icon"
-                        title={t('nova.tracking')}
-                      >
-                        <PackageSearch className="h-4 w-4" />
-                      </Link>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => toggleRow(r.number)}
+                          aria-expanded={open}
+                          disabled={r.history.length === 0}
+                          className="btn btn-ghost btn-icon disabled:opacity-40"
+                          title={t('nova.movementHistory')}
+                        >
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+                          />
+                        </button>
+                        <Link
+                          href={`/workflow/novaposhta/track?numbers=${r.number}`}
+                          className="btn btn-ghost btn-icon"
+                          title={t('nova.tracking')}
+                        >
+                          <PackageSearch className="h-4 w-4" />
+                        </Link>
+                      </div>
                     </td>
                   </tr>
+                  {open && r.history.length > 0 && (
+                    <tr className="bg-surface-inset/30">
+                      <td colSpan={9} className="px-4 py-4">
+                        <div className="mx-auto max-w-3xl space-y-4">
+                          {/* Повний графік фаз + історія руху (дані вже в списку) */}
+                          <DeliveryStepper code={r.state_id} />
+                          <MovementTimeline entries={r.history} />
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </React.Fragment>
                 );
               })}
             </tbody>

@@ -21,6 +21,7 @@ import type {
 
 export type {
   NovaPoshtaTracking,
+  NovaPoshtaTrackingHistoryEntry,
   NovaPoshtaShipment,
   NovaPoshtaCity,
   NovaPoshtaWarehouse,
@@ -85,6 +86,14 @@ export function toNovaPoshtaDate(d: Date): string {
     d.getMonth() + 1,
   ).padStart(2, '0')}.${d.getFullYear()}`;
 }
+
+/** Ordered delivery phases for the progress graph. `problem` sits outside the line. */
+export const DELIVERY_PHASES: TrackingPhase[] = [
+  'created',
+  'in_transit',
+  'arrived',
+  'delivered',
+];
 
 export function trackingPhase(code: string | null): TrackingPhase {
   switch (code) {

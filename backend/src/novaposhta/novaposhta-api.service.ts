@@ -46,6 +46,16 @@ interface NpEnvelope<T> {
 
 /* ── normalized shapes returned to the controller ───────────────────────── */
 
+/** One movement-history entry of a parcel (TrackingUpdateHistory rows). */
+export interface NovaPoshtaTrackingHistoryEntry {
+  status_code: string | null;
+  status: string | null;
+  /** «YYYY-MM-DD HH:MM:SS» as Nova Poshta returns it. */
+  datetime: string | null;
+  city: string | null;
+  warehouse: string | null;
+}
+
 /** One parcel's live status (TrackingDocument.getStatusDocuments). */
 export interface NovaPoshtaTracking {
   number: string;
@@ -69,6 +79,8 @@ export interface NovaPoshtaTracking {
   delivered: boolean;
   /** Raw phone tail Nova Poshta echoes back, when a phone was supplied. */
   phone_recipient: string | null;
+  /** Movement timeline (TrackingUpdateHistory), oldest-first as НП returns it. */
+  history: NovaPoshtaTrackingHistoryEntry[];
   error: string | null;
 }
 
@@ -91,12 +103,16 @@ export interface NovaPoshtaShipment {
   city_recipient: string | null;
   warehouse_recipient: string | null;
   state_name: string | null;
+  /** StatusCode taxonomy id (StateId) — drives the delivery-phase graph on the UI. */
+  state_id: string | null;
   payer_type: string | null;
   /** Cargo description and any dispatcher notes / extra instructions. */
   description: string | null;
   additional_information: string | null;
   note: string | null;
   scheduled_delivery_date: string | null;
+  /** Movement timeline, embedded so the list needs no per-row tracking call. */
+  history: NovaPoshtaTrackingHistoryEntry[];
 }
 
 export interface NovaPoshtaCity {
@@ -229,6 +245,9 @@ export class NovaPoshtaApiService {
   /** Delivered statuses in Nova Poshta's StatusCode taxonomy. */
   private static DELIVERED_CODES = new Set(['9', '10', '11']);
 
+  /** «Прибув у відділення / поштомат» — parcel is physically at the destination. */
+  private static ARRIVED_CODES = new Set(['7', '8']);
+
   /**
    * `getDocumentList` уже містить StateId і RecipientDateTime (фактичну дату вручення),
    * тож окремий трекінг не потрібен. StateId 9/10/11 = отримано.
@@ -249,6 +268,145 @@ export class NovaPoshtaApiService {
   }
 
   /**
+   * Дати в `getStatusDocuments` приходять у РІЗНИХ форматах на різних полях:
+   * `DD-MM-YYYY HH:MM:SS`, `DD.MM.YYYY HH:MM:SS`, `YYYY-MM-DD HH:MM:SS` і навіть
+   * `HH:MM DD.MM.YYYY` (час спереду). Розбираємо всі → Date (локальний час), або null.
+   */
+  private static parseFlexibleNpDate(value?: string): Date | null {
+    const s = (value ?? '').trim();
+    if (!s || s.startsWith('0001')) return null;
+    const mk = (y: number, mo: number, d: number, h = 0, mi = 0, se = 0) => {
+      const dt = new Date(y, mo - 1, d, h, mi, se);
+      return isNaN(dt.getTime()) ? null : dt;
+    };
+    let m: RegExpExecArray | null;
+    // DD[.-]MM[.-]YYYY [HH:MM[:SS]]
+    if ((m = /^(\d{2})[.\-](\d{2})[.\-](\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(s))) {
+      const [, d, mo, y, h, mi, se] = m;
+      return mk(+y, +mo, +d, +(h ?? 0), +(mi ?? 0), +(se ?? 0));
+    }
+    // YYYY-MM-DD[ T]HH:MM[:SS]
+    if ((m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(s))) {
+      const [, y, mo, d, h, mi, se] = m;
+      return mk(+y, +mo, +d, +(h ?? 0), +(mi ?? 0), +(se ?? 0));
+    }
+    // HH:MM[:SS] DD.MM.YYYY (час спереду)
+    if ((m = /^(\d{2}):(\d{2})(?::(\d{2}))?[ ](\d{2})[.\-](\d{2})[.\-](\d{4})$/.exec(s))) {
+      const [, h, mi, se, d, mo, y] = m;
+      return mk(+y, +mo, +d, +h, +mi, +(se ?? 0));
+    }
+    const iso = new Date(s.replace(' ', 'T'));
+    return isNaN(iso.getTime()) ? null : iso;
+  }
+
+  /** «YYYY-MM-DD HH:MM:SS» — стабільний формат, який фронт (formatDateTime) точно розбере. */
+  private static toWallClock(d: Date): string {
+    const p = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  }
+
+  /**
+   * Жива відповідь `getStatusDocuments` НЕ містить `TrackingUpdateHistory` — лише
+   * плаский поточний статус і набір дат (перевірено на реальній ТТН). Коли історії
+   * в відповіді немає, синтезуємо коротку шкалу руху з полів, які НП реально віддає:
+   * **Створено** (DateCreated) → **В дорозі** (DateMoving) → **Поточний стан / Отримано**
+   * (ActualDeliveryDate|RecipientDateTime для вручених, інакше TrackingUpdateDate|DateScan).
+   *
+   * Кожен крок додаємо лише за валідної дати; сортуємо за часом (старіші згори, як
+   * віддав би сам API) і прибираємо дублікати за (час + код), напр. коли поточний
+   * стан і є врученням. Локацію ставимо лише там, де вона однозначна: місто/відділення
+   * одержувача — для «прибув»/«отримано», відправника — для «створено».
+   */
+  private static synthesizeHistory(r: any): NovaPoshtaTrackingHistoryEntry[] {
+    const statusCode = NovaPoshtaApiService.text(r.StatusCode);
+    const delivered = statusCode ? NovaPoshtaApiService.DELIVERED_CODES.has(statusCode) : false;
+    const arrived = statusCode ? NovaPoshtaApiService.ARRIVED_CODES.has(statusCode) : false;
+    const citySender = NovaPoshtaApiService.text(r.CitySender);
+    const cityRecipient = NovaPoshtaApiService.text(r.CityRecipient);
+    const whSender = NovaPoshtaApiService.text(r.WarehouseSender);
+    const whRecipient = NovaPoshtaApiService.text(r.WarehouseRecipient);
+
+    const candidates: Array<NovaPoshtaTrackingHistoryEntry & { _t: number }> = [];
+    const push = (
+      raw: any,
+      entry: Omit<NovaPoshtaTrackingHistoryEntry, 'datetime'>,
+    ) => {
+      const d = NovaPoshtaApiService.parseFlexibleNpDate(
+        NovaPoshtaApiService.text(raw) ?? undefined,
+      );
+      if (!d) return;
+      // Нормалізуємо в стабільний рядок — поля НП приходять у різних форматах.
+      candidates.push({
+        ...entry,
+        datetime: NovaPoshtaApiService.toWallClock(d),
+        _t: d.getTime(),
+      });
+    };
+
+    const status = NovaPoshtaApiService.text(r.Status);
+
+    // 1) Створено — електронний документ.
+    push(r.DateCreated, {
+      status_code: '1',
+      status: 'Відправлення створено',
+      city: citySender,
+      warehouse: whSender ?? 'Електронний документ створено',
+    });
+
+    // 2) Вирушило (окрема дата початку руху, якщо НП її віддала — часто порожня).
+    push(r.DateMoving, {
+      status_code: '5',
+      status: 'Відправлення прямує до міста призначення',
+      city: citySender,
+      warehouse: null,
+    });
+
+    // 3) Прибуло у відділення призначення. ActualDeliveryDate у НП — це саме
+    //    момент ПРИБУТТЯ на відділення (готове до видачі), а не вручення: для
+    //    вручених воно менше за RecipientDateTime. Тож це окремий, більш ранній крок.
+    if (delivered || arrived) {
+      push(r.ActualDeliveryDate ?? r.TrackingUpdateDate ?? r.DateScan, {
+        status_code: '7',
+        status: arrived ? (status ?? 'Прибув у відділення') : 'Прибув у відділення',
+        city: cityRecipient,
+        warehouse: whRecipient,
+      });
+    }
+
+    // 4a) Вручено — RecipientDateTime це фактичний момент отримання одержувачем.
+    if (delivered) {
+      push(r.RecipientDateTime ?? r.DateScan ?? r.TrackingUpdateDate, {
+        status_code: statusCode,
+        status: status ?? 'Відправлення отримано',
+        city: cityRecipient,
+        warehouse: whRecipient,
+      });
+    } else if (!arrived) {
+      // 4b) Ще в дорозі — поточний стан із реальним текстом статусу.
+      push(r.TrackingUpdateDate ?? r.DateScan, {
+        status_code: statusCode,
+        status,
+        city: null,
+        warehouse: null,
+      });
+    }
+
+    candidates.sort((a, b) => a._t - b._t);
+    // Дедуп за (хвилина + код): різні поля НП можуть указувати на ту саму подію
+    // з різницею в секунди (напр. ActualDeliveryDate vs TrackingUpdateDate).
+    const seen = new Set<string>();
+    const out: NovaPoshtaTrackingHistoryEntry[] = [];
+    for (const c of candidates) {
+      const key = `${Math.floor(c._t / 60000)}|${c.status_code ?? ''}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const { _t, ...entry } = c;
+      out.push(entry);
+    }
+    return out;
+  }
+
+  /**
    * Наші доставлені відправлення за період: пагінує getDocumentList і повертає
    * пари { номер ТТН, дата вручення } лише для отриманих (StateId 9/10/11).
    * Використовується крон-джобом синхронізації дат доставки в Oracle.
@@ -261,7 +419,7 @@ export class NovaPoshtaApiService {
     const limit = 200;
     let page = 1;
 
-    for (;;) {
+    for (; ;) {
       const rows = await this.call<any>('InternetDocument', 'getDocumentList', {
         DateTimeFrom: dateFrom,
         DateTimeTo: dateTo,
@@ -309,6 +467,20 @@ export class NovaPoshtaApiService {
 
     return rows.map((r) => {
       const statusCode = NovaPoshtaApiService.text(r.StatusCode);
+      // The live getStatusDocuments response has no TrackingUpdateHistory (verified),
+      // so map it when a proxy/mock provides it, otherwise synthesize a coarse
+      // timeline from the date fields NP does return.
+      const history: NovaPoshtaTrackingHistoryEntry[] = Array.isArray(
+        r.TrackingUpdateHistory,
+      )
+        ? r.TrackingUpdateHistory.map((h: any) => ({
+            status_code: NovaPoshtaApiService.text(h.StatusCode),
+            status: NovaPoshtaApiService.text(h.Status),
+            datetime: NovaPoshtaApiService.text(h.DateTime),
+            city: NovaPoshtaApiService.text(h.City),
+            warehouse: NovaPoshtaApiService.text(h.Warehouse),
+          }))
+        : NovaPoshtaApiService.synthesizeHistory(r);
       return {
         number: NovaPoshtaApiService.text(r.Number) ?? '',
         status: NovaPoshtaApiService.text(r.Status),
@@ -330,6 +502,7 @@ export class NovaPoshtaApiService {
           ? NovaPoshtaApiService.DELIVERED_CODES.has(statusCode)
           : false,
         phone_recipient: NovaPoshtaApiService.text(r.PhoneRecipient),
+        history,
         // Per-document errors ride in an `error` field on the row itself.
         error: NovaPoshtaApiService.text(r.Error),
       };
@@ -354,6 +527,7 @@ export class NovaPoshtaApiService {
       GetFullList: '0',
       Limit: String(limit),
     });
+
     const items = rows.map((r) => {
       const settlement = r.SettlmentAddressData ?? {};
       return {
@@ -380,6 +554,8 @@ export class NovaPoshtaApiService {
           r.RecipientAddressDescription,
         ),
         state_name: NovaPoshtaApiService.text(r.StateName),
+        // StatusCode taxonomy (7=у відділенні, 9/10/11=отримано) — drives the phase graph.
+        state_id: NovaPoshtaApiService.text(r.StateId),
         payer_type: NovaPoshtaApiService.text(r.PayerType),
         description: NovaPoshtaApiService.text(r.Description),
         additional_information: NovaPoshtaApiService.text(
@@ -392,7 +568,26 @@ export class NovaPoshtaApiService {
       };
     });
 
-    return { items, page, limit };
+    // Прикріплюємо історію руху одним батч-запитом getStatusDocuments, щоб фронт
+    // отримав її разом зі списком і не робив окремий трек на кожну накладну.
+    let historyByNumber = new Map<string, NovaPoshtaTrackingHistoryEntry[]>();
+    if (items.length > 0) {
+      try {
+        const tracked = await this.track(
+          items.map((i) => ({ number: i.number, phone: i.recipient_phone ?? undefined })),
+        );
+        historyByNumber = new Map(tracked.map((tr) => [tr.number, tr.history]));
+      } catch (e) {
+        // Історія — не критична: якщо трек упав, віддаємо список без неї.
+        this.logger.warn(`Не вдалося прикріпити історію до відправлень: ${e.message}`);
+      }
+    }
+    const itemsWithHistory: NovaPoshtaShipment[] = items.map((i) => ({
+      ...i,
+      history: historyByNumber.get(i.number) ?? [],
+    }));
+
+    return { items: itemsWithHistory, page, limit };
   }
 
   /* ── reference lookups (create) ─────────────────────────────────────── */

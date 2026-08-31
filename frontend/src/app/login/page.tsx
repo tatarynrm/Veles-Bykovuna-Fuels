@@ -20,6 +20,13 @@ const QUICK_LOGINS = [
 /** Published on purpose — the guest role is read-only and enforced server-side. */
 const GUEST_CREDENTIALS = { user: 'guest', password: 'guest' };
 
+/**
+ * Гостьовий вхід тимчасово вимкнено. Має збігатися з бекендом:
+ * `AUTH_GUEST_ENABLED=false` у backend/.env. Щоб повернути — true тут і
+ * прибрати/увімкнути прапорець на бекенді.
+ */
+const GUEST_LOGIN_ENABLED = false;
+
 export default function LoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState('');
@@ -169,21 +176,23 @@ export default function LoginPage() {
             </form>
 
             {/* Guest access — credentials are public, so they are printed here. */}
-            <div className="hairline-t mt-7 pt-5">
-              <button
-                type="button"
-                onClick={() => submitLogin(GUEST_CREDENTIALS.user, GUEST_CREDENTIALS.password)}
-                disabled={loading}
-                className="btn btn-ghost w-full py-2.5 text-xs"
-              >
-                <Eye className="h-4 w-4" />
-                {t('auth.guestSignViewOnly')}
-              </button>
-              <p className="mt-2 text-center text-micro leading-relaxed text-txt-muted">
-                {t('auth.login')} <span className="font-mono text-txt-secondary">guest</span> {t('auth.passwordFragment')}{' '}
-                <span className="font-mono text-txt-secondary">guest</span>{t('auth.allDataAvailableViewing')}
-              </p>
-            </div>
+            {GUEST_LOGIN_ENABLED && (
+              <div className="hairline-t mt-7 pt-5">
+                <button
+                  type="button"
+                  onClick={() => submitLogin(GUEST_CREDENTIALS.user, GUEST_CREDENTIALS.password)}
+                  disabled={loading}
+                  className="btn btn-ghost w-full py-2.5 text-xs"
+                >
+                  <Eye className="h-4 w-4" />
+                  {t('auth.guestSignViewOnly')}
+                </button>
+                <p className="mt-2 text-center text-micro leading-relaxed text-txt-muted">
+                  {t('auth.login')} <span className="font-mono text-txt-secondary">guest</span> {t('auth.passwordFragment')}{' '}
+                  <span className="font-mono text-txt-secondary">guest</span>{t('auth.allDataAvailableViewing')}
+                </p>
+              </div>
+            )}
           </>
         )}
       </div>
