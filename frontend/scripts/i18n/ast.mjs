@@ -19,6 +19,7 @@ export const EXCLUDE = [
   'src/app/workflow/ruptela/realtime-coordinates/page.tsx',
   'src/features/sync/ui/GpsSyncView.tsx',
   'src/features/sync/ui/NovaPoshtaSyncView.tsx',
+  'src/features/sync/ui/FuelSyncView.tsx',
   'src/features/sync/model/usePolledStatus.ts',
   'src/components/VendorLogos.tsx',
   'src/screens/calculator/index.tsx',

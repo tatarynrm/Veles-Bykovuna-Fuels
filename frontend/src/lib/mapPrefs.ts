@@ -31,7 +31,6 @@ export interface BasemapDef {
   imagery?: boolean;
 }
 
-const CARTO_ATTR = '&copy; CARTO &copy; OpenStreetMap contributors';
 const OSM_ATTR = '&copy; OpenStreetMap contributors';
 const ESRI_ATTR = 'Tiles &copy; Esri';
 
@@ -41,31 +40,27 @@ const ESRI_ATTR = 'Tiles &copy; Esri';
  */
 export const AUTO_BASEMAP = 'auto';
 
+/**
+ * Усі підкладки — БЕЗ API-ключа. CARTO (dark_all/light_all/voyager) прибрано: їхні
+ * безкоштовні анонімні плитки тепер повертають зображення з водяним знаком
+ * «API KEY REQUIRED». Нейтральні сірі підкладки CARTO замінює Esri Gray Canvas —
+ * прямий безключовий аналог, на якому маркери й треки так само добре читаються.
+ */
 export const BASEMAPS: BasemapDef[] = [
   {
-    id: 'carto-dark',
-    label: 'map.basemapCartoDark',
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: CARTO_ATTR,
-    maxZoom: 20,
-    subdomains: 'abcd',
+    id: 'esri-dark-gray',
+    label: 'map.basemapEsriDarkGray',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    attribution: ESRI_ATTR,
+    maxZoom: 16,
     dark: true,
   },
   {
-    id: 'carto-light',
-    label: 'map.basemapCartoLight',
-    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    attribution: CARTO_ATTR,
-    maxZoom: 20,
-    subdomains: 'abcd',
-  },
-  {
-    id: 'carto-voyager',
-    label: 'map.basemapVoyager',
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: CARTO_ATTR,
-    maxZoom: 20,
-    subdomains: 'abcd',
+    id: 'esri-light-gray',
+    label: 'map.basemapEsriLightGray',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    attribution: ESRI_ATTR,
+    maxZoom: 16,
   },
   {
     id: 'osm',
@@ -91,6 +86,13 @@ export const BASEMAPS: BasemapDef[] = [
     subdomains: 'abc',
   },
   {
+    id: 'esri-streets',
+    label: 'map.basemapEsriStreets',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    attribution: ESRI_ATTR,
+    maxZoom: 19,
+  },
+  {
     id: 'esri-imagery',
     label: 'map.basemapSatellite',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -99,38 +101,26 @@ export const BASEMAPS: BasemapDef[] = [
     dark: true,
     imagery: true,
   },
-  {
-    id: 'esri-streets',
-    label: 'map.basemapEsriStreets',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-    attribution: ESRI_ATTR,
-    maxZoom: 19,
-  },
-  {
-    id: 'esri-dark-gray',
-    label: 'map.basemapEsriDarkGray',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-    attribution: ESRI_ATTR,
-    maxZoom: 16,
-    dark: true,
-  },
 ];
 
-/** Підписи окремим шаром — щоб назви міст читалися поверх супутника. */
+/**
+ * Підписи окремим шаром — щоб назви міст читалися поверх супутника. Безключовий
+ * довідковий шар Esri (кордони + топоніми) замість CARTO voyager_only_labels.
+ */
 export const LABELS_OVERLAY = {
-  dark: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
-  light: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
-  attribution: CARTO_ATTR,
-  subdomains: 'abcd',
-  maxZoom: 20,
+  dark: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+  light: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+  attribution: ESRI_ATTR,
+  subdomains: 'abc',
+  maxZoom: 19,
 };
 
 export const basemapById = (id: string): BasemapDef | undefined =>
   BASEMAPS.find((b) => b.id === id);
 
-/** Підкладка під поточну тему, коли обрано «автоматично». */
+/** Підкладка під поточну тему, коли обрано «автоматично». Нейтральна сіра, без ключа. */
 export const autoBasemap = (theme: 'light' | 'dark'): BasemapDef =>
-  basemapById(theme === 'light' ? 'carto-light' : 'carto-dark')!;
+  basemapById(theme === 'light' ? 'esri-light-gray' : 'esri-dark-gray')!;
 
 /** Підкладка, яку насправді треба намалювати. */
 export function resolveBasemap(prefs: MapPrefs, theme: 'light' | 'dark'): BasemapDef {

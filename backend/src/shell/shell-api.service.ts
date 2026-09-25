@@ -132,22 +132,26 @@ export class ShellApiService {
    * миттєво, тож ідемо посторінково (PageSize 1000) через параметр `CurrentPage`,
    * поки не вичерпаємо `TotalPages` (із запобіжником MAX_PAGES).
    */
-  private async fetchAllPages(fromYmd: string, toYmd: string): Promise<any[]> {
+  private async fetchAllPages(fromYmd: string, toYmd: string, timeoutMs?: number): Promise<any[]> {
     const rows: any[] = [];
     let page = 1;
     let totalPages = 1;
 
     do {
-      const response = await this.client.post('/fleetmanagement/v1/transaction/pricedtransactions', {
-        ColCoCode: this.colCoCode,
-        PayerNumber: this.payerNumber,
-        InvoiceStatus: 'A',
-        FromDate: fromYmd,
-        ToDate: toYmd,
-        IncludeFees: true,
-        PageSize: String(ShellApiService.PAGE_SIZE),
-        CurrentPage: String(page),
-      });
+      const response = await this.client.post(
+        '/fleetmanagement/v1/transaction/pricedtransactions',
+        {
+          ColCoCode: this.colCoCode,
+          PayerNumber: this.payerNumber,
+          InvoiceStatus: 'A',
+          FromDate: fromYmd,
+          ToDate: toYmd,
+          IncludeFees: true,
+          PageSize: String(ShellApiService.PAGE_SIZE),
+          CurrentPage: String(page),
+        },
+        timeoutMs ? { timeout: timeoutMs } : undefined,
+      );
 
       const data = response.data;
       if (data?.Error?.Code && data.Error.Code !== '0000') {
@@ -168,6 +172,19 @@ export class ShellApiService {
       );
     }
     return rows;
+  }
+
+  /**
+   * Сирі рядки pricedtransactions (продажі + збори) за діапазон — для синхронізації в
+   * Oracle (fuel-sync). Без кешу, без конвертації валют і без ковтання помилок: збій
+   * має зупинити прохід. Діапазон тримайте ≤ 31 дня — режим IncludeFees повільний
+   * (15–25 с на місяць), тому й таймаут тут довший за звичайні 30 с.
+   */
+  async getRawPricedTransactions(dateFrom: string, dateTo: string): Promise<any[]> {
+    if (!this.basicAuth || !this.apiKey || !this.payerNumber || !this.colCoCode) {
+      throw new Error('Shell API не налаштовано (SHELL_API_KEY / SHELL_SECRET / SHELL_PAYER_NUMBER / SHELL_COLCO_CODE)');
+    }
+    return this.fetchAllPages(dateFrom.replace(/-/g, ''), dateTo.replace(/-/g, ''), 180_000);
   }
 
   async getPricedTransactions(dateFrom?: string, dateTo?: string): Promise<ShellTransaction[]> {

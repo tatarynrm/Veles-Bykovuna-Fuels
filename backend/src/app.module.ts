@@ -16,6 +16,7 @@ import { NovaPoshtaModule } from './novaposhta/novaposhta.module';
 import { OracleModule } from './oracle/oracle.module';
 import { HealthModule } from './health/health.module';
 import { GpsModule } from './gps/gps.module';
+import { FuelSyncModule } from './fuel-sync/fuel-sync.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { GpsModule } from './gps/gps.module';
     OracleModule,
     HealthModule,
     GpsModule,
+    FuelSyncModule,
   ],
   providers: [
     // Global, so a route added later is covered without anyone remembering to opt in.

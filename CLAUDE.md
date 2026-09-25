@@ -235,6 +235,41 @@ Nova Poshta) when a task touches their mapping.
   **`/workflow/sync/gps`** page polls (every 20 s) to visualise the ingest (no manual-run
   button — the cron keeps it going and the page shows the cooldown when Ruptela is down).
   The old `/workflow/ruptela/realtime-coordinates` URL now redirects here.
+- **`fuel-sync/`** — fuel-card transactions **OKKO / Shell → Oracle** through
+  `VELDAT.P_API_TRUCK_PAY.save_transaction(p_json CLOB)` into table `TZ_TRANS`. Two separate
+  services on one base (`fuel-sync.base.ts`): `OkkoOracleSyncService` (`@Cron('0 0 */2 * * *')`) and
+  `ShellOracleSyncService` (`0 15 */2 * * *`, staggered), each gated by its own
+  `OKKO_SYNC_ENABLED` / `SHELL_SYNC_ENABLED` (default false — live DB; gates the manual run too).
+  A pass splits the period into ≤ 1-month windows and walks them **oldest first**, stopping at
+  the first failing window so the last stored date never skips a gap. `incremental` (cron and
+  «Запустити») starts at `max(api_dat)` of the brand minus `FUEL_SYNC_LOOKBACK_DAYS` (40), never
+  before `*_SYNC_START` (2025-01-01); `full` starts at `*_SYNC_START`. `POST
+  /api/fuel-sync/:vendor/run` (`{ full }`) runs in the background; `GET /api/fuel-sync/:vendor`
+  is the live per-window status the **`/workflow/sync/{okko,shell}`** pages poll. Raw rows come
+  from `OkkoApiService.getRawTransactions` / `ShellApiService.getRawPricedTransactions` (all pages,
+  errors thrown — unlike the dashboard methods). Mapping lives in `fuel-sync.mapper.ts` (tested);
+  SQL in `truck-pay.repository.ts`. Facts that shape it:
+  - The procedure takes **one** transaction as a JSON object with lowercase `api_*` keys, dedupes
+    on `cctrans = brend_YYYYMMDDHH24MISS(api_dat)_api_cc_api_transaction_id`, **only inserts
+    (never updates)** and does not commit — the repository commits once per window and counts
+    new rows as `count(*)` before/after.
+  - Because nothing is ever updated, Shell rows are written only once **invoiced**
+    (`IsInvoiced`), otherwise `api_rahnum`/`api_rahdat` would stay empty forever; OKKO is read with
+    `processed_in_bo=true`. OKKO contract operations (687/688 top-up/debit, transfers, PIN change)
+    and the 736 pre-authorisation are skipped.
+  - Shell `api_transaction_id` is `TrnIdentifier` ("37" + SalesItemId): `TransactionId` is shared by
+    the lines of one purchase (diesel + AdBlue) and empty on fees, and `SalesItemId` is a 64-bit
+    JSON number that `JSON.parse` rounds. Shell amounts are in the **invoice currency (EUR)**:
+    `Invoice*` / `CustomerRetail*`; fees are included with `api_kil = null` (their `Quantity` is
+    the fee base, not litres).
+  - Money semantics match `CCINVOICED`: `*full` = at pump price, `api_suma`/`api_cina` = actually
+    charged (OKKO `amnt_acct`, kopiykas ÷ 100), `*zn` = discount (negative = markup); amounts are
+    positive and refunds/credits set `api_minus = 1` (OKKO 775/783/787, Shell `CreditDebitCode = C`).
+  - OKKO `offset` is a **zero-based page index**, not a row offset (Swagger is wrong).
+  - **Trap:** in this Oracle 19c `JSON_OBJECT_T.get_date` drops the time part (`16:10:47` →
+    `00:00:00`); `CAST(get_timestamp(...) AS DATE)` keeps it. Changing that in the procedure also
+    changes `cctrans` for new inserts, so rows already written would be duplicated on the next
+    overlapping pass — fix it **before** the first run, or clean `TZ_TRANS` afterwards.
 
 Cross-vendor endpoints (`transactions`, `cards`, `merchants`, `analytics`) take a
 `brand=ALL|OKKO|SHELL` query param, fan out to the relevant services, map Shell's PascalCase
@@ -284,11 +319,14 @@ different architectures (see *Architecture direction* above):
   docs/console, the `ui-kit` gallery). Still on the **legacy flat layout**; being migrated to
   `features/` per the direction above. The `workflow/` URL prefix is real — links and the
   command palette use `/workflow/...`. The **«Синхронізація з базою»** section
-  (`workflow/sync/{gps,novaposhta}`, its own sidebar group above the fleet) is the first slice
-  landed under FSD: `features/sync/` with `ui/` (`SyncShell` + the two views) and `model/`
-  (`usePolledStatus` — a 20 s poller, `types.ts`); the route files are thin. Both views are
-  Ukrainian-only ops screens (in the i18n `EXCLUDE`); only the shell tabs / sidebar labels are
-  translated (`sync.*`, `nav.dbSync`).
+  (`workflow/sync/{gps,novaposhta,okko,shell}`, its own sidebar group above the fleet) is the first
+  slice landed under FSD: `features/sync/` with `ui/` (`SyncShell`, `GpsSyncView`,
+  `NovaPoshtaSyncView`, and `FuelSyncView` shared by OKKO and Shell via a `vendor` prop) and
+  `model/` (`usePolledStatus` — a 20 s poller, `types.ts`); the route files are thin. The views
+  are Ukrainian-only ops screens (in the i18n `EXCLUDE`); only the shell tabs / sidebar labels are
+  translated (`sync.*`, `nav.dbSync`). `FuelSyncView` polls every 5 s while a pass runs and has
+  the manual «Запустити» / «Повністю з …» buttons (disabled for guest, when the flag is off, or
+  while running).
 
 Every page under `src/app/` is a `'use client'` component. The shared pieces:
 
@@ -349,8 +387,9 @@ Anything using `useSearchParams()` needs a `<Suspense>` boundary or the static e
 
 #### Map settings (`lib/mapPrefs.ts` + `lib/mapRuntime.ts` + `components/MapSettingsPanel.tsx`)
 
-Both Leaflet maps share **one** preferences object — basemap (10 providers incl. Esri
-imagery/topo, plus `auto` = follow the app theme), a labels overlay, tile opacity/grayscale/
+Both Leaflet maps share **one** preferences object — basemap (7 **keyless** providers: Esri
+dark/light gray canvas, imagery and streets, OSM, OSM-HOT, OpenTopoMap, plus `auto` = follow
+the app theme), a labels overlay, tile opacity/grayscale/
 brightness/contrast, which controls exist (zoom, scale metric/imperial/both, attribution,
 fullscreen, locate, cursor coordinates) and interaction (wheel/double-click zoom, dragging,
 inertia, keyboard, box zoom, 180° wrap, zoom step). Persisted in `localStorage`
@@ -362,6 +401,14 @@ because the maps are imperative `L.map` instances in refs, not component trees.
 state, so both maps run the same code and no setting needs prop-drilling.
 
 Facts that cost time to rediscover:
+- **Every basemap must be keyless.** CARTO (`basemaps.cartocdn.com` dark_all/light_all/voyager)
+  was removed: its free anonymous tiles now return a **"API KEY REQUIRED"** watermark image at
+  higher zoom. Esri Gray Canvas (`Canvas/World_Dark_Gray_Base` / `World_Light_Gray_Base`, no
+  key) is the neutral replacement and the `auto` default; the labels overlay is Esri
+  `Reference/World_Boundaries_and_Places`. Do not add a provider that needs a token
+  (MapTiler/Thunderforest/Stadia) or a vector-tile style (those need a MapLibre plugin, and
+  this project is plugin-free Leaflet). The Esri gray canvases cap at zoom 16 — for closer
+  zoom the user switches to OSM/imagery (zoom 19).
 - Maps **must** be constructed with `attributionControl: true` — that is what makes
   `TileLayer.onAdd` register the provider's credit. Hide it by removing the control, not by
   the option (the option is read only in the constructor). Same for `worldCopyJump`, which

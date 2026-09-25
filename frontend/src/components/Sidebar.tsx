@@ -31,6 +31,7 @@ import {
   BookOpen,
   Database,
   DownloadCloud,
+  Receipt,
 } from 'lucide-react';
 import { t } from '@/lib/i18n';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -51,10 +52,12 @@ const primaryNav = [
   { href: '/workflow/merchants', label: 'common.stationNetwork', icon: MapPin, tour: 'nav-merchants' },
 ];
 
-/** Фонові закачки у базу (Oracle) — GPS-історія та дати доставки Нової Пошти. */
+/** Фонові закачки у базу (Oracle) — GPS-історія, статуси Нової Пошти, транзакції OKKO і Shell. */
 const syncNav = [
   { href: '/workflow/sync/gps', label: 'sync.gpsToOracle', icon: DownloadCloud, tour: 'nav-sync-gps' },
   { href: '/workflow/sync/novaposhta', label: 'sync.npToOracle', icon: Package, tour: 'nav-sync-np' },
+  { href: '/workflow/sync/okko', label: 'sync.okkoToOracle', icon: Fuel, tour: 'nav-sync-okko' },
+  { href: '/workflow/sync/shell', label: 'sync.shellToOracle', icon: Receipt, tour: 'nav-sync-shell' },
 ];
 
 const fleetNav = [

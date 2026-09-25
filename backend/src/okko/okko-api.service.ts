@@ -150,6 +150,40 @@ export class OkkoApiService {
     }
   }
 
+  /**
+   * Сирі рядки `/v2/transactions` за одне вікно (≤ 31 день — ліміт API) з УСІМА
+   * сторінками — для синхронізації в Oracle (fuel-sync). Лише рознесені транзакції
+   * (`processed_in_bo=true`), бо Oracle-процедура не оновлює вже записане.
+   *
+   * На відміну від getTransactions() помилку не ковтає: збій має зупинити прохід
+   * синхронізації, а не виглядати як «транзакцій немає».
+   * `offset` в OKKO — НОМЕР СТОРІНКИ з нуля, а не зсув у рядках (перевірено:
+   * size=50&offset=1 → рядки 51–100), Swagger тут помиляється.
+   */
+  async getRawTransactions(dateFrom: string, dateTo: string): Promise<any[]> {
+    if (!this.apiKey) throw new Error('OKKO_API_KEY не налаштовано');
+
+    const PAGE = 100;
+    const rows: any[] = [];
+    let total = 0;
+    for (let page = 0; ; page++) {
+      const response = await this.client.get('/v2/transactions', {
+        params: { date_from: dateFrom, date_to: dateTo, processed_in_bo: true, size: PAGE, offset: page },
+        timeout: 60_000,
+      });
+      const list: any[] = response.data?.items ?? response.data?.transactions ?? [];
+      total = Number(response.data?.total ?? 0);
+      rows.push(...list);
+      // Запобіжник від нескінченного циклу, якщо вендор колись змінить семантику offset.
+      if (!list.length || rows.length >= total || page > Math.ceil(total / PAGE)) break;
+    }
+
+    if (rows.length < total) {
+      throw new Error(`OKKO ${dateFrom}..${dateTo}: отримано ${rows.length} з ${total} транзакцій`);
+    }
+    return rows;
+  }
+
   async getBasketContent(transId: string): Promise<OkkoBasketItem[]> {
     try {
       const response = await this.client.get('/v2/basket', {
