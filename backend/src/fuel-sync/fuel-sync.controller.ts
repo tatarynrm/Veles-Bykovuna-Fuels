@@ -24,12 +24,17 @@ export class FuelSyncController {
   }
 
   /**
-   * Ручний запуск у фоні: `{ full: true }` — з OKKO_SYNC_START / SHELL_SYNC_START,
-   * інакше інкрементально (останні дні із запасом). Пише в живу БД, тож ReadOnlyGuard
-   * блокує його для гостя; без <VENDOR>_SYNC_ENABLED=true повертає started: false.
+   * Ручний запуск у фоні:
+   *   `{ from, to }` — за вибраний період (to за замовчуванням — сьогодні);
+   *   `{ full: true }` — усе з OKKO_SYNC_START / SHELL_SYNC_START;
+   *   порожнє тіло — останні FUEL_SYNC_LOOKBACK_DAYS днів (те саме, що робить крон).
+   * Пише в живу БД, тож ReadOnlyGuard блокує його для гостя; без <VENDOR>_SYNC_ENABLED=true
+   * повертає started: false.
    */
   @Post(':vendor/run')
-  run(@Param('vendor') vendor: string, @Body() body?: { full?: boolean }) {
-    return this.pick(vendor).start(body?.full === true ? 'full' : 'incremental');
+  run(@Param('vendor') vendor: string, @Body() body?: { full?: boolean; from?: string; to?: string }) {
+    const service = this.pick(vendor);
+    if (body?.from || body?.to) return service.start('period', { from: body.from, to: body.to });
+    return service.start(body?.full === true ? 'full' : 'recent');
   }
 }

@@ -2,7 +2,7 @@
 
 /**
  * Синхронізація транзакцій паливних карток OKKO / Shell → Oracle
- * (P_API_TRUCK_PAY.save_transaction → TZ_TRANS): крон кожні 2 год + ручний запуск.
+ * (P_API_TRUCK_PAY.save_transaction → TZ_TRANS): крон щодня о 09:00 і 15:00 + ручний запуск (останні дні, період або все).
  * Показує прохід по місячних вікнах: скільки отримано від вендора, пропущено, нових.
  * Опитує GET /api/fuel-sync/:vendor раз на 20 с, під час проходу — раз на 5 с.
  * Технічний ops-екран (текст авторський, у i18n EXCLUDE).
@@ -28,7 +28,13 @@ import { apiSend } from '@/lib/api';
 import { GuestBanner } from '@/components/GuestLock';
 import SyncShell from './SyncShell';
 import { SYNC_POLL_MS, usePolledStatus } from '../model/usePolledStatus';
-import type { FuelSyncStatus, FuelSyncWindow, FuelVendorKey, VehicleSyncStatus } from '../model/types';
+import type {
+  FuelSyncMode,
+  FuelSyncStatus,
+  FuelSyncWindow,
+  FuelVendorKey,
+  VehicleSyncStatus,
+} from '../model/types';
 
 const NO_DATA = '—';
 const RUNNING_POLL_MS = 5_000;
@@ -36,12 +42,12 @@ const RUNNING_POLL_MS = 5_000;
 const VENDOR: Record<FuelVendorKey, { title: string; subtitle: string; flag: string }> = {
   okko: {
     title: 'Синхронізація OKKO',
-    subtitle: 'Транзакції паливних карток OKKO → Oracle, таблиця TZ_TRANS · крон кожні 2 год або вручну',
+    subtitle: 'Транзакції паливних карток OKKO → Oracle, таблиця TZ_TRANS · крон щодня о 09:00 і 15:00, або вручну',
     flag: 'OKKO_SYNC_ENABLED',
   },
   shell: {
     title: 'Синхронізація Shell',
-    subtitle: 'Продажі й збори Shell (суми в EUR, як у рахунку) → Oracle, таблиця TZ_TRANS · крон кожні 2 год або вручну',
+    subtitle: 'Продажі й збори Shell (суми в EUR, як у рахунку) → Oracle, таблиця TZ_TRANS · крон щодня о 09:00 і 15:00, або вручну',
     flag: 'SHELL_SYNC_ENABLED',
   },
 };
@@ -79,6 +85,13 @@ const duration = (ms: number) => {
 
 const n = (value: number) => value.toLocaleString('uk-UA');
 
+/** Місцева дата у форматі для <input type="date">, зі зсувом у днях. */
+const localYmd = (offsetDays = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 const sumWindows = (
   windows: FuelSyncWindow[],
   key: 'fetched' | 'skipped' | 'alreadyStored' | 'sent' | 'inserted' | 'failed',
@@ -92,6 +105,9 @@ export default function FuelSyncView({ vendor }: { vendor: FuelVendorKey }) {
   const { data: s, error, refresh } = usePolledStatus<FuelSyncStatus>(`/api/fuel-sync/${vendor}`, authenticated, pollMs);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
   const [starting, setStarting] = useState(false);
+  // Період для ручного запуску: за замовчуванням — той самий тиждень, що бере крон.
+  const [to, setTo] = useState(() => localYmd());
+  const [from, setFrom] = useState(() => localYmd(-7));
   const activeRowRef = useRef<HTMLTableRowElement>(null);
 
   const running = Boolean(s?.running);
@@ -119,20 +135,23 @@ export default function FuelSyncView({ vendor }: { vendor: FuelVendorKey }) {
   const pct = s && s.windowsTotal > 0 ? Math.round((s.windowsDone / s.windowsTotal) * 100) : 0;
   const canRun = Boolean(s?.enabled && s.oracleConfigured && !running && !starting && !isGuest);
 
-  const start = async (full: boolean) => {
+  const start = async (mode: FuelSyncMode) => {
     if (!s) return;
     if (
-      full &&
+      mode === 'full' &&
       !window.confirm(
-        `Перечитати всі транзакції з ${dmy(s.config.startDate)} і передати в Oracle?\n` +
-          'Рядки, що вже є в TZ_TRANS, процедура пропустить.',
+        `Перечитати всі транзакції з ${dmy(s.config.startDate)} і передати в Oracle?
+` +
+          'Рядки, що вже є в TZ_TRANS, пропускаються.',
       )
     ) {
       return;
     }
+    const body =
+      mode === 'period' ? { from, to } : mode === 'full' ? { full: true } : {};
     setStarting(true);
     try {
-      const res = await apiSend<{ started: boolean; message: string }>('POST', `/api/fuel-sync/${vendor}/run`, { full });
+      const res = await apiSend<{ started: boolean; message: string }>('POST', `/api/fuel-sync/${vendor}/run`, body);
       setNotice({ ok: res.started, text: res.message });
     } catch (e: any) {
       setNotice({ ok: false, text: e?.message ?? 'Не вдалося запустити синхронізацію' });
@@ -141,7 +160,6 @@ export default function FuelSyncView({ vendor }: { vendor: FuelVendorKey }) {
       refresh();
     }
   };
-
   const statusChip = s ? (
     <span className={`badge ${!s.enabled ? 'badge-neutral' : running ? 'badge-warn' : 'badge-success'}`}>
       {!s.enabled ? 'вимкнено' : running ? 'працює' : 'очікує'}
@@ -150,16 +168,37 @@ export default function FuelSyncView({ vendor }: { vendor: FuelVendorKey }) {
 
   const actions = (
     <>
-      <button onClick={() => start(true)} disabled={!canRun} className="btn btn-ghost">
+      <span className="flex items-center gap-1 text-2xs text-txt-muted">
+        <input
+          type="date"
+          value={from}
+          max={to}
+          onChange={(e) => setFrom(e.target.value)}
+          className="field h-8 w-[8.5rem] px-2 py-1 text-2xs"
+          aria-label="Період від"
+        />
+        –
+        <input
+          type="date"
+          value={to}
+          min={from}
+          onChange={(e) => setTo(e.target.value)}
+          className="field h-8 w-[8.5rem] px-2 py-1 text-2xs"
+          aria-label="Період до"
+        />
+      </span>
+      <button onClick={() => start('period')} disabled={!canRun || !from || !to} className="btn btn-ghost">
+        <CalendarRange className="h-3.5 w-3.5" /> За період
+      </button>
+      <button onClick={() => start('full')} disabled={!canRun} className="btn btn-ghost">
         <History className="h-3.5 w-3.5" /> Повністю з {s ? dmy(s.config.startDate) : NO_DATA}
       </button>
-      <button onClick={() => start(false)} disabled={!canRun} className="btn btn-primary">
+      <button onClick={() => start('recent')} disabled={!canRun} className="btn btn-primary">
         {running || starting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-        {running ? 'Триває…' : 'Запустити'}
+        {running ? 'Триває…' : `Останні ${s?.config.lookbackDays ?? 7} дн.`}
       </button>
     </>
   );
-
   return (
     <SyncShell title={meta.title} subtitle={meta.subtitle} status={statusChip} actions={actions}>
       {isGuest && <GuestBanner />}
@@ -250,9 +289,11 @@ export default function FuelSyncView({ vendor }: { vendor: FuelVendorKey }) {
           <span className="mt-0.5 block text-2xs text-txt-muted">
             {s?.mode === 'full'
               ? `повністю з ${dmy(s.config.startDate)}`
-              : s?.mode === 'incremental'
-                ? `останні дні, запас ${s.config.lookbackDays} дн.`
-                : ''}
+              : s?.mode === 'period'
+                ? 'вибраний період'
+                : s?.mode === 'recent'
+                  ? `останні ${s.config.lookbackDays} дн.`
+                  : ''}
           </span>
         </div>
         <div className="stat">
@@ -364,6 +405,9 @@ export default function FuelSyncView({ vendor }: { vendor: FuelVendorKey }) {
             останньої записаної дати із запасом {s.config.lookbackDays} дн., «Повністю» — все з{' '}
             {dmy(s.config.startDate)}. Запит до вендора — вікнами по {s.config.windowDays} дн. Не записуються:{' '}
             {s.config.skippedLabel}.
+            <br />
+            Розклад, період і вмикання — у файлі <code>{s.config.configFile}</code>: правите просто на
+            сервері, зміни підхоплюються без перезапуску.
           </span>
         </div>
       )}

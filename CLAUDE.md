@@ -69,6 +69,30 @@ corrupts its chunks (`Cannot find module './230.js'`). Stop dev, `rm -rf .next`,
 
 ## Architecture
 
+### Background sync settings — one editable file, no DB
+
+`backend/sync-config.json` is the single place that configures **every** background sync
+(fuel cards, Nova Poshta, GPS): when it runs, how far back it reads, and whether it runs at
+all. It is a plain JSONC file in the repo — **comments allowed** — read through
+`config/sync-config.service.ts` (`SyncConfigService`, a `@Global()` module) and **re-read on
+every change**: `fs.watch` on the directory (editors save via temp files) with a 300 ms
+debounce, then listeners re-register their cron jobs. Editing the file on the server changes
+the schedule without a restart and without touching the database.
+
+Properties worth keeping:
+- **Nothing crashes on a bad file.** Missing keys fall back to defaults, out-of-range values
+  are ignored, and an unparseable file keeps the last good config while surfacing the message
+  in `getStatus().error` (and in the sync pages).
+- **`.env` stays a fallback**, not a competitor: `enabled` / start dates come from the file
+  when present, otherwise from `OKKO_SYNC_ENABLED` / `SHELL_SYNC_ENABLED` / `GPS_SYNC_ENABLED`
+  / `*_SYNC_START`. The shipped file deliberately keeps those `enabled` keys **commented out**
+  so a deploy cannot silently stop a sync that `.env` had switched on.
+- **Schedules are dynamic jobs, not `@Cron` decorators** — a decorator fixes its expression at
+  class-load time, so it cannot follow the file. Each service registers its jobs through
+  `rescheduleJobs()` (`config/cron-jobs.ts`) in `onModuleInit` and again on every config change;
+  the job names (`fuel-sync#0`, `np-delivered-sync#0`, `gps-sync#0`) are what it replaces.
+  `SYNC_CONFIG_FILE` overrides the file location.
+
 ### Backend: vendor adapters + thin aggregating controllers
 
 `src/<vendor>/<vendor>-api.service.ts` are the only places that talk to an external API.
@@ -186,7 +210,8 @@ Nova Poshta) when a task touches their mapping.
   page in one `getStatusDocuments` call, so the `/workflow/novaposhta/shipments` list shows the
   delivery-phase graph inline and the movement timeline on expand with **no per-row request** —
   a tracking failure degrades to an empty history, never a failed list.
-- **`novaposhta/novaposhta-sync.service.ts`** — a `@Cron('0 0 */3 * * *')` job (every 3 h,
+- **`novaposhta/novaposhta-sync.service.ts`** — a job on `novaposhta.everyHours` from
+  `sync-config.json` (3 h by default, with `enabled` and the 40-day `windowDays` there too;
   warmed 10 s after boot) that pulls **our** shipments for the last **40 days** and upserts the
   **current status of every one of them** (any state, not only delivered) into Oracle via
   `p_post.SetStatus(pCodePost, pDocNumber, pStatusId, pStatusName, pDateStatus, pDateStart,
@@ -215,7 +240,8 @@ Nova Poshta) when a task touches their mapping.
 - **`contracts/contracts.controller.ts`** — thin passthrough to `OkkoApiService.getContracts()`
   (OKKO is the only vendor exposing contract metadata); it owns no service of its own.
 - **`gps/gps-sync.service.ts`** — periodic GPS-history sync **Ruptela coordinates → Oracle
-  `p_gps.AddGps`**. A `@Cron('0 * * * * *')` cycle (running-guard, warmed after boot) walks the
+  `p_gps.AddGps`**. A cycle every `gps.everyMinutes` from `sync-config.json` (1 min by default;
+  `gps.enabled` switches it, running-guard, warmed after boot) walks the
   vehicle list from `GpsRepository.getVehicles()` (the `tz`/`gpsprov` join; `datlast =
   to_char(max(dat))`) **one vehicle at a time** — Ruptela rate-limits (429), so no fan-out.
   Per vehicle it reads the **oldest** ≤`GPS_SYNC_LIMIT` (999) points after `datlast` via
@@ -227,7 +253,7 @@ Nova Poshta) when a task touches their mapping.
   Oracle stores points in local wall-clock (UTC+`RUPTELA_TZ_OFFSET_HOURS`, default 3), Ruptela
   speaks UTC — dates cross the boundary as **strings** (`TO_DATE` in the block, `TO_CHAR` on
   read) so it is process-TZ-independent, matching the old Pascal `lDatFrom - 3h + 1s`. Gated by
-  `GPS_SYNC_ENABLED` (writes to the live DB). If Ruptela is **unreachable** (a network-level
+  `gps.enabled` in `sync-config.json`, falling back to `GPS_SYNC_ENABLED` (writes to the live DB). If Ruptela is **unreachable** (a network-level
   error, not a 429 or an HTTP error with a body), the cycle stops and backs off for
   `RUPTELA_RETRY_COOLDOWN_MIN` (default 10) minutes instead of retrying every minute. Live
   per-vehicle progress is kept in memory and surfaced at `GET /api/gps/progress` (+
@@ -237,15 +263,20 @@ Nova Poshta) when a task touches their mapping.
   The old `/workflow/ruptela/realtime-coordinates` URL now redirects here.
 - **`fuel-sync/`** — fuel-card transactions **OKKO / Shell → Oracle** through
   `VELDAT.P_API_TRUCK_PAY.save_transaction(p_json CLOB)` into table `TZ_TRANS`. Two separate
-  services on one base (`fuel-sync.base.ts`): `OkkoOracleSyncService` (`@Cron('0 0 */2 * * *')`) and
-  `ShellOracleSyncService` (`0 15 */2 * * *`, staggered), each gated by its own
-  `OKKO_SYNC_ENABLED` / `SHELL_SYNC_ENABLED` (default false — live DB; gates the manual run too).
+  services on one base (`fuel-sync.base.ts`), each gated by `fuel.<vendor>.enabled` in
+  `sync-config.json` (the flag gates the manual run too — it writes to the live DB). One shared
+  schedule drives both: `FuelSyncScheduler` turns `fuel.times` (default **09:00 and 15:00**) into
+  cron jobs and runs OKKO first, then the slower Shell, sequentially, so neither Oracle nor the
+  vendor APIs get two passes at once, and one vendor failing does not skip the other. `enabled`,
+  `startDate`, `lookbackDays` and `times` are read through getters on every pass, so edits to the
+  file apply without a restart.
   A pass splits the period into ≤ 1-month windows and walks them **oldest first**, stopping at
-  the first failing window so the last stored date never skips a gap. `incremental` (cron and
-  «Запустити») starts at `max(api_dat)` of the brand minus `FUEL_SYNC_LOOKBACK_DAYS` (40), never
-  before `*_SYNC_START` (2025-01-01); `full` starts at `*_SYNC_START`. `POST
-  /api/fuel-sync/:vendor/run` (`{ full }`) runs in the background; `GET /api/fuel-sync/:vendor`
-  is the live per-window status the **`/workflow/sync/{okko,shell}`** pages poll. Raw rows come
+  the first failing window. Three modes:
+  `recent` (cron and the «Останні N дн.» button) always re-reads the last `fuel.lookbackDays`
+  (7) days, and reaches further back when `max(api_dat)` is older, so a long outage still
+  self-heals; `period` takes an explicit `{ from, to }` from the page's date pickers; `full`
+  starts at `fuel.<vendor>.startDate` (2025-01-01). `POST /api/fuel-sync/:vendor/run` takes
+  `{ from, to }`, `{ full: true }` or an empty body and runs in the background; `GET /api/fuel-sync/:vendor`  is the live per-window status the **`/workflow/sync/{okko,shell}`** pages poll. Raw rows come
   from `OkkoApiService.getRawTransactions` / `ShellApiService.getRawPricedTransactions` (all pages,
   errors thrown — unlike the dashboard methods). Mapping lives in `fuel-sync.mapper.ts` (tested);
   SQL in `truck-pay.repository.ts`. Facts that shape it:

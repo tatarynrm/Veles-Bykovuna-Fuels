@@ -59,7 +59,7 @@ export interface NpSyncStatus {
 }
 
 export type FuelVendorKey = 'okko' | 'shell';
-export type FuelSyncMode = 'incremental' | 'full';
+export type FuelSyncMode = 'recent' | 'period' | 'full';
 export type FuelSyncTrigger = 'cron' | 'manual';
 
 export interface FuelSyncWindow {
@@ -114,6 +114,8 @@ export interface FuelSyncStatus {
     lookbackDays: number;
     windowDays: number;
     procedure: string;
+    /** Де лежить файл налаштувань — підказка на сторінці. */
+    configFile: string;
     skippedLabel: string;
   };
 }

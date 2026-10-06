@@ -1,6 +1,8 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Cron } from '@nestjs/schedule';
+import { SchedulerRegistry } from '@nestjs/schedule';
+import { SyncConfigService } from '../config/sync-config.service';
+import { rescheduleJobs } from '../config/cron-jobs';
 import { OracleService } from '../oracle/oracle.service';
 import { RuptelaApiService } from '../ruptela/ruptela-api.service';
 import { GpsRepository } from './gps.repository';
@@ -85,7 +87,6 @@ export class GpsSyncService implements OnModuleInit {
   private readonly logger = new Logger(GpsSyncService.name);
   private running = false;
 
-  private readonly enabled: boolean;
   private readonly tzOffsetHours: number;
   private readonly defaultStart: string;
   private readonly limit: number;
@@ -96,13 +97,19 @@ export class GpsSyncService implements OnModuleInit {
 
   private progress: GpsProgress;
 
+  /** Вмикається у backend/sync-config.json (`gps.enabled`); читається на кожен тік. */
+  private get enabled(): boolean {
+    return this.syncConfig.get().gps.enabled;
+  }
+
   constructor(
     config: ConfigService,
+    private readonly syncConfig: SyncConfigService,
+    private readonly registry: SchedulerRegistry,
     private readonly oracle: OracleService,
     private readonly gpsRepository: GpsRepository,
     private readonly ruptela: RuptelaApiService,
   ) {
-    this.enabled = (config.get<string>('GPS_SYNC_ENABLED') ?? 'false').toLowerCase() === 'true';
     const tz = Number(config.get<string>('RUPTELA_TZ_OFFSET_HOURS'));
     this.tzOffsetHours = Number.isFinite(tz) ? tz : 3;
     this.defaultStart = config.get<string>('GPS_DEFAULT_START') ?? '2026-07-01';
@@ -128,8 +135,11 @@ export class GpsSyncService implements OnModuleInit {
   }
 
   onModuleInit() {
+    // Крок береться з backend/sync-config.json і перечитується на льоту.
+    this.applySchedule();
+    this.syncConfig.onChange(() => this.applySchedule());
     if (!this.enabled) {
-      this.logger.warn('GPS-синхронізацію вимкнено (GPS_SYNC_ENABLED != true)');
+      this.logger.warn('GPS-синхронізацію вимкнено (gps.enabled у sync-config.json)');
       return;
     }
     this.logger.log(
@@ -139,11 +149,11 @@ export class GpsSyncService implements OnModuleInit {
     setTimeout(() => this.runCycle().catch(() => undefined), 10_000);
   }
 
-  /** Every minute; the running-guard makes back-to-back cycles when one runs long. */
-  @Cron('0 * * * * *', { name: 'gps-sync' })
-  handleCron() {
-    if (!this.enabled) return;
-    return this.runCycle();
+  /** Крок із налаштувань; running-guard робить цикли підряд, якщо один затягнувся. */
+  private applySchedule(): void {
+    const { enabled, everyMinutes } = this.syncConfig.get().gps;
+    const expressions = enabled ? [`0 */${everyMinutes} * * * *`] : [];
+    rescheduleJobs(this.registry, 'gps-sync', expressions, () => this.runCycle(), this.logger);
   }
 
   getStatus() {
@@ -160,6 +170,7 @@ export class GpsSyncService implements OnModuleInit {
   getProgress(): GpsProgress {
     return {
       ...this.progress,
+      enabled: this.enabled,
       cooldownUntil:
         this.cooldownUntil > Date.now() ? new Date(this.cooldownUntil).toISOString() : null,
     };

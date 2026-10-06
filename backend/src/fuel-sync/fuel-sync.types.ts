@@ -50,7 +50,8 @@ export interface TruckPayRow {
   api_rahdat: string | null;
 }
 
-export type SyncMode = 'incremental' | 'full';
+/** `recent` — останні N днів (крон і кнопка «Запустити»); `period` — вибраний діапазон; `full` — від стартової дати. */
+export type SyncMode = 'recent' | 'period' | 'full';
 export type SyncTrigger = 'cron' | 'manual';
 export type SyncWindowStatus = 'pending' | 'active' | 'done' | 'error';
 
@@ -117,6 +118,8 @@ export interface FuelSyncStatus {
     lookbackDays: number;
     windowDays: number;
     procedure: string;
+    /** Де лежить файл налаштувань — підказка на сторінці. */
+    configFile: string;
     skippedLabel: string;
   };
 }

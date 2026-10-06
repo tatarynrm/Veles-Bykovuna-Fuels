@@ -17,6 +17,7 @@ import { OracleModule } from './oracle/oracle.module';
 import { HealthModule } from './health/health.module';
 import { GpsModule } from './gps/gps.module';
 import { FuelSyncModule } from './fuel-sync/fuel-sync.module';
+import { SyncConfigModule } from './config/sync-config.module';
 
 @Module({
   imports: [
@@ -24,6 +25,8 @@ import { FuelSyncModule } from './fuel-sync/fuel-sync.module';
       isGlobal: true,
     }),
     ScheduleModule.forRoot(),
+    // Глобальні налаштування фонових синхронізацій: backend/sync-config.json
+    SyncConfigModule,
     OkkoModule,
     ShellModule,
     AuthModule,

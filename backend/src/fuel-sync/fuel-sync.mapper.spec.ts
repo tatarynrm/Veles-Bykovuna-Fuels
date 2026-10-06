@@ -8,7 +8,7 @@ import {
   shouldSyncShell,
   toProcedureJson,
 } from './fuel-sync.mapper';
-import { addDays, incrementalFrom, nextEvenHourRun, splitPeriod } from './fuel-sync.utils';
+import { addDays, cronExpressions, isYmd, nextDailyRun, recentFrom, splitPeriod } from './fuel-sync.utils';
 
 /** Реальна форма рядка OKKO /v2/transactions (номер картки вигаданий). */
 const okkoPurchase = {
@@ -294,19 +294,41 @@ describe('sync schedule helpers', () => {
     expect(splitPeriod('2026-09-15', '2026-09-15', 30)).toEqual([{ from: '2026-09-15', to: '2026-09-15' }]);
   });
 
-  it('starts incremental passes from the last stored date minus the lookback, never before start', () => {
-    expect(incrementalFrom(null, '2025-01-01', 40)).toBe('2025-01-01');
-    expect(incrementalFrom('2026-09-10', '2025-01-01', 40)).toBe(addDays('2026-09-10', -40));
-    expect(incrementalFrom('2025-01-20', '2025-01-01', 40)).toBe('2025-01-01');
+  it('always covers the last N days, and more when the sync stood still', () => {
+    // Порожня таблиця → від стартової дати.
+    expect(recentFrom(null, '2025-01-01', 7, '2026-10-06')).toBe('2026-09-29');
+    // Свіжі дані → рівно останні 7 днів.
+    expect(recentFrom('2026-10-05', '2025-01-01', 7, '2026-10-06')).toBe('2026-09-29');
+    // Давній пропуск → від останньої записаної дати, щоб його закрити.
+    expect(recentFrom('2026-08-20', '2025-01-01', 7, '2026-10-06')).toBe('2026-08-20');
+    // Ніколи раніше стартової дати.
+    expect(recentFrom('2024-05-01', '2025-01-01', 7, '2026-10-06')).toBe('2025-01-01');
   });
 
-  it('finds the next even-hour cron run', () => {
-    const at = (h: number, m: number) => new Date(2026, 8, 15, h, m, 30);
-    const hm = (d: Date) => `${d.getHours()}:${d.getMinutes()}`;
-    expect(hm(nextEvenHourRun(at(13, 20), 0))).toBe('14:0');
-    expect(hm(nextEvenHourRun(at(14, 5), 0))).toBe('16:0');
-    expect(hm(nextEvenHourRun(at(14, 10), 15))).toBe('14:15');
-    expect(hm(nextEvenHourRun(at(13, 10), 15))).toBe('14:15');
-    expect(nextEvenHourRun(at(23, 30), 0).getDate()).toBe(16);
+  it('finds the next daily run from the configured times', () => {
+    const at = (h: number, m: number) => new Date(2026, 9, 6, h, m, 0);
+    const hm = (d: Date | null) => (d ? `${d.getDate()} ${d.getHours()}:${d.getMinutes()}` : 'none');
+    const times = ['09:00', '15:00'];
+    expect(hm(nextDailyRun(at(7, 30), times))).toBe('6 9:0');
+    expect(hm(nextDailyRun(at(9, 1), times))).toBe('6 15:0');
+    expect(hm(nextDailyRun(at(15, 1), times))).toBe('7 9:0');
+    expect(hm(nextDailyRun(at(23, 59), times))).toBe('7 9:0');
+    // Нестандартний час із файлу теж працює, як і порожній розклад.
+    expect(hm(nextDailyRun(at(7, 30), ['06:30']))).toBe('7 6:30');
+    expect(nextDailyRun(at(7, 30), [])).toBeNull();
+  });
+
+  it('builds cron expressions from the configured times', () => {
+    expect(cronExpressions(['09:00', '15:00'])).toEqual(['0 0 9 * * *', '0 0 15 * * *']);
+    expect(cronExpressions(['06:30'])).toEqual(['0 30 6 * * *']);
+    expect(cronExpressions(['25:00', 'хибне'])).toEqual([]);
+  });
+
+  it('validates a period from the UI', () => {
+    expect(isYmd('2026-10-06')).toBe(true);
+    expect(isYmd('06.10.2026')).toBe(false);
+    expect(isYmd('2026-13-01')).toBe(false);
+    expect(isYmd(undefined)).toBe(false);
+    expect(addDays('2026-10-06', -7)).toBe('2026-09-29');
   });
 });

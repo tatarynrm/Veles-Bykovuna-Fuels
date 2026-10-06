@@ -1,5 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
+import { SchedulerRegistry } from '@nestjs/schedule';
+import { SyncConfigService } from '../config/sync-config.service';
+import { rescheduleJobs } from '../config/cron-jobs';
 import { NovaPoshtaApiService } from './novaposhta-api.service';
 import { OracleService } from '../oracle/oracle.service';
 import { DeliveriesRepository } from './deliveries.repository';
@@ -52,40 +54,48 @@ export class NovaPoshtaSyncService implements OnModuleInit {
   private startedAt: number | null = null;
   private lastRun: NpSyncRun | null = null;
 
-  private static readonly WINDOW_DAYS = 40;
-  private static readonly CRON = '0 0 */3 * * *';
 
   constructor(
     private readonly np: NovaPoshtaApiService,
     private readonly oracle: OracleService,
     private readonly deliveries: DeliveriesRepository,
+    private readonly syncConfig: SyncConfigService,
+    private readonly registry: SchedulerRegistry,
   ) {}
+
+  /** Налаштування з backend/sync-config.json (секція `novaposhta`). */
+  private get settings() {
+    return this.syncConfig.get().novaposhta;
+  }
 
   /** Snapshot for the sync-status page (poll this). */
   getSyncStatus(): NpSyncStatus {
     return {
-      enabled: this.oracle.isConfigured(),
+      enabled: this.oracle.isConfigured() && this.settings.enabled,
       running: this.running,
       startedAt: this.startedAt ? new Date(this.startedAt).toISOString() : null,
       lastRun: this.lastRun,
       config: {
-        windowDays: NovaPoshtaSyncService.WINDOW_DAYS,
-        cron: NovaPoshtaSyncService.CRON,
-        cronLabel: 'кожні 3 год',
+        windowDays: this.settings.windowDays,
+        cron: `0 0 */${this.settings.everyHours} * * *`,
+        cronLabel: `кожні ${this.settings.everyHours} год`,
       },
     };
   }
 
   onModuleInit() {
-    // Прогрів при старті, щоб не чекати першого тіку 20 хв. Не блокуємо bootstrap.
+    // Крок береться з backend/sync-config.json і перечитується на льоту.
+    this.applySchedule();
+    this.syncConfig.onChange(() => this.applySchedule());
+    // Прогрів при старті, щоб не чекати першого тіку. Не блокуємо bootstrap.
     setTimeout(() => {
       this.sync().catch(() => undefined);
     }, 10_000);
   }
 
-  @Cron('0 0 */3 * * *', { name: 'np-delivered-sync' })
-  handleCron() {
-    return this.sync();
+  private applySchedule(): void {
+    const expressions = this.settings.enabled ? [`0 0 */${this.settings.everyHours} * * *`] : [];
+    rescheduleJobs(this.registry, 'np-delivered-sync', expressions, () => this.sync(), this.logger);
   }
 
   async sync(): Promise<{ delivered: number; skipped?: boolean }> {
@@ -97,11 +107,15 @@ export class NovaPoshtaSyncService implements OnModuleInit {
       this.logger.warn('Oracle не налаштовано — синк статусів НП вимкнено');
       return { delivered: 0, skipped: true };
     }
+    if (!this.settings.enabled) {
+      this.logger.warn('Синк статусів НП вимкнено в sync-config.json (novaposhta.enabled)');
+      return { delivered: 0, skipped: true };
+    }
 
     this.running = true;
     const started = Date.now();
     this.startedAt = started;
-    const { from, to } = NovaPoshtaSyncService.window();
+    const { from, to } = NovaPoshtaSyncService.window(this.settings.windowDays);
     try {
       const statuses = await this.np.collectStatuses(from, to);
       // Пушимо повний статус КОЖНОГО відправлення за вікно (upsert p_post.SetStatus).
@@ -141,9 +155,9 @@ export class NovaPoshtaSyncService implements OnModuleInit {
     }
   }
 
-  private static window(): { from: string; to: string } {
+  private static window(windowDays: number): { from: string; to: string } {
     const to = new Date();
-    const from = new Date(to.getTime() - NovaPoshtaSyncService.WINDOW_DAYS * 86400000);
+    const from = new Date(to.getTime() - windowDays * 86400000);
     const fmt = (d: Date) =>
       `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
     return { from: fmt(from), to: fmt(to) };

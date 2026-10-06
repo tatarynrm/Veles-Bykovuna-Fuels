@@ -6,10 +6,11 @@ import { FuelSyncController } from './fuel-sync.controller';
 import { OkkoOracleSyncService } from './okko-oracle-sync.service';
 import { ShellOracleSyncService } from './shell-oracle-sync.service';
 import { TruckPayRepository } from './truck-pay.repository';
+import { FuelSyncScheduler } from './fuel-sync.scheduler';
 
 @Module({
   imports: [OracleModule, OkkoModule, ShellModule],
   controllers: [FuelSyncController],
-  providers: [TruckPayRepository, OkkoOracleSyncService, ShellOracleSyncService],
+  providers: [TruckPayRepository, OkkoOracleSyncService, ShellOracleSyncService, FuelSyncScheduler],
 })
 export class FuelSyncModule {}
