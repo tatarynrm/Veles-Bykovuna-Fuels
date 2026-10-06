@@ -248,6 +248,17 @@ describe('Shell → TZ_TRANS', () => {
     expect(shouldSyncShell({ ...shellDiesel, IsInvoiced: false, InvoiceNumber: '' })).toBe(false);
   });
 
+  it('falls back to the posting time when Shell gives no transaction time', () => {
+    // Комісії приходять з TransactionTime 00:00:00, а реальний час — у PostingDate.
+    const sameDay = mapShellToTruckPay({ ...shellFee, TransactionDate: '20260907', TransactionTime: '00:00:00', PostingDate: '20260907 18:18:25' });
+    expect(sameDay.api_dat).toBe('2026-09-07T18:18:25');
+    // Рознесення наступного дня — чужий час на цю дату не чіпляємо.
+    const nextDay = mapShellToTruckPay({ ...shellFee, TransactionDate: '20250228', TransactionTime: '00:00:00', PostingDate: '20250301 10:07:16' });
+    expect(nextDay.api_dat).toBe('2025-02-28T00:00:00');
+    // Справжній час транзакції має пріоритет над часом рознесення.
+    const withTime = mapShellToTruckPay({ ...shellDiesel, TransactionTime: '08:59:36', PostingDate: '20260827 09:49:14' });
+    expect(withTime.api_dat).toBe('2026-08-27T08:59:36');
+  });
   it('parses Shell date formats', () => {
     expect(shellDateTime('20260827', '08:59:36')).toBe('2026-08-27T08:59:36');
     expect(shellDateTime('20260831 00:00:00')).toBe('2026-08-31T00:00:00');

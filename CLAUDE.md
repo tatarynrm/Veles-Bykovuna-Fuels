@@ -266,10 +266,19 @@ Nova Poshta) when a task touches their mapping.
     charged (OKKO `amnt_acct`, kopiykas ÷ 100), `*zn` = discount (negative = markup); amounts are
     positive and refunds/credits set `api_minus = 1` (OKKO 775/783/787, Shell `CreditDebitCode = C`).
   - OKKO `offset` is a **zero-based page index**, not a row offset (Swagger is wrong).
-  - **Trap:** in this Oracle 19c `JSON_OBJECT_T.get_date` drops the time part (`16:10:47` →
-    `00:00:00`); `CAST(get_timestamp(...) AS DATE)` keeps it. Changing that in the procedure also
-    changes `cctrans` for new inserts, so rows already written would be duplicated on the next
-    overlapping pass — fix it **before** the first run, or clean `TZ_TRANS` afterwards.
+  - **Trap (fixed 2026-10-06):** in this Oracle 19c `JSON_OBJECT_T.get_date` **drops the time**
+    (`16:10:47` → `00:00:00`), which is why the first 15 549 rows landed at midnight. The package
+    body now reads both dates as `CAST(v_obj.get_timestamp(...) AS DATE)` — its current source is
+    kept in `common/Fuels/p_api_truck_pay-fix.sql`; do not go back to `get_date`. Because
+    `cctrans` embeds `HH24MISS`, that change also re-keys every row: the existing rows were
+    repaired in place (real time re-fetched from the vendors, matched on
+    `api_brend + api_transaction_id`, which is unique) rather than deleted, so the `kod_*` links
+    already set by hand survived. Any later change to `api_dat` or to the `cctrans` formula needs
+    the same repair, or the next overlapping pass inserts duplicates.
+  - The body assigns only `isignore` of the bookkeeping flags: `TZ_TRANS` has since lost `nosyn`,
+    `tofinzvit`, `zvitmis`, `kod_shlz` and `kod_shlzplan`, and those stale assignments left the
+    package **INVALID**, which stops the sync before it writes anything — worth checking
+    `all_objects.status` whenever nothing lands.
 
 Cross-vendor endpoints (`transactions`, `cards`, `merchants`, `analytics`) take a
 `brand=ALL|OKKO|SHELL` query param, fan out to the relevant services, map Shell's PascalCase

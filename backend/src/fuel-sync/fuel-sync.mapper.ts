@@ -174,6 +174,19 @@ export function shellDateTime(date: unknown, time?: unknown): string | null {
 }
 
 /**
+ * Повний момент операції Shell. На комісіях (`Transaction Fee`, `Invoice Adjustment`)
+ * вендор віддає `TransactionTime = 00:00:00`, але в тих же рядках є `PostingDate` з
+ * реальним часом рознесення. Якщо рознесення того самого дня — беремо час звідти, щоб
+ * api_dat був повноцінним timestamp; якщо іншого дня (комісія за 28.02 рознесена 01.03) —
+ * лишаємо 00:00:00, бо чужий час на цю дату чіпляти не можна.
+ */
+export function shellEventDateTime(t: any): string | null {
+  const base = shellDateTime(t?.TransactionDate, t?.TransactionTime);
+  if (!base || !base.endsWith("T00:00:00")) return base;
+  const posting = shellDateTime(t?.PostingDate);
+  return posting && posting.slice(0, 10) === base.slice(0, 10) ? posting : base;
+}
+/**
  * Пишемо продажі (пальне, AdBlue, тол) і збори (комісії, оренда OBU, пеня), але лише
  * ВЖЕ виставлені в рахунок: процедура тільки вставляє, тож № і дата рахунку для рядка,
  * записаного раніше, вже ніколи б не заповнились. Інкрементальний прохід перечитує
@@ -208,7 +221,7 @@ export function mapShellToTruckPay(t: any): TruckPayRow {
     // TransactionId спільний для кількох рядків однієї покупки (дизель + AdBlue) і
     // порожній у зборах; TrnIdentifier ("37" + SalesItemId) унікальний для кожного рядка.
     api_transaction_id: clipText(t.TrnIdentifier, MAX_BYTES.api_transaction_id) as string,
-    api_dat: shellDateTime(t.TransactionDate, t.TransactionTime) as string,
+    api_dat: shellEventDateTime(t) as string,
     api_cc: clipText(t.CardPAN, MAX_BYTES.api_cc),
     api_adresa: clipText(joinText([t.SiteName, t.SiteCountry], ', '), MAX_BYTES.api_adresa),
     api_station: clipText(t.SiteCode, MAX_BYTES.api_station),
