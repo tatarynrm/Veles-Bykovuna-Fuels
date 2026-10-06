@@ -10,6 +10,17 @@ const DEFAULT_PROC = 'P_API_TRUCK_PAY.save_transaction';
 /** Остання записана дата бренду — від неї інкрементальний прохід рахує запас назад. */
 const LAST_DAT_SQL = `select to_char(max(api_dat), 'YYYY-MM-DD') as last_dat from tz_trans where api_brend = :brend`;
 
+/**
+ * Ідентифікатори бренду, вже записані за цей період. Повторно їх не надсилаємо:
+ * процедура й сама пропускає дублі за `cctrans`, але той ключ містить дату з часом, тож
+ * будь-яка зміна `api_dat` робила б наявні рядки «невидимими» і вони вставлялись би вдруге.
+ * Звірка за `api_transaction_id` від формату ключа не залежить (і економить тисячі викликів).
+ */
+const EXISTING_IDS_SQL = `select api_transaction_id as id
+  from tz_trans
+ where api_brend = :brend
+   and api_dat >= to_date(:dat_from, 'YYYY-MM-DD')
+   and api_dat < to_date(:dat_to, 'YYYY-MM-DD') + 1`;
 const COUNT_SQL = `select count(*) as cnt from tz_trans where api_brend = :brend`;
 
 /**
@@ -43,6 +54,15 @@ export class TruckPayRepository {
     return rows[0]?.LAST_DAT ?? null;
   }
 
+  /** Які транзакції бренду за період уже лежать у TZ_TRANS (за вендорським id). */
+  async getExistingIds(vendor: FuelVendor, from: string, to: string): Promise<Set<string>> {
+    const rows = await this.oracle.query<{ ID: string }>(EXISTING_IDS_SQL, {
+      brend: vendor,
+      dat_from: from,
+      dat_to: to,
+    });
+    return new Set(rows.map((r) => String(r.ID)));
+  }
   /**
    * Передає рядки в процедуру по одному на спільному зʼєднанні й комітить раз у кінці.
    * Рядок, що впав, пропускається (перші помилки повертаються), решта комітиться.

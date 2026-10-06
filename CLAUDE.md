@@ -262,6 +262,18 @@ Nova Poshta) when a task touches their mapping.
     JSON number that `JSON.parse` rounds. Shell amounts are in the **invoice currency (EUR)**:
     `Invoice*` / `CustomerRetail*`; fees are included with `api_kil = null` (their `Quantity` is
     the fee base, not litres).
+  - `api_dat` must carry **date + time**. OKKO has it in `trans_date`; Shell splits it into
+    `TransactionDate` + `TransactionTime`, and on fee rows (`Transaction Fee …`, `Invoice
+    Adjustment`) the vendor sends `00:00:00` — there `shellEventDateTime()` takes the time from
+    `PostingDate`, but only when the posting happened on the same day (a fee for 28.02 posted on
+    01.03 keeps `00:00:00` rather than borrowing another day's clock). ~1 000 of 15 500 rows stay
+    at midnight for that reason; everything else carries a real time.
+  - **Never re-send a transaction that is already stored.** `saveBatch` is preceded by
+    `getExistingIds(vendor, from, to)` (a `SELECT api_transaction_id … WHERE api_brend = … AND
+    api_dat IN window`), and known ids are filtered out before the procedure is called. The
+    procedure's own `cctrans` check is not enough: that key embeds `HH24MISS`, so any change to
+    `api_dat` makes stored rows invisible to it and they come back as duplicates. The id check is
+    format-independent — and it also saves thousands of PL/SQL round trips per pass.
   - Money semantics match `CCINVOICED`: `*full` = at pump price, `api_suma`/`api_cina` = actually
     charged (OKKO `amnt_acct`, kopiykas ÷ 100), `*zn` = discount (negative = markup); amounts are
     positive and refunds/credits set `api_minus = 1` (OKKO 775/783/787, Shell `CreditDebitCode = C`).

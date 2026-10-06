@@ -63,6 +63,8 @@ export interface SyncWindowProgress {
   fetched: number;
   /** Відфільтровано — у TZ_TRANS не пишемо (див. config.skippedLabel). */
   skipped: number;
+  /** Уже лежали в TZ_TRANS (звірка за api_transaction_id) — у процедуру не йшли. */
+  alreadyStored: number;
   /** Процедура прийняла без помилки (нові + ті, що вже були в базі). */
   sent: number;
   /** З них нових рядків у TZ_TRANS. */
@@ -82,6 +84,7 @@ export interface FuelSyncRun {
   to: string;
   fetched: number;
   skipped: number;
+  alreadyStored: number;
   sent: number;
   inserted: number;
   failed: number;

@@ -167,7 +167,7 @@ export abstract class FuelSyncBase {
 
     const to = localYmd();
     let from = this.startDate;
-    const totals = { fetched: 0, skipped: 0, sent: 0, inserted: 0, failed: 0 };
+    const totals = { fetched: 0, skipped: 0, alreadyStored: 0, sent: 0, inserted: 0, failed: 0 };
     let error: string | null = null;
 
     try {
@@ -181,6 +181,7 @@ export abstract class FuelSyncBase {
         status: 'pending' as const,
         fetched: 0,
         skipped: 0,
+        alreadyStored: 0,
         sent: 0,
         inserted: 0,
         failed: 0,
@@ -196,6 +197,7 @@ export abstract class FuelSyncBase {
         } finally {
           totals.fetched += w.fetched;
           totals.skipped += w.skipped;
+          totals.alreadyStored += w.alreadyStored;
           totals.sent += w.sent;
           totals.inserted += w.inserted;
           totals.failed += w.failed;
@@ -221,7 +223,8 @@ export abstract class FuelSyncBase {
       this.startedAt = null;
       this.logger.log(
         `Прохід завершено за ${Math.round(durationMs / 1000)}с: отримано ${totals.fetched}, пропущено ${totals.skipped}, ` +
-          `нових ${totals.inserted}, вже були ${totals.sent - totals.inserted}, помилок ${totals.failed}`,
+          `нових ${totals.inserted}, вже були ${totals.alreadyStored + (totals.sent - totals.inserted)}, ` +
+          `помилок ${totals.failed}`,
       );
     }
     return this.lastRun;
@@ -237,7 +240,12 @@ export abstract class FuelSyncBase {
       w.skipped = raw.length - eligible.length;
 
       // Захист від дублів усередині вікна (однаковий ID → однаковий cctrans).
-      const rows = [...new Map(eligible.map((r) => this.map(r)).map((row) => [row.api_transaction_id, row])).values()];
+      const mapped = [...new Map(eligible.map((r) => this.map(r)).map((row) => [row.api_transaction_id, row])).values()];
+      // …і від повторного надсилання вже записаного: звіряємось за вендорським id, а не
+      // за cctrans, бо той містить дату з часом і змінюється разом із правилами api_dat.
+      const stored = await this.repo.getExistingIds(this.settings.vendor, w.from, w.to);
+      const rows = mapped.filter((row) => !stored.has(row.api_transaction_id));
+      w.alreadyStored = mapped.length - rows.length;
       const result = await this.repo.saveBatch(this.settings.vendor, rows);
       w.sent = result.sent;
       w.inserted = result.inserted;
@@ -253,7 +261,7 @@ export abstract class FuelSyncBase {
       w.status = 'done';
       this.logger.log(
         `${w.from}..${w.to}: отримано ${w.fetched}, пропущено ${w.skipped}, нових ${w.inserted}, ` +
-          `вже були ${w.sent - w.inserted}, помилок ${w.failed}`,
+          `вже були ${w.alreadyStored + (w.sent - w.inserted)}, помилок ${w.failed}`,
       );
     } catch (e) {
       w.status = 'error';

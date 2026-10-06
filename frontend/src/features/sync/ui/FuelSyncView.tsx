@@ -79,7 +79,10 @@ const duration = (ms: number) => {
 
 const n = (value: number) => value.toLocaleString('uk-UA');
 
-const sumWindows = (windows: FuelSyncWindow[], key: 'fetched' | 'skipped' | 'sent' | 'inserted' | 'failed') =>
+const sumWindows = (
+  windows: FuelSyncWindow[],
+  key: 'fetched' | 'skipped' | 'alreadyStored' | 'sent' | 'inserted' | 'failed',
+) =>
   windows.reduce((total, w) => total + w[key], 0);
 
 export default function FuelSyncView({ vendor }: { vendor: FuelVendorKey }) {
@@ -109,7 +112,8 @@ export default function FuelSyncView({ vendor }: { vendor: FuelVendorKey }) {
   const windows = s?.windows ?? [];
   const last = s?.lastRun ?? null;
   const inserted = sumWindows(windows, 'inserted');
-  const existing = sumWindows(windows, 'sent') - inserted;
+  // «Вже в базі» = пропущені до надсилання (звірка за id) + ті, що процедура впізнала як дубль.
+  const existing = sumWindows(windows, 'alreadyStored') + sumWindows(windows, 'sent') - inserted;
   const skipped = sumWindows(windows, 'skipped');
   const failed = sumWindows(windows, 'failed');
   const pct = s && s.windowsTotal > 0 ? Math.round((s.windowsDone / s.windowsTotal) * 100) : 0;
@@ -336,7 +340,7 @@ export default function FuelSyncView({ vendor }: { vendor: FuelVendorKey }) {
                       <td className="text-right tabular text-txt-muted">{touched ? n(w.skipped) : NO_DATA}</td>
                       <td className="text-right tabular font-semibold text-accent">{touched ? n(w.inserted) : NO_DATA}</td>
                       <td className="text-right tabular text-txt-secondary">
-                        {touched ? n(w.sent - w.inserted) : NO_DATA}
+                        {touched ? n(w.alreadyStored + w.sent - w.inserted) : NO_DATA}
                       </td>
                       <td className={`text-right tabular ${w.failed ? 'font-semibold text-danger' : 'text-txt-muted'}`}>
                         {touched ? n(w.failed) : NO_DATA}

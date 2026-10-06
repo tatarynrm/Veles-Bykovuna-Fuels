@@ -68,6 +68,7 @@ export interface FuelSyncWindow {
   status: VehicleSyncStatus;
   fetched: number;
   skipped: number;
+  alreadyStored: number;
   sent: number;
   inserted: number;
   failed: number;
@@ -83,6 +84,7 @@ export interface FuelSyncRun {
   to: string;
   fetched: number;
   skipped: number;
+  alreadyStored: number;
   sent: number;
   inserted: number;
   failed: number;
