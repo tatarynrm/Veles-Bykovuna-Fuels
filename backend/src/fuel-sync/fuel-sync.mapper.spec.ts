@@ -147,8 +147,8 @@ describe('OKKO → TZ_TRANS', () => {
       api_kraina: 'UA',
       api_station: '40563200',
       api_adresa: 'АЗС 028 Франківськ ОККО-Драйв, Чернівецька, Чернівці, Калинівська, 1-А',
-      api_oper: '774 Заправка/покупка з карткою',
-      api_pal: '9009 Бензин А-95',
+      api_oper1: '774 Заправка/покупка з карткою',
+      api_oper2: '9009 Бензин А-95',
       api_tz: 'SKODA',
       api_os: null,
       api_rahnum: null,
@@ -159,7 +159,7 @@ describe('OKKO → TZ_TRANS', () => {
     const row = mapOkkoToTruckPay({ ...okkoPurchase, trans_type: 775, amnt_trans: 377, amnt_acct: 401 });
     expect(row.api_minus).toBe(1);
     expect(row.api_suma).toBe(4.01);
-    expect(row.api_oper).toBe('775 Часткове повернення');
+    expect(row.api_oper1).toBe('775 Часткове повернення');
   });
 
   it('skips contract operations and rows without a card', () => {
@@ -199,8 +199,8 @@ describe('Shell → TZ_TRANS', () => {
       api_station: '5012',
       api_adresa: '5012 SHELL RUSSE DANUBE BRIDGE, Bulgaria',
       api_chek: '146558',
-      api_oper: '7 Automotive Gas Oil',
-      api_pal: '30 Diesel AGO',
+      api_oper1: '7 Automotive Gas Oil',
+      api_oper2: '30 Diesel AGO',
       api_tz: 'CE5465BM',
       api_os: null,
       api_km: null,
@@ -221,8 +221,8 @@ describe('Shell → TZ_TRANS', () => {
       api_valut: 'EUR',
       api_station: null,
       api_kraina: null,
-      api_oper: '22 Card related fees',
-      api_pal: '6 Transaction Fee BG731 14',
+      api_oper1: '22 Card related fees',
+      api_oper2: '6 Transaction Fee BG731 14',
     });
   });
 
@@ -274,7 +274,7 @@ describe('procedure payload', () => {
     expect(json).not.toHaveProperty('api_pdv');
     expect(json).not.toHaveProperty('api_rahdat');
     expect(json.api_suma).toBe(3156);
-    expect(Object.keys(json).every((k) => /^api_[a-z_]+$/.test(k))).toBe(true);
+    expect(Object.keys(json).every((k) => /^api_[a-z0-9_]+$/.test(k))).toBe(true);
   });
 
   it('clips text by UTF-8 bytes without cutting a character', () => {

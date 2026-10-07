@@ -41,9 +41,9 @@ export interface TruckPayRow {
   /** 1 — сума додатна, але її треба відняти (повернення, кредит). */
   api_minus: 0 | 1;
   /** Операція: «код назва». */
-  api_oper: string | null;
+  api_oper1: string | null;
   /** Тип палива / товар: «код назва». */
-  api_pal: string | null;
+  api_oper2: string | null;
   api_os: string | null;
   api_tz: string | null;
   api_rahnum: string | null;

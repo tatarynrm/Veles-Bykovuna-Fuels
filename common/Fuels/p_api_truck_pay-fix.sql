@@ -36,9 +36,9 @@ begin
     r.api_km             := v_obj.get_number('api_km');
     r.api_kraina         := v_obj.get_string('api_kraina');
     r.api_minus          := nvl(v_obj.get_number('api_minus'), 0);
-    r.api_oper           := v_obj.get_string('api_oper');
+    r.api_oper1          := v_obj.get_string('api_oper1');
     r.api_os             := v_obj.get_string('api_os');
-    r.api_pal            := v_obj.get_string('api_pal');
+    r.api_oper2          := v_obj.get_string('api_oper2');
     r.api_pdv            := v_obj.get_number('api_pdv');
     r.api_przn           := v_obj.get_number('api_przn');
     r.api_rahdat         := cast(v_obj.get_timestamp('api_rahdat') as date); -- дата + час
