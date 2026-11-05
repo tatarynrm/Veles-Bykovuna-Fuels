@@ -10,6 +10,7 @@ const configOf = (enabled: boolean, times = ['09:00', '15:00'], lookbackDays = 7
     lookbackDays,
     okko: { enabled, startDate: '2025-01-01' },
     shell: { enabled, startDate: '2025-01-01' },
+    upg: { enabled, startDate: '2025-01-01' },
   },
   novaposhta: { enabled: true, everyHours: 3, windowDays: 40 },
   gps: { enabled: false, everyMinutes: 1 },

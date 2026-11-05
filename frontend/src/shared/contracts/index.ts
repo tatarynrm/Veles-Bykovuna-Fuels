@@ -5,3 +5,4 @@
  */
 export * from './ruptela';
 export * from './novaposhta';
+export * from './privat';

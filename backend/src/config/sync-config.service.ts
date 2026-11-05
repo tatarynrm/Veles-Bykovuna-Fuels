@@ -14,6 +14,7 @@ const DEFAULTS: SyncConfig = {
     lookbackDays: 7,
     okko: { enabled: false, startDate: '2025-01-01' },
     shell: { enabled: false, startDate: '2025-01-01' },
+    upg: { enabled: false, startDate: '2025-01-01' },
   },
   novaposhta: { enabled: true, everyHours: 3, windowDays: 40 },
   gps: { enabled: false, everyMinutes: 1 },
@@ -203,6 +204,7 @@ export class SyncConfigService implements OnModuleDestroy {
         lookbackDays: int(fuel.lookbackDays, DEFAULTS.fuel.lookbackDays, 0, 365),
         okko: this.vendor(fuel.okko, 'OKKO_SYNC_ENABLED', 'OKKO_SYNC_START', DEFAULTS.fuel.okko),
         shell: this.vendor(fuel.shell, 'SHELL_SYNC_ENABLED', 'SHELL_SYNC_START', DEFAULTS.fuel.shell),
+        upg: this.vendor(fuel.upg, 'UPG_SYNC_ENABLED', 'UPG_SYNC_START', DEFAULTS.fuel.upg),
       },
       novaposhta: {
         enabled: bool(np.enabled, DEFAULTS.novaposhta.enabled),

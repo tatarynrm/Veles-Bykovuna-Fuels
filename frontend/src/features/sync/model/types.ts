@@ -6,7 +6,7 @@
  *  - NpSyncStatus  ← backend/src/novaposhta/novaposhta-sync.service.ts
  *                    (GET /api/novaposhta/sync-status)
  *  - FuelSyncStatus ← backend/src/fuel-sync/fuel-sync.types.ts
- *                    (GET /api/fuel-sync/okko | /api/fuel-sync/shell)
+ *                    (GET /api/fuel-sync/okko | /api/fuel-sync/shell | /api/fuel-sync/upg)
  * Тримаємо копію тут (див. CLAUDE.md — фронт і бек ведуть паралельні копії форм).
  */
 
@@ -58,7 +58,7 @@ export interface NpSyncStatus {
   config: { windowDays: number; cron: string; cronLabel: string };
 }
 
-export type FuelVendorKey = 'okko' | 'shell';
+export type FuelVendorKey = 'okko' | 'shell' | 'upg';
 export type FuelSyncMode = 'recent' | 'period' | 'full';
 export type FuelSyncTrigger = 'cron' | 'manual';
 
@@ -94,7 +94,7 @@ export interface FuelSyncRun {
 }
 
 export interface FuelSyncStatus {
-  vendor: 'OKKO' | 'SHELL';
+  vendor: 'OKKO' | 'SHELL' | 'UPG';
   enabled: boolean;
   oracleConfigured: boolean;
   running: boolean;

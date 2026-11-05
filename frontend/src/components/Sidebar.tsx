@@ -32,6 +32,8 @@ import {
   Database,
   DownloadCloud,
   Receipt,
+  Landmark,
+  Banknote,
 } from 'lucide-react';
 import { t } from '@/lib/i18n';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -52,12 +54,22 @@ const primaryNav = [
   { href: '/workflow/merchants', label: 'common.stationNetwork', icon: MapPin, tour: 'nav-merchants' },
 ];
 
-/** Фонові закачки у базу (Oracle) — GPS-історія, статуси Нової Пошти, транзакції OKKO і Shell. */
+/** Фонові закачки у базу (Oracle) — GPS-історія, статуси Нової Пошти, транзакції OKKO, UPG і Shell. */
 const syncNav = [
   { href: '/workflow/sync/gps', label: 'sync.gpsToOracle', icon: DownloadCloud, tour: 'nav-sync-gps' },
   { href: '/workflow/sync/novaposhta', label: 'sync.npToOracle', icon: Package, tour: 'nav-sync-np' },
   { href: '/workflow/sync/okko', label: 'sync.okkoToOracle', icon: Fuel, tour: 'nav-sync-okko' },
+  { href: '/workflow/sync/upg', label: 'sync.upgToOracle', icon: CreditCard, tour: 'nav-sync-upg' },
   { href: '/workflow/sync/shell', label: 'sync.shellToOracle', icon: Receipt, tour: 'nav-sync-shell' },
+];
+
+/**
+ * Банк → Приват24 → розділи. Фінансові дані компанії — гостю не показуємо (сервер теж відмовляє).
+ * Рахунки й картки — різні API банку, тому окремі сторінки.
+ */
+const bankNav = [
+  { href: '/workflow/bank/privat24/transactions', label: 'bank.transactions', icon: Receipt, tour: 'nav-bank-privat24' },
+  { href: '/workflow/bank/privat24/cards', label: 'bank.cardTransactions', icon: CreditCard, tour: 'nav-bank-privat24-cards' },
 ];
 
 const fleetNav = [
@@ -131,6 +143,7 @@ export default function Sidebar({ apiStatus }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [ruptelaOpen, setRuptelaOpen] = useState(true);
   const [novaPoshtaOpen, setNovaPoshtaOpen] = useState(true);
+  const [bankOpen, setBankOpen] = useState(true);
   /** Згорнутий стан діє лише на десктопі; у шухляді панель завжди повна. */
   const [collapsed, setCollapsed] = useState(() => collapsedCache ?? false);
   /**
@@ -171,6 +184,7 @@ export default function Sidebar({ apiStatus }: SidebarProps) {
   useEffect(() => {
     if (pathname.startsWith('/workflow/ruptela')) setRuptelaOpen(true);
     if (pathname.startsWith('/workflow/novaposhta')) setNovaPoshtaOpen(true);
+    if (pathname.startsWith('/workflow/bank')) setBankOpen(true);
   }, [pathname]);
 
   // Close the drawer whenever the route changes
@@ -331,6 +345,99 @@ export default function Sidebar({ apiStatus }: SidebarProps) {
               <NavLink key={item.href} {...item} />
             ))}
           </div>
+
+          {!isGuest && (
+            <>
+              {/* Згорнутою рейкою підпис замінює риска; розгорнутою заголовок дає сама група. */}
+              {isCollapsed && <SectionLabel>{t('nav.bank')}</SectionLabel>}
+              {/* Група «Банк» → підменю банків (поки лише Приват24) */}
+              <div
+                className={`glass-inset ${isCollapsed ? 'p-0.5' : 'mt-4 p-1'}`}
+                data-tour="nav-bank"
+              >
+                {isCollapsed ? (
+                  <div className="space-y-0.5">
+                    {bankNav.map((sub) => {
+                      const active = pathname === sub.href;
+                      const SubIcon = sub.icon;
+                      return (
+                        <Link
+                          key={sub.href}
+                          href={sub.href}
+                          data-tour={sub.tour}
+                          title={t(sub.label)}
+                          className={`flex items-center justify-center rounded-control py-2 transition-colors ${
+                            active
+                              ? 'bg-accent/10 text-accent'
+                              : 'text-txt-secondary hover:bg-surface-hover hover:text-txt-primary'
+                          }`}
+                        >
+                          <SubIcon
+                            className={`h-4 w-4 ${active ? 'text-accent' : 'text-txt-muted'}`}
+                          />
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setBankOpen((v) => !v)}
+                      aria-expanded={bankOpen}
+                      className={`flex w-full items-center justify-between rounded-control px-2.5 py-1.5 text-2xs font-semibold transition-colors ${
+                        pathname.startsWith('/workflow/bank')
+                          ? 'text-accent'
+                          : 'text-txt-secondary hover:text-txt-primary'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Landmark className="h-3.5 w-3.5 text-accent" />
+                        <span>{t('nav.bank')}</span>
+                      </span>
+                      <ChevronDown
+                        className={`h-3.5 w-3.5 text-txt-muted transition-transform duration-200 ${
+                          bankOpen ? '' : '-rotate-90'
+                        }`}
+                      />
+                    </button>
+
+                    {bankOpen && (
+                      <div className="mt-0.5 space-y-0.5 pl-1">
+                        {/* Підменю банку: Приват24 → його розділи */}
+                        <p className="flex items-center gap-2 px-2.5 pb-0.5 pt-1.5 text-micro font-semibold uppercase tracking-wide text-txt-muted">
+                          <Banknote className="h-3 w-3" />
+                          {t('bank.privat24')}
+                        </p>
+                        {bankNav.map((sub) => {
+                          const active = pathname === sub.href;
+                          const SubIcon = sub.icon;
+                          return (
+                            <Link
+                              key={sub.href}
+                              href={sub.href}
+                              data-tour={sub.tour}
+                              aria-current={active ? 'page' : undefined}
+                              className={`ml-2 flex items-center gap-2.5 rounded-control px-2.5 py-1.5 text-2xs transition-colors ${
+                                active
+                                  ? 'bg-accent/10 font-semibold text-accent'
+                                  : 'text-txt-secondary hover:bg-surface-hover hover:text-txt-primary'
+                              }`}
+                            >
+                              <SubIcon
+                                className={`h-3.5 w-3.5 shrink-0 ${active ? 'text-accent' : 'text-txt-muted'}`}
+                              />
+                              <span className="truncate">{t(sub.label)}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </>
+          )}
 
           <SectionLabel>{t('nav.fleet')}</SectionLabel>
           <div className="space-y-0.5">

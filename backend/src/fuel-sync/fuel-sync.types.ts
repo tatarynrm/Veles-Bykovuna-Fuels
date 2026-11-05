@@ -1,4 +1,4 @@
-export type FuelVendor = 'OKKO' | 'SHELL';
+export type FuelVendor = 'OKKO' | 'SHELL' | 'UPG';
 
 /**
  * JSON-контракт процедури `VELDAT.P_API_TRUCK_PAY.save_transaction(p_json CLOB)`, що
@@ -8,7 +8,7 @@ export type FuelVendor = 'OKKO' | 'SHELL';
  * `null` у JSON не потрапляє — ключ просто пропускається (див. toProcedureJson).
  */
 export interface TruckPayRow {
-  /** Бренд: 'OKKO' | 'SHELL' — частина ключа дедуплікації cctrans. */
+  /** Бренд: 'OKKO' | 'SHELL' | 'UPG' — частина ключа дедуплікації cctrans. */
   api_brend: FuelVendor;
   /** Унікальний ID рядка у вендора — частина ключа дедуплікації cctrans. */
   api_transaction_id: string;
@@ -94,10 +94,10 @@ export interface FuelSyncRun {
   error: string | null;
 }
 
-/** Знімок для сторінки /workflow/sync/{okko,shell} (GET /api/fuel-sync/:vendor). */
+/** Знімок для сторінки /workflow/sync/{okko,shell,upg} (GET /api/fuel-sync/:vendor). */
 export interface FuelSyncStatus {
   vendor: FuelVendor;
-  /** Прапорець OKKO_SYNC_ENABLED / SHELL_SYNC_ENABLED. */
+  /** Прапорець fuel.<вендор>.enabled (запасний — OKKO_/SHELL_/UPG_SYNC_ENABLED). */
   enabled: boolean;
   oracleConfigured: boolean;
   running: boolean;

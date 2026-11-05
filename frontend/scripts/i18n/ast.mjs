@@ -21,6 +21,10 @@ export const EXCLUDE = [
   'src/features/sync/ui/NovaPoshtaSyncView.tsx',
   'src/features/sync/ui/FuelSyncView.tsx',
   'src/features/sync/model/usePolledStatus.ts',
+  // BankShell свідомо не тут: він лише читає ключі (bank.*), і сканер має їх бачити як використані.
+  'src/features/bank/ui/PrivatTransactionsView.tsx',
+  'src/features/bank/ui/PrivatCardsView.tsx',
+  'src/features/bank/model/',
   'src/components/VendorLogos.tsx',
   'src/screens/calculator/index.tsx',
   'src/context/I18nContext.tsx',

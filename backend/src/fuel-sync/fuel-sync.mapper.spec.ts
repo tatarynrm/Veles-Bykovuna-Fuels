@@ -2,11 +2,14 @@ import {
   clipText,
   mapOkkoToTruckPay,
   mapShellToTruckPay,
+  mapUpgToTruckPay,
   okkoDateTime,
   shellDateTime,
   shouldSyncOkko,
   shouldSyncShell,
+  shouldSyncUpg,
   toProcedureJson,
+  upgDateTime,
 } from './fuel-sync.mapper';
 import { addDays, cronExpressions, isYmd, nextDailyRun, recentFrom, splitPeriod } from './fuel-sync.utils';
 
@@ -265,6 +268,100 @@ describe('Shell → TZ_TRANS', () => {
     expect(shellDateTime('20260819 000530')).toBe('2026-08-19T00:05:30');
     expect(shellDateTime('20260819')).toBe('2026-08-19T00:00:00');
     expect(shellDateTime(null)).toBeNull();
+  });
+});
+
+describe('UPG → TZ_TRANS', () => {
+  /** Реальна форма рядка /fuel-card-history (живі дані, 2026-10-27). */
+  const upgDiesel = {
+    id: 18241896,
+    card_id: 515495,
+    card_number: '142 566',
+    card_holder: 'ВЕЛЕС БУКОВИНА ТОВ',
+    card_owner: 'ВЕЛЕС БУКОВИНА ТОВ',
+    fuel_id: 5,
+    fuel: 'Дизельне пальне',
+    price: '102.9000',
+    amount: '217.8200',
+    total: '21542.4000',
+    service_station: 'АЗС №378 с. Варваринці, вул. Дружбівська, 56',
+    address: 'Тернопільська обл., с. Варваринці, вул. Дружбівська, 56',
+    transaction_date: '2026-10-27',
+    transaction_time: '19:27:26',
+  };
+
+  it('maps a sale in UAH: price is the pump price, total is after discount', () => {
+    const row = mapUpgToTruckPay(upgDiesel);
+    expect(row).toMatchObject({
+      api_brend: 'UPG',
+      api_transaction_id: '18241896',
+      api_dat: '2026-10-27T19:27:26',
+      api_cc: '142 566',
+      api_station: '378',
+      api_kil: 217.82,
+      api_valut: 'UAH',
+      api_kraina: 'UA',
+      api_minus: 0,
+      api_oper2: '5 Дизельне пальне',
+      // Знижка 4 грн/л: стеля 102.90, фактично 98.90.
+      api_cinafull: 102.9,
+      api_cina: 98.9,
+      api_cinazn: 4,
+      api_sumafull: 22413.68,
+      api_suma: 21542.4,
+      api_sumazn: 871.28,
+      api_przn: 3.89,
+    });
+    // Чека, рахунку, ПДВ і авто в цьому API немає — у процедуру не йдуть.
+    const json = JSON.parse(toProcedureJson(row));
+    for (const key of ['api_chek', 'api_rahnum', 'api_pdv', 'api_tz', 'api_os']) {
+      expect(json).not.toHaveProperty(key);
+    }
+  });
+
+  it('does not repeat the street that service_station already contains', () => {
+    expect(mapUpgToTruckPay(upgDiesel).api_adresa).toBe('АЗС №378 с. Варваринці, вул. Дружбівська, 56, Тернопільська обл.');
+    const plain = mapUpgToTruckPay({ ...upgDiesel, service_station: 'АЗС №73 "Гастелло"', address: 'Житомирська обл., м. Коростень, 3' });
+    expect(plain.api_adresa).toBe('АЗС №73 "Гастелло", Житомирська обл., м. Коростень, 3');
+  });
+
+  it('writes the card name into api_tz only when it differs from the owner', () => {
+    expect(mapUpgToTruckPay({ ...upgDiesel, card_holder: 'AA4115' }).api_tz).toBe('AA4115');
+    expect(mapUpgToTruckPay({ ...upgDiesel, card_holder: '---' }).api_tz).toBeNull();
+    expect(mapUpgToTruckPay(upgDiesel).api_tz).toBeNull();
+  });
+
+  it('without a pump price the full values equal the actual ones', () => {
+    const row = mapUpgToTruckPay({ ...upgDiesel, price: null });
+    expect(row.api_cinafull).toBe(row.api_cina);
+    expect(row.api_sumafull).toBe(row.api_suma);
+    expect(row.api_sumazn).toBe(0);
+    expect(row.api_przn).toBe(0);
+  });
+
+  it('keeps the station name when it has no number', () => {
+    expect(mapUpgToTruckPay({ ...upgDiesel, service_station: 'Мобільна АЗС' }).api_station).toBe('Мобільна АЗС');
+  });
+
+  it('treats negative amounts as a return with positive values', () => {
+    const row = mapUpgToTruckPay({ ...upgDiesel, amount: '-10.0000', total: '-989.0000' });
+    expect(row.api_minus).toBe(1);
+    expect(row.api_kil).toBe(10);
+    expect(row.api_suma).toBe(989);
+    expect(row.api_cina).toBe(98.9);
+  });
+
+  it('syncs only rows that have an id, a card and a date', () => {
+    expect(shouldSyncUpg(upgDiesel)).toBe(true);
+    expect(shouldSyncUpg({ ...upgDiesel, id: null })).toBe(false);
+    expect(shouldSyncUpg({ ...upgDiesel, card_number: '' })).toBe(false);
+    expect(shouldSyncUpg({ ...upgDiesel, transaction_date: null })).toBe(false);
+  });
+
+  it('parses the date and time', () => {
+    expect(upgDateTime('2022-01-06', '8:29:19')).toBe('2022-01-06T08:29:19');
+    expect(upgDateTime('2022-01-06 04:04:48')).toBe('2022-01-06T00:00:00');
+    expect(upgDateTime('06.01.2022')).toBeNull();
   });
 });
 

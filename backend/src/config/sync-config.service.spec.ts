@@ -58,6 +58,15 @@ describe('SyncConfigService', () => {
     cleanup();
   });
 
+  it('UPG: за замовчуванням вимкнено, а .env його вмикає', () => {
+    const plain = withFile('{}');
+    expect(plain.service.get().fuel.upg).toEqual({ enabled: false, startDate: '2025-01-01' });
+    plain.cleanup();
+    const { service, cleanup } = withFile('{}', { UPG_SYNC_ENABLED: 'true', UPG_SYNC_START: '2026-02-01' });
+    expect(service.get().fuel.upg).toEqual({ enabled: true, startDate: '2026-02-01' });
+    cleanup();
+  });
+
   it('перечитує змінений файл і повідомляє підписників', () => {
     const { service, file, cleanup } = withFile('{ "fuel": { "times": ["09:00"] } }');
     const seen: string[][] = [];

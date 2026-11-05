@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Database, DownloadCloud, Fuel, Package, Receipt } from 'lucide-react';
+import { CreditCard, Database, DownloadCloud, Fuel, Package, Receipt } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import ThemeToggleButton from '@/components/ThemeToggleButton';
 import { t } from '@/lib/i18n';
@@ -12,6 +12,7 @@ const TABS = [
   { href: '/workflow/sync/gps', label: 'sync.gpsToOracle', icon: DownloadCloud },
   { href: '/workflow/sync/novaposhta', label: 'sync.npToOracle', icon: Package },
   { href: '/workflow/sync/okko', label: 'sync.okkoToOracle', icon: Fuel },
+  { href: '/workflow/sync/upg', label: 'sync.upgToOracle', icon: CreditCard },
   { href: '/workflow/sync/shell', label: 'sync.shellToOracle', icon: Receipt },
 ];
 

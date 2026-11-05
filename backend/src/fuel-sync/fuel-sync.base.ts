@@ -16,7 +16,7 @@ import { cronExpressions, isYmd, localYmd, nextDailyRun, recentFrom, splitPeriod
 export interface FuelSyncSettings {
   vendor: FuelVendor;
   /** Ключ вендора в sync-config.json → fuel.<key>. */
-  key: 'okko' | 'shell';
+  key: 'okko' | 'shell' | 'upg';
   /** Розмір вікна запиту до API вендора, днів. */
   windowDays: number;
   /** Що саме відфільтровується (текст для сторінки). */
@@ -173,6 +173,11 @@ export abstract class FuelSyncBase {
     }
     if (this.running) return 'Синхронізація вже триває';
     if (!this.oracle.isConfigured()) return 'Oracle не налаштовано';
+    return this.vendorBlockReason();
+  }
+
+  /** Вендор-специфічна передумова (напр. облікові дані в .env); текст — причина відмови. */
+  protected vendorBlockReason(): string | null {
     return null;
   }
 

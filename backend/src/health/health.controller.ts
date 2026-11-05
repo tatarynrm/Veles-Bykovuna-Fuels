@@ -35,8 +35,10 @@ export class HealthController {
         shell: {
           configured: this.has('SHELL_API_KEY') && (this.has('SHELL_SECRET') || this.has('SHELL_BASIC_AUTH')),
         },
+        upg: { configured: this.has('UPG_LOGIN') && this.has('UPG_PASSWORD') },
         ruptela: { configured: this.has('RUPTELA_API_KEY') },
         novaposhta: { configured: this.has('NOVAPOSHTA_API_KEY') },
+        privat: { configured: this.has('PRIVAT_BANK_API_KEY') },
         oracle: {
           configured: this.has('ORACLE_USER') && this.has('ORACLE_PASSWORD') && oracleConnect,
         },

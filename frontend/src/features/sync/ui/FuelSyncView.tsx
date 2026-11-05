@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Синхронізація транзакцій паливних карток OKKO / Shell → Oracle
+ * Синхронізація транзакцій паливних карток OKKO / Shell / UPG → Oracle
  * (P_API_TRUCK_PAY.save_transaction → TZ_TRANS): крон щодня о 09:00 і 15:00 + ручний запуск (останні дні, період або все).
  * Показує прохід по місячних вікнах: скільки отримано від вендора, пропущено, нових.
  * Опитує GET /api/fuel-sync/:vendor раз на 20 с, під час проходу — раз на 5 с.
@@ -49,6 +49,11 @@ const VENDOR: Record<FuelVendorKey, { title: string; subtitle: string; flag: str
     title: 'Синхронізація Shell',
     subtitle: 'Продажі й збори Shell (суми в EUR, як у рахунку) → Oracle, таблиця TZ_TRANS · крон щодня о 09:00 і 15:00, або вручну',
     flag: 'SHELL_SYNC_ENABLED',
+  },
+  upg: {
+    title: 'Синхронізація UPG',
+    subtitle: 'Транзакції паливних карток UPG (суми в гривнях) → Oracle, таблиця TZ_TRANS · крон щодня о 09:00 і 15:00, або вручну',
+    flag: 'UPG_SYNC_ENABLED',
   },
 };
 

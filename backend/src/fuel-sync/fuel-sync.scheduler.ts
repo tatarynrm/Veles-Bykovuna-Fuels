@@ -5,12 +5,13 @@ import { rescheduleJobs } from '../config/cron-jobs';
 import { cronExpressions } from './fuel-sync.utils';
 import { OkkoOracleSyncService } from './okko-oracle-sync.service';
 import { ShellOracleSyncService } from './shell-oracle-sync.service';
+import { UpgOracleSyncService } from './upg-oracle-sync.service';
 
 /**
- * Один розклад на обох вендорів: за планом оновлюємо ЗАВЖДИ і OKKO, і Shell. Проходи
- * йдуть ПОСЛІДОВНО (спочатку OKKO — він короткий, далі повільніший Shell), щоб не бити
+ * Один розклад на всіх вендорів: за планом оновлюємо ЗАВЖДИ OKKO, UPG і Shell. Проходи
+ * йдуть ПОСЛІДОВНО (спочатку короткі OKKO і UPG, наприкінці найповільніший Shell), щоб не бити
  * одночасно по Oracle і по вендорських API. Вимкнений вендор свій прохід пропускає,
- * а збій одного не заважає іншому.
+ * а збій одного не заважає іншим.
  *
  * Часи беруться з `fuel.times` у backend/sync-config.json і перечитуються на льоту:
  * зберегли файл — завдання одразу переставлено.
@@ -24,6 +25,7 @@ export class FuelSyncScheduler implements OnModuleInit {
     private readonly registry: SchedulerRegistry,
     private readonly okko: OkkoOracleSyncService,
     private readonly shell: ShellOracleSyncService,
+    private readonly upg: UpgOracleSyncService,
   ) {}
 
   onModuleInit(): void {
@@ -38,8 +40,8 @@ export class FuelSyncScheduler implements OnModuleInit {
 
   /** Плановий прохід: обидва вендори, один за одним. */
   async runAll(): Promise<void> {
-    this.logger.log('Плановий прохід: OKKO → Shell');
-    for (const vendor of [this.okko, this.shell]) {
+    this.logger.log('Плановий прохід: OKKO → UPG → Shell');
+    for (const vendor of [this.okko, this.upg, this.shell]) {
       try {
         await vendor.runScheduled();
       } catch (error) {

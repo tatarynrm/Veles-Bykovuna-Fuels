@@ -227,6 +227,38 @@ Nova Poshta) when a task touches their mapping.
   kept in memory and surfaced at `GET /api/novaposhta/sync-status`, which the
   **`/workflow/sync/novaposhta`** page polls (every 20 s). There is no per-item progress — it is
   one batch call, so the page shows last-run status, not a live table like GPS.
+- **`privat/privat-api.service.ts`** (+ `privat.mapper.ts`, `privat.controller.ts`) — PrivatBank
+  «Автоклієнт» statements (`acp.privatbank.ua/api/statements/*`, header `token` =
+  `PRIVAT_BANK_API_KEY`), **read-only** — the adapter has no payment calls. Extraction only for now:
+  everything the bank returns is mapped (snake_case, money as numbers, dates ISO) so it can later be
+  stored in Oracle and linked to trips; the dedupe key is `REF`+`REFN` (`id`). Facts: the vendor allows
+  **~1 request/s**, so every call goes through one serial queue with a 1.1 s gap; paging is a cursor
+  (`exist_next_page` + `next_page_id` → `followId`), walked to the end server-side (cap
+  `PRIVAT_BANK_MAX_PAGES`, 300); `scope=period|interim|final` picks `/transactions`,
+  `/transactions/interim` (today, not final yet) or `/final`; the period feed takes `DD-MM-YYYY`.
+  `PR_PR`: p проводиться, t сторнована, **r проведена**, n забракована — the totals skip t and n.
+  Unlike the fuel adapters it **throws** on upstream failure (an empty bank statement that is really a
+  dead token would be a dangerous lie), and the controller answers **403 to the guest role** — the
+  public `guest`/`guest` login must not read company bank data (the sidebar group is hidden for guest
+  too). Results are cached 60 s with in-flight de-duplication (`?force=1` skips it). UI:
+  `features/bank/` → `/workflow/bank/privat24/{transactions,cards}` (the bare `/privat24` redirects
+  to `transactions`; Ukrainian-only ops screens, the two views + `model/` are in the i18n `EXCLUDE`;
+  `BankShell` and the sidebar only read `nav.bank` / `bank.*` keys, so `BankShell` must stay OUT of
+  `EXCLUDE` or `--prune` would drop them).
+  **Cards are a separate API** (`privat-cards.mapper.ts`, `/api/corpcards/v2/*`, all **POST**, dates
+  `DD.MM.YYYY` in the query): `GET /api/privat/cards` (`cards/list`, verified live — corporations of
+  type CORP/ACCKEY/FUEL with their `PanData`; `PanNumber` is the bank's card key, kept as `pan_key`)
+  and `GET /api/privat/card-transactions` (`corp/statements` per corporation, or `card/statements`
+  with `?card=<pan_key>`). **Open issue (2026-11-03):** `corp/statements` works for corporation
+  `37273350` (`id` = `Branch`; raw answer `{CorpStatement:{panInfos:[{pan,fio}…152], statements:[]}}`,
+  genuinely no operations 2025-01 → now) but the corporation `A37273350` (503 cards, 87 open) answers
+  `501 DE022 COPR_CARDS_SERVICE_ERROR` after exactly 30 s for **every** request — any `id` (Branch /
+  jurId / ClientIdJur), CORP and ACCKEY, a 1-day window, a single card — while `cards/list` works.
+  Our request shape matches the vendor document, so this is a bank-side timeout (probably assembling
+  that big corporation), to be raised with Privat24 support (requestIds in the error text). The
+  statement-row mapping follows the document and has **not** been seen on a real operation yet; a
+  failing corporation is reported in `errors[]` and never turned into an empty list. Statement `id`
+  per the doc is `ClientIdJur` or `Branch`; we send `Branch`.
 - **`oracle/oracle.service.ts`** — the **pure Oracle access layer** (`node-oracledb`, THIN
   mode, no Instant Client), lazy connection pool (`poolMax: 4`). Imported with `import oracledb
   = require('oracledb')` because `esModuleInterop` is off. It exposes only generics — `query()`
@@ -261,13 +293,13 @@ Nova Poshta) when a task touches their mapping.
   **`/workflow/sync/gps`** page polls (every 20 s) to visualise the ingest (no manual-run
   button — the cron keeps it going and the page shows the cooldown when Ruptela is down).
   The old `/workflow/ruptela/realtime-coordinates` URL now redirects here.
-- **`fuel-sync/`** — fuel-card transactions **OKKO / Shell → Oracle** through
-  `VELDAT.P_API_TRUCK_PAY.save_transaction(p_json CLOB)` into table `TZ_TRANS`. Two separate
+- **`fuel-sync/`** — fuel-card transactions **OKKO / Shell / UPG → Oracle** through
+  `VELDAT.P_API_TRUCK_PAY.save_transaction(p_json CLOB)` into table `TZ_TRANS`. Three separate
   services on one base (`fuel-sync.base.ts`), each gated by `fuel.<vendor>.enabled` in
   `sync-config.json` (the flag gates the manual run too — it writes to the live DB). One shared
-  schedule drives both: `FuelSyncScheduler` turns `fuel.times` (default **09:00 and 15:00**) into
-  cron jobs and runs OKKO first, then the slower Shell, sequentially, so neither Oracle nor the
-  vendor APIs get two passes at once, and one vendor failing does not skip the other. `enabled`,
+  schedule drives all: `FuelSyncScheduler` turns `fuel.times` (default **09:00 and 15:00**) into
+  cron jobs and runs OKKO, then UPG, then the slower Shell, sequentially, so neither Oracle nor the
+  vendor APIs get two passes at once, and one vendor failing does not skip the others. `enabled`,
   `startDate`, `lookbackDays` and `times` are read through getters on every pass, so edits to the
   file apply without a restart.
   A pass splits the period into ≤ 1-month windows and walks them **oldest first**, stopping at
@@ -276,8 +308,9 @@ Nova Poshta) when a task touches their mapping.
   (7) days, and reaches further back when `max(api_dat)` is older, so a long outage still
   self-heals; `period` takes an explicit `{ from, to }` from the page's date pickers; `full`
   starts at `fuel.<vendor>.startDate` (2025-01-01). `POST /api/fuel-sync/:vendor/run` takes
-  `{ from, to }`, `{ full: true }` or an empty body and runs in the background; `GET /api/fuel-sync/:vendor`  is the live per-window status the **`/workflow/sync/{okko,shell}`** pages poll. Raw rows come
-  from `OkkoApiService.getRawTransactions` / `ShellApiService.getRawPricedTransactions` (all pages,
+  `{ from, to }`, `{ full: true }` or an empty body and runs in the background; `GET /api/fuel-sync/:vendor`  is the live per-window status the **`/workflow/sync/{okko,shell,upg}`** pages poll. Raw rows come
+  from `OkkoApiService.getRawTransactions` / `ShellApiService.getRawPricedTransactions` /
+  `UpgApiService.getRawFuelCardHistory` (all pages,
   errors thrown — unlike the dashboard methods). Mapping lives in `fuel-sync.mapper.ts` (tested);
   SQL in `truck-pay.repository.ts`. Facts that shape it:
   - The procedure takes **one** transaction as a JSON object with lowercase `api_*` keys, dedupes
@@ -309,6 +342,26 @@ Nova Poshta) when a task touches their mapping.
     charged (OKKO `amnt_acct`, kopiykas ÷ 100), `*zn` = discount (negative = markup); amounts are
     positive and refunds/credits set `api_minus = 1` (OKKO 775/783/787, Shell `CreditDebitCode = C`).
   - OKKO `offset` is a **zero-based page index**, not a row offset (Swagger is wrong).
+  - **UPG** (`upg/upg-api.service.ts`, brand `UPG`, doc `common/UPG-Api/ClientReportAPI_Description2026.pdf`
+    — the PDF's text layer has no Cyrillic, render pages to images to read the field comments):
+    `POST /login` (form-urlencoded `login`/`password` from `UPG_LOGIN`/`UPG_PASSWORD`) → bearer
+    token, cached, one re-login + retry on 401. Only `POST /fuel-card-history` (`date_from`/`date_to`
+    in the body, **50 rows/page**, `?page=N` in the query) feeds Oracle; the window is accepted as
+    incomplete (and the pass stops) when fewer rows arrive than `meta.total`. **`date_to` is
+    EXCLUSIVE** (`[from, to)`, verified live: `2026-10-27..2026-10-28` returns only the 27th), so the
+    adapter sends `to + 1 day`; without that the last day of every window would be lost. The adapter builds the
+    page URL itself instead of following `links.next`, so the bearer token never leaves the base URL.
+    Mapping facts (verified on live data 2026-11-05, **not** what the PDF suggests): amounts are
+    **UAH strings**; `price` is the **pump price before discount** and `total` is **after** discount
+    (102.90 × 217.82 ≠ 21 542.40; real price `total/amount` = 98.90, i.e. −4 UAH/l), so `api_cina` =
+    `total/amount`, `*full` = `price`-based, `*zn`/`api_przn` = the difference. The API gives no VAT,
+    receipt or invoice — those stay empty. `card_holder` equals `card_owner` (the company name) and
+    card names are «Карта № 142 566» — **UPG cards are not bound to vehicles**, so `api_tz` stays
+    empty unless the holder differs from the owner. `service_station` often already contains the
+    street that `address` repeats (deduped in `api_adresa`); `api_station` is the number from
+    «АЗС №378 …». Rows go in at once (no invoicing gate like Shell) and `id` is the dedupe key. Not
+    synced: coupons (`/coupons-info`, `/coupons-history`), balance and card list. The account only
+    started producing transactions on 2026-10-27 (nothing earlier in 2025–2026).
   - **Trap (fixed 2026-10-06):** in this Oracle 19c `JSON_OBJECT_T.get_date` **drops the time**
     (`16:10:47` → `00:00:00`), which is why the first 15 549 rows landed at midnight. The package
     body now reads both dates as `CAST(v_obj.get_timestamp(...) AS DATE)` — its current source is
@@ -371,9 +424,9 @@ different architectures (see *Architecture direction* above):
   docs/console, the `ui-kit` gallery). Still on the **legacy flat layout**; being migrated to
   `features/` per the direction above. The `workflow/` URL prefix is real — links and the
   command palette use `/workflow/...`. The **«Синхронізація з базою»** section
-  (`workflow/sync/{gps,novaposhta,okko,shell}`, its own sidebar group above the fleet) is the first
+  (`workflow/sync/{gps,novaposhta,okko,upg,shell}`, its own sidebar group above the fleet) is the first
   slice landed under FSD: `features/sync/` with `ui/` (`SyncShell`, `GpsSyncView`,
-  `NovaPoshtaSyncView`, and `FuelSyncView` shared by OKKO and Shell via a `vendor` prop) and
+  `NovaPoshtaSyncView`, and `FuelSyncView` shared by OKKO, UPG and Shell via a `vendor` prop) and
   `model/` (`usePolledStatus` — a 20 s poller, `types.ts`); the route files are thin. The views
   are Ukrainian-only ops screens (in the i18n `EXCLUDE`); only the shell tabs / sidebar labels are
   translated (`sync.*`, `nav.dbSync`). `FuelSyncView` polls every 5 s while a pass runs and has

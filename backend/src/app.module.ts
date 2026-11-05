@@ -13,6 +13,7 @@ import { TransactionsModule } from './transactions/transactions.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { RuptelaModule } from './ruptela/ruptela.module';
 import { NovaPoshtaModule } from './novaposhta/novaposhta.module';
+import { PrivatModule } from './privat/privat.module';
 import { OracleModule } from './oracle/oracle.module';
 import { HealthModule } from './health/health.module';
 import { GpsModule } from './gps/gps.module';
@@ -37,6 +38,7 @@ import { SyncConfigModule } from './config/sync-config.module';
     AnalyticsModule,
     RuptelaModule,
     NovaPoshtaModule,
+    PrivatModule,
     OracleModule,
     HealthModule,
     GpsModule,

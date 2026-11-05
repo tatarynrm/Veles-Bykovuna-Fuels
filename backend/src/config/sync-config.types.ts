@@ -12,6 +12,7 @@ export interface FuelSyncConfig {
   lookbackDays: number;
   okko: FuelVendorConfig;
   shell: FuelVendorConfig;
+  upg: FuelVendorConfig;
 }
 
 export interface NovaPoshtaSyncConfig {

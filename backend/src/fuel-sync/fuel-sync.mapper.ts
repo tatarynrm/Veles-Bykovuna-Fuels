@@ -1,7 +1,7 @@
 import type { TruckPayRow } from './fuel-sync.types';
 
 /**
- * Сирі транзакції OKKO / Shell → JSON для `P_API_TRUCK_PAY.save_transaction`
+ * Сирі транзакції OKKO / Shell / UPG → JSON для `P_API_TRUCK_PAY.save_transaction`
  * (таблиця TZ_TRANS). Чисті функції без I/O — покриті fuel-sync.mapper.spec.ts.
  *
  * Семантика грошей однакова для обох вендорів (як у CCINVOICED):
@@ -250,5 +250,102 @@ export function mapShellToTruckPay(t: any): TruckPayRow {
     api_tz: vrn,
     api_rahnum: clipText(t.InvoiceNumber, MAX_BYTES.api_rahnum),
     api_rahdat: shellDateTime(t.InvoiceDate),
+  };
+}
+
+// ─── UPG ───────────────────────────────────────────────────────────────────
+
+/** "2022-01-06" + "08:29:19" → "2022-01-06T08:29:19"; без часу — опівніч. */
+export function upgDateTime(date: unknown, time?: unknown): string | null {
+  const d = /^(\d{4}-\d{2}-\d{2})/.exec(String(date ?? '').trim());
+  if (!d) return null;
+  const t = /^(\d{1,2}):(\d{2})(?::(\d{2}))?/.exec(String(time ?? '').trim());
+  const [hh, mi, ss] = t ? [t[1].padStart(2, '0'), t[2], t[3] ?? '00'] : ['00', '00', '00'];
+  return `${d[1]}T${hh}:${mi}:${ss}`;
+}
+
+/** UPG віддає `---` замість назви картки, коли її не задано — це не значення. */
+const meaningful = (v: unknown): string | null => {
+  const s = String(v ?? '').trim();
+  return /^[-–—\s]*$/.test(s) ? null : s;
+};
+
+export function shouldSyncUpg(t: any): boolean {
+  const id = String(t?.id ?? '').trim();
+  return Boolean(id && String(t?.card_number ?? '').trim() && upgDateTime(t?.transaction_date, t?.transaction_time));
+}
+
+/**
+ * UPG `/fuel-card-history` — лише продажі пального, у гривнях. Поля вендора (числа — рядки з
+ * 4 знаками): `price` — ЦІНА НА СТЕЛІ за літр (до знижки), `amount` — літри, `total` — сума
+ * З УРАХУВАННЯМ ЗНИЖКИ. Перевірено на живих даних: price × amount ≠ total (102.90 × 217.82 проти
+ * 21 542.40), реальна ціна total / amount = 98.90 — знижка рівно 4 грн/л. Тож семантика та сама,
+ * що в OKKO/Shell: `*full` — за стелею, `api_suma`/`api_cina` — фактично для нас, `*zn` — різниця.
+ * Номера чека, рахунку й ПДВ у цьому API немає — лишаються порожніми. Знак із вендора не
+ * очікується, але якщо кількість чи сума прийдуть від'ємними — це повернення: беремо модуль і
+ * ставимо `api_minus = 1`.
+ */
+export function mapUpgToTruckPay(t: any): TruckPayRow {
+  const amount = num(t.amount);
+  const total = num(t.total);
+  const price = num(t.price);
+  const negative = (amount ?? 0) < 0 || (total ?? 0) < 0 || (price ?? 0) < 0;
+
+  const kil = amount !== null && amount !== 0 ? Math.abs(amount) : null;
+  const suma = total !== null ? round(Math.abs(total), 2) : null;
+  // Фактична ціна — із суми й літрів (у `price` вендора вона не лежить).
+  const cina = kil !== null && suma !== null ? round(suma / kil, 4) : null;
+  const pump = price !== null && price !== 0 ? round(Math.abs(price), 4) : null;
+  // Без ціни стелі «повна» = фактична: знижки немає.
+  const cinafull = pump ?? cina;
+  const sumafull = pump !== null && kil !== null ? round(pump * kil, 2) : suma;
+  const sumazn = sumafull !== null && suma !== null ? round(sumafull - suma, 2) : null;
+
+  const stationName = String(t.service_station ?? '').trim();
+  // «АЗС №73 "Гастелло"» → код станції 73; без номера лишаємо назву.
+  const stationCode = /№\s*(\d+)/.exec(stationName)?.[1] ?? stationName;
+
+  // service_station інколи вже містить вулицю, а address повторює її з областю
+  // («…вул. Дружбівська, 56» / «Тернопільська обл., с. Варваринці, вул. Дружбівська, 56»).
+  const address = String(t.address ?? '').trim();
+  const [region, ...rest] = address.split(',');
+  const street = rest.join(',').trim();
+  const adresa =
+    street && stationName.toLowerCase().includes(street.toLowerCase())
+      ? joinText([stationName, region], ', ')
+      : joinText([stationName, address], ', ');
+
+  // Картка UPG не прив'язана до авто: `card_holder` ("назва картки") на практиці дорівнює
+  // власнику (назві компанії). Пишемо його в api_tz лише коли це справді інша назва, напр. держномер.
+  const holder = meaningful(t.card_holder);
+  const tz = holder && holder.toLowerCase() !== String(t.card_owner ?? '').trim().toLowerCase() ? holder : null;
+
+  return {
+    api_brend: 'UPG',
+    api_transaction_id: clipText(t.id, MAX_BYTES.api_transaction_id) as string,
+    api_dat: upgDateTime(t.transaction_date, t.transaction_time) as string,
+    api_cc: clipText(t.card_number, MAX_BYTES.api_cc),
+    api_adresa: clipText(adresa, MAX_BYTES.api_adresa),
+    api_station: clipText(stationCode, MAX_BYTES.api_station),
+    api_chek: null,
+    api_kil: kil !== null ? round(kil, 3) : null,
+    api_km: null,
+    api_kraina: 'UA',
+    api_valut: 'UAH',
+    api_cinafull: cinafull,
+    api_cinazn: cinafull !== null && cina !== null ? round(cinafull - cina, 4) : null,
+    api_cina: cina,
+    api_sumafull: sumafull,
+    api_sumazn: sumazn,
+    api_suma: suma,
+    api_pdv: null,
+    api_przn: sumafull !== null && sumazn !== null && sumafull > 0 ? percent((sumazn / sumafull) * 100) : null,
+    api_minus: negative ? 1 : 0,
+    api_oper1: 'Заправка/покупка з карткою',
+    api_oper2: clipText(joinText([t.fuel_id, t.fuel], ' '), MAX_BYTES.api_oper2),
+    api_os: null,
+    api_tz: clipText(tz, MAX_BYTES.api_tz),
+    api_rahnum: null,
+    api_rahdat: null,
   };
 }
