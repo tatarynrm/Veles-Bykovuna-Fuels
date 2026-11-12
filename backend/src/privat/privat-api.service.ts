@@ -223,6 +223,40 @@ export class PrivatApiService {
   }
 
   /**
+   * Account-statement rows for **database sync** (`privat-sync.service.ts`): every row for
+   * the period, no cache, and uniqueness by the bank's own `ID` — NOT by `REF+REFN`.
+   *
+   * `getTransactions()` dedupes by `id` (= REF+REFN) as the vendor's document advises, but on
+   * live data that key is shared by the two legs of every transfer between our own accounts
+   * (debit + credit), so the second leg would silently vanish before reaching the database.
+   * `ID` embeds the direction and is unique across all 56 910 rows checked (see
+   * common/PrivatBank-Api/PRIVATBANK-transactions.md). The same row may still arrive twice at a
+   * page boundary, hence the dedupe on `bank_row_id`.
+   *
+   * Throws on upstream failure and on a truncated walk — an incomplete statement must stop
+   * the pass instead of looking like "nothing new today".
+   */
+  async getTransactionsForSync(startDate: string, endDate: string): Promise<PrivatTransaction[]> {
+    const q: PrivatQuery = { scope: 'period', startDate, endDate };
+    this.assertConfigured();
+    this.validate(q);
+    const { items, truncated } = await this.fetchAll('transactions', q);
+    if (truncated) {
+      throw new BadGatewayException(`ПриватБанк ${startDate}..${endDate}: виписку обірвано на межі сторінок (PRIVAT_BANK_MAX_PAGES)`);
+    }
+    const seen = new Set<string>();
+    const rows: PrivatTransaction[] = [];
+    for (const raw of items) {
+      const tx = mapTransaction(raw);
+      const key = tx.bank_row_id ?? `${tx.id}|${tx.account}|${tx.direction}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      rows.push(tx);
+    }
+    return rows;
+  }
+
+  /**
    * Corporations and their cards (`POST /api/corpcards/v2/cards/list`). Verified live.
    * When a corporation reports more cards than it sent (`cardsAmount > cardsShown`) the
    * rest are fetched in packets of 100 (`numOfEntr`/`packNum`), stopping if a packet adds nothing.

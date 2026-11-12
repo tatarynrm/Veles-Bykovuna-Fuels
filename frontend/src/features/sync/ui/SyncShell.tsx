@@ -3,15 +3,17 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CreditCard, Database, DownloadCloud, Fuel, Package, Receipt } from 'lucide-react';
+import { CreditCard, Database, DownloadCloud, Fuel, Landmark, Package, Receipt } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import ThemeToggleButton from '@/components/ThemeToggleButton';
+import { useSessionUser } from '@/lib/useAuthGuard';
 import { t } from '@/lib/i18n';
 
-const TABS = [
+const TABS: { href: string; label: string; icon: React.ElementType; staffOnly?: boolean }[] = [
   { href: '/workflow/sync/gps', label: 'sync.gpsToOracle', icon: DownloadCloud },
   { href: '/workflow/sync/novaposhta', label: 'sync.npToOracle', icon: Package },
   { href: '/workflow/sync/okko', label: 'sync.okkoToOracle', icon: Fuel },
+  { href: '/workflow/sync/privat', label: 'sync.privatToOracle', icon: Landmark, staffOnly: true },
   { href: '/workflow/sync/upg', label: 'sync.upgToOracle', icon: CreditCard },
   { href: '/workflow/sync/shell', label: 'sync.shellToOracle', icon: Receipt },
 ];
@@ -39,6 +41,8 @@ export default function SyncShell({
   children,
 }: SyncShellProps) {
   const pathname = usePathname();
+  // Банківська синхронізація — як і розділ «Банк», гостю не показуємо.
+  const { isGuest } = useSessionUser();
 
   return (
     <div className="flex min-h-screen w-full">
@@ -68,7 +72,7 @@ export default function SyncShell({
 
           <nav className="mt-3 flex gap-1 overflow-x-auto" aria-label={t('sync.sections')}>
             <div className="segmented">
-              {TABS.map((tab) => {
+              {TABS.filter((tab) => !(tab.staffOnly && isGuest)).map((tab) => {
                 const active = pathname === tab.href;
                 const Icon = tab.icon;
                 return (

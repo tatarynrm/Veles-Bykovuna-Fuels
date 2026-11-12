@@ -1,6 +1,7 @@
-import { Controller, ForbiddenException, Get, Headers, Query } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Headers, Post, Query } from '@nestjs/common';
 import { isGuestRole, roleFromToken } from '../auth/session';
 import { PrivatApiService, PrivatScope } from './privat-api.service';
+import { PrivatSyncService } from './privat-sync.service';
 
 const SCOPES: PrivatScope[] = ['period', 'interim', 'final'];
 
@@ -14,7 +15,10 @@ const SCOPES: PrivatScope[] = ['period', 'interim', 'final'];
  */
 @Controller('api/privat')
 export class PrivatController {
-  constructor(private readonly privat: PrivatApiService) {}
+  constructor(
+    private readonly privat: PrivatApiService,
+    private readonly sync: PrivatSyncService,
+  ) {}
 
   private deny(authorization?: string): void {
     if (isGuestRole(roleFromToken(authorization))) {
@@ -30,6 +34,33 @@ export class PrivatController {
   getStatus(@Headers('authorization') auth?: string) {
     this.deny(auth);
     return this.privat.getStatus();
+  }
+
+  /** Стан синхронізації виписки → Oracle `BANKV` (`P_BANK.AddBankV`): розклад, останній прохід. */
+  @Get('sync-status')
+  getSyncStatus(@Headers('authorization') auth?: string) {
+    this.deny(auth);
+    return this.sync.getStatus();
+  }
+
+  /**
+   * Ручний запуск синхронізації в Oracle. Пише в живу БД, тож `ReadOnlyGuard` блокує його для
+   * гостя; без `privat.enabled` повертає `started: false`.
+   *
+   *   `{}`                         — сьогодні + `privat.lookbackDays` попередніх днів (як крон);
+   *   `{ "from", "to" }`           — вибраний період (РРРР-ММ-ДД; `to` за замовчуванням і максимум —
+   *                                  сьогодні). Іде вікнами по 7 днів, по черзі від найстарішого;
+   *   `{ "dryRun": true, … }`      — нічого не записує: скільки рядків пішло б у процедуру і як вони
+   *                                  виглядатимуть. Один день повертає звіт одразу, довший період
+   *                                  іде у фоні (результат — у `sync-status`).
+   */
+  @Post('sync')
+  runSync(
+    @Headers('authorization') auth?: string,
+    @Body() body?: { dryRun?: boolean; from?: string; to?: string },
+  ) {
+    this.deny(auth);
+    return this.sync.start({ dryRun: body?.dryRun === true, from: body?.from, to: body?.to });
   }
 
   /** Bank server clock + work phase (`statements/settings`). */

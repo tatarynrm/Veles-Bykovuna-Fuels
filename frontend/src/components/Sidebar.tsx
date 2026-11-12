@@ -54,11 +54,12 @@ const primaryNav = [
   { href: '/workflow/merchants', label: 'common.stationNetwork', icon: MapPin, tour: 'nav-merchants' },
 ];
 
-/** Фонові закачки у базу (Oracle) — GPS-історія, статуси Нової Пошти, транзакції OKKO, UPG і Shell. */
+/** Фонові закачки у базу (Oracle) — GPS-історія, статуси Нової Пошти, транзакції OKKO, UPG і Shell, виписка ПриватБанку (гостю — ні). */
 const syncNav = [
   { href: '/workflow/sync/gps', label: 'sync.gpsToOracle', icon: DownloadCloud, tour: 'nav-sync-gps' },
   { href: '/workflow/sync/novaposhta', label: 'sync.npToOracle', icon: Package, tour: 'nav-sync-np' },
   { href: '/workflow/sync/okko', label: 'sync.okkoToOracle', icon: Fuel, tour: 'nav-sync-okko' },
+  { href: '/workflow/sync/privat', label: 'sync.privatToOracle', icon: Landmark, tour: 'nav-sync-privat', staffOnly: true },
   { href: '/workflow/sync/upg', label: 'sync.upgToOracle', icon: CreditCard, tour: 'nav-sync-upg' },
   { href: '/workflow/sync/shell', label: 'sync.shellToOracle', icon: Receipt, tour: 'nav-sync-shell' },
 ];
@@ -341,9 +342,11 @@ export default function Sidebar({ apiStatus }: SidebarProps) {
 
           <SectionLabel>{t('nav.dbSync')}</SectionLabel>
           <div className="space-y-0.5" data-tour="nav-sync">
-            {syncNav.map((item) => (
-              <NavLink key={item.href} {...item} />
-            ))}
+            {syncNav
+              .filter((item) => !(item.staffOnly && isGuest))
+              .map(({ staffOnly: _staffOnly, ...item }) => (
+                <NavLink key={item.href} {...item} />
+              ))}
           </div>
 
           {!isGuest && (

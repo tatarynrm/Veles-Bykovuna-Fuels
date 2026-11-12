@@ -1478,6 +1478,7 @@
   "sync.gpsToOracle": "GPS → Oracle",
   "sync.npToOracle": "Нова Пошта → Oracle",
   "sync.okkoToOracle": "OKKO → Oracle",
+  "sync.privatToOracle": "ПриватБанк → Oracle",
   "sync.sections": "Розділи синхронізації",
   "sync.shellToOracle": "Shell → Oracle",
   "sync.upgToOracle": "UPG → Oracle",

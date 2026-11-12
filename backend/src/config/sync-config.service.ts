@@ -1,23 +1,28 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import * as fs from 'fs';
-import * as path from 'path';
-import { FuelVendorConfig, SyncConfig, SyncConfigStatus } from './sync-config.types';
+import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import * as fs from "fs";
+import * as path from "path";
+import {
+  FuelVendorConfig,
+  SyncConfig,
+  SyncConfigStatus,
+} from "./sync-config.types";
 
-const FILE_NAME = 'sync-config.json';
+const FILE_NAME = "sync-config.json";
 const RELOAD_DEBOUNCE_MS = 300;
 
 /** Значення, якщо файлу немає або ключ у ньому пропущено. */
 const DEFAULTS: SyncConfig = {
   fuel: {
-    times: ['09:00', '15:00'],
+    times: ["09:00", "15:00"],
     lookbackDays: 7,
-    okko: { enabled: false, startDate: '2025-01-01' },
-    shell: { enabled: false, startDate: '2025-01-01' },
-    upg: { enabled: false, startDate: '2025-01-01' },
+    okko: { enabled: false, startDate: "2025-01-01" },
+    shell: { enabled: false, startDate: "2025-01-01" },
+    upg: { enabled: false, startDate: "2025-01-01" },
   },
   novaposhta: { enabled: true, everyHours: 3, windowDays: 40 },
   gps: { enabled: false, everyMinutes: 1 },
+  privat: { enabled: true, everyHours: 1, lookbackDays: 1 },
 };
 
 /**
@@ -25,7 +30,7 @@ const DEFAULTS: SyncConfig = {
  * Саморобний сканер, а не регулярка: регулярка зіпсувала б «https://…» всередині значень.
  */
 export function stripJsonComments(text: string): string {
-  let out = '';
+  let out = "";
   let inString = false;
   let inLine = false;
   let inBlock = false;
@@ -33,14 +38,14 @@ export function stripJsonComments(text: string): string {
     const c = text[i];
     const next = text[i + 1];
     if (inLine) {
-      if (c === '\n') {
+      if (c === "\n") {
         inLine = false;
         out += c;
       }
       continue;
     }
     if (inBlock) {
-      if (c === '*' && next === '/') {
+      if (c === "*" && next === "/") {
         inBlock = false;
         i++;
       }
@@ -48,8 +53,8 @@ export function stripJsonComments(text: string): string {
     }
     if (inString) {
       out += c;
-      if (c === '\\') {
-        out += next ?? '';
+      if (c === "\\") {
+        out += next ?? "";
         i++;
         continue;
       }
@@ -61,12 +66,12 @@ export function stripJsonComments(text: string): string {
       out += c;
       continue;
     }
-    if (c === '/' && next === '/') {
+    if (c === "/" && next === "/") {
       inLine = true;
       i++;
       continue;
     }
-    if (c === '/' && next === '*') {
+    if (c === "/" && next === "*") {
       inBlock = true;
       i++;
       continue;
@@ -76,28 +81,44 @@ export function stripJsonComments(text: string): string {
   return out;
 }
 
-const bool = (v: unknown, fallback: boolean): boolean => (typeof v === 'boolean' ? v : fallback);
+const bool = (v: unknown, fallback: boolean): boolean =>
+  typeof v === "boolean" ? v : fallback;
 
-const int = (v: unknown, fallback: number, min: number, max: number): number => {
+const int = (
+  v: unknown,
+  fallback: number,
+  min: number,
+  max: number,
+): number => {
   const n = Number(v);
   return Number.isFinite(n) && n >= min && n <= max ? Math.round(n) : fallback;
 };
 
 const ymd = (v: unknown, fallback: string): string =>
-  typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(Date.parse(`${v}T00:00:00Z`)) ? v : fallback;
+  typeof v === "string" &&
+  /^\d{4}-\d{2}-\d{2}$/.test(v) &&
+  !isNaN(Date.parse(`${v}T00:00:00Z`))
+    ? v
+    : fallback;
 
 /** "09:00" → { hour: 9, minute: 0 }; інакше null. */
-export function parseTime(value: unknown): { hour: number; minute: number } | null {
-  const m = /^(\d{1,2}):(\d{2})$/.exec(String(value ?? '').trim());
+export function parseTime(
+  value: unknown,
+): { hour: number; minute: number } | null {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(value ?? "").trim());
   if (!m) return null;
   const hour = Number(m[1]);
   const minute = Number(m[2]);
-  return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59 ? { hour, minute } : null;
+  return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59
+    ? { hour, minute }
+    : null;
 }
 
 const timeList = (v: unknown, fallback: string[]): string[] => {
   if (!Array.isArray(v)) return fallback;
-  const valid = [...new Set(v.filter((x) => parseTime(x)).map((x) => String(x).trim()))].sort();
+  const valid = [
+    ...new Set(v.filter((x) => parseTime(x)).map((x) => String(x).trim())),
+  ].sort();
   return valid.length ? valid : fallback;
 };
 
@@ -153,7 +174,7 @@ export class SyncConfigService implements OnModuleDestroy {
     const changed = JSON.stringify(next) !== JSON.stringify(this.config);
     this.config = next;
     if (changed) {
-      this.logger.log('Налаштування синхронізацій перечитано');
+      this.logger.log("Налаштування синхронізацій перечитано");
       for (const listener of this.listeners) {
         try {
           listener(next);
@@ -166,13 +187,13 @@ export class SyncConfigService implements OnModuleDestroy {
   }
 
   private resolveFile(): string {
-    const fromEnv = this.env.get<string>('SYNC_CONFIG_FILE');
+    const fromEnv = this.env.get<string>("SYNC_CONFIG_FILE");
     if (fromEnv) return path.resolve(fromEnv);
     // PM2 і dev-режим запускають бекенд із cwd=backend/, зібраний код лежить у dist/.
     const candidates = [
       path.resolve(process.cwd(), FILE_NAME),
-      path.resolve(__dirname, '..', '..', FILE_NAME),
-      path.resolve(__dirname, '..', '..', '..', FILE_NAME),
+      path.resolve(__dirname, "..", "..", FILE_NAME),
+      path.resolve(__dirname, "..", "..", "..", FILE_NAME),
     ];
     return candidates.find((p) => fs.existsSync(p)) ?? candidates[0];
   }
@@ -181,7 +202,9 @@ export class SyncConfigService implements OnModuleDestroy {
     let raw: any = {};
     try {
       if (fs.existsSync(this.file)) {
-        raw = JSON.parse(stripJsonComments(fs.readFileSync(this.file, 'utf8'))) ?? {};
+        raw =
+          JSON.parse(stripJsonComments(fs.readFileSync(this.file, "utf8"))) ??
+          {};
         this.error = null;
         this.loadedAt = new Date().toISOString();
       } else {
@@ -198,13 +221,34 @@ export class SyncConfigService implements OnModuleDestroy {
     const fuel = raw.fuel ?? {};
     const np = raw.novaposhta ?? {};
     const gps = raw.gps ?? {};
+    const privat = raw.privat ?? {};
     return {
       fuel: {
         times: timeList(fuel.times, DEFAULTS.fuel.times),
-        lookbackDays: int(fuel.lookbackDays, DEFAULTS.fuel.lookbackDays, 0, 365),
-        okko: this.vendor(fuel.okko, 'OKKO_SYNC_ENABLED', 'OKKO_SYNC_START', DEFAULTS.fuel.okko),
-        shell: this.vendor(fuel.shell, 'SHELL_SYNC_ENABLED', 'SHELL_SYNC_START', DEFAULTS.fuel.shell),
-        upg: this.vendor(fuel.upg, 'UPG_SYNC_ENABLED', 'UPG_SYNC_START', DEFAULTS.fuel.upg),
+        lookbackDays: int(
+          fuel.lookbackDays,
+          DEFAULTS.fuel.lookbackDays,
+          0,
+          365,
+        ),
+        okko: this.vendor(
+          fuel.okko,
+          "OKKO_SYNC_ENABLED",
+          "OKKO_SYNC_START",
+          DEFAULTS.fuel.okko,
+        ),
+        shell: this.vendor(
+          fuel.shell,
+          "SHELL_SYNC_ENABLED",
+          "SHELL_SYNC_START",
+          DEFAULTS.fuel.shell,
+        ),
+        upg: this.vendor(
+          fuel.upg,
+          "UPG_SYNC_ENABLED",
+          "UPG_SYNC_START",
+          DEFAULTS.fuel.upg,
+        ),
       },
       novaposhta: {
         enabled: bool(np.enabled, DEFAULTS.novaposhta.enabled),
@@ -212,22 +256,48 @@ export class SyncConfigService implements OnModuleDestroy {
         windowDays: int(np.windowDays, DEFAULTS.novaposhta.windowDays, 1, 365),
       },
       gps: {
-        enabled: bool(gps.enabled, this.envBool('GPS_SYNC_ENABLED', DEFAULTS.gps.enabled)),
+        enabled: bool(
+          gps.enabled,
+          this.envBool("GPS_SYNC_ENABLED", DEFAULTS.gps.enabled),
+        ),
         everyMinutes: int(gps.everyMinutes, DEFAULTS.gps.everyMinutes, 1, 1440),
+      },
+      privat: {
+        enabled: bool(
+          privat.enabled,
+          this.envBool("PRIVAT_SYNC_ENABLED", DEFAULTS.privat.enabled),
+        ),
+        everyHours: int(privat.everyHours, DEFAULTS.privat.everyHours, 1, 24),
+        lookbackDays: int(
+          privat.lookbackDays,
+          DEFAULTS.privat.lookbackDays,
+          0,
+          31,
+        ),
       },
     };
   }
 
-  private vendor(raw: any, enabledEnv: string, startEnv: string, fallback: FuelVendorConfig): FuelVendorConfig {
+  private vendor(
+    raw: any,
+    enabledEnv: string,
+    startEnv: string,
+    fallback: FuelVendorConfig,
+  ): FuelVendorConfig {
     return {
       enabled: bool(raw?.enabled, this.envBool(enabledEnv, fallback.enabled)),
-      startDate: ymd(raw?.startDate, ymd(this.env.get<string>(startEnv), fallback.startDate)),
+      startDate: ymd(
+        raw?.startDate,
+        ymd(this.env.get<string>(startEnv), fallback.startDate),
+      ),
     };
   }
 
   private envBool(key: string, fallback: boolean): boolean {
     const value = this.env.get<string>(key);
-    return value === undefined ? fallback : String(value).trim().toLowerCase() === 'true';
+    return value === undefined
+      ? fallback
+      : String(value).trim().toLowerCase() === "true";
   }
 
   private watch(): void {
@@ -238,9 +308,13 @@ export class SyncConfigService implements OnModuleDestroy {
         if (this.reloadTimer) clearTimeout(this.reloadTimer);
         this.reloadTimer = setTimeout(() => this.reload(), RELOAD_DEBOUNCE_MS);
       });
-      this.logger.log(`Налаштування синхронізацій: ${this.file} (зміни підхоплюються без перезапуску)`);
+      this.logger.log(
+        `Налаштування синхронізацій: ${this.file} (зміни підхоплюються без перезапуску)`,
+      );
     } catch (e) {
-      this.logger.warn(`Не вдалося стежити за ${this.file}: ${e?.message ?? e}`);
+      this.logger.warn(
+        `Не вдалося стежити за ${this.file}: ${e?.message ?? e}`,
+      );
     }
   }
 

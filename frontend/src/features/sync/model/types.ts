@@ -58,6 +58,87 @@ export interface NpSyncStatus {
   config: { windowDays: number; cron: string; cronLabel: string };
 }
 
+/** Рядок виписки Привату у вигляді, в якому він іде в P_BANK.AddBankV (лише те, що показуємо). */
+export interface PrivatSyncSampleRow {
+  bank_trans_id: string;
+  /** `1` — прихід, `2` — розхід. */
+  dk: '1' | '2';
+  doc_date: string;
+  suma: number;
+  suma_uah: number | null;
+  valut_idnt: string | null;
+  firma_iban: string | null;
+  ur_name: string | null;
+  prizn: string | null;
+}
+
+export type PrivatSyncMode = 'recent' | 'period';
+
+/** Одне вікно періоду (≤ 7 днів) у живому прогресі проходу. Вікна йдуть чергою, від найстарішого. */
+export interface PrivatSyncWindow {
+  from: string;
+  to: string;
+  status: VehicleSyncStatus;
+  fetched: number;
+  skipped: number;
+  alreadyStored: number;
+  /** Передано процедурі (у пробному проході — скільки пішло б). */
+  sent: number;
+  inserted: number;
+  failed: number;
+  error: string | null;
+  at: string | null;
+}
+
+export interface PrivatSyncRun {
+  at: string;
+  trigger: 'cron' | 'manual';
+  mode: PrivatSyncMode;
+  /** `true` — пробний прохід: нічого не записувалось. */
+  dryRun: boolean;
+  from: string;
+  to: string;
+  windowsTotal: number;
+  windowsDone: number;
+  fetched: number;
+  skipped: number;
+  alreadyStored: number;
+  sent: number;
+  inserted: number;
+  failed: number;
+  durationMs: number;
+  ok: boolean;
+  error: string | null;
+  errors: string[];
+  sample?: PrivatSyncSampleRow[];
+}
+
+/** GET /api/privat/sync-status ← backend/src/privat/privat-sync.service.ts */
+export interface PrivatSyncStatus {
+  enabled: boolean;
+  oracleConfigured: boolean;
+  bankConfigured: boolean;
+  running: boolean;
+  startedAt: string | null;
+  /** Режим і період поточного (або останнього) проходу. */
+  mode: PrivatSyncMode | null;
+  period: { from: string; to: string } | null;
+  windowsTotal: number;
+  windowsDone: number;
+  windows: PrivatSyncWindow[];
+  lastRun: PrivatSyncRun | null;
+  nextRunAt: string | null;
+  config: {
+    cron: string;
+    cronLabel: string;
+    lookbackDays: number;
+    windowDays: number;
+    maxPeriodDays: number;
+    procedure: string;
+    configFile: string;
+  };
+}
+
 export type FuelVendorKey = 'okko' | 'shell' | 'upg';
 export type FuelSyncMode = 'recent' | 'period' | 'full';
 export type FuelSyncTrigger = 'cron' | 'manual';

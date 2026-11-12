@@ -1478,6 +1478,7 @@
   "sync.gpsToOracle": "GPS → Oracle",
   "sync.npToOracle": "Nova Poshta → Oracle",
   "sync.okkoToOracle": "OKKO → Oracle",
+  "sync.privatToOracle": "PrivatBank → Oracle",
   "sync.sections": "Secciones de sincronización",
   "sync.shellToOracle": "Shell → Oracle",
   "sync.upgToOracle": "UPG → Oracle",

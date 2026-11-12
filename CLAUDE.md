@@ -84,13 +84,14 @@ Properties worth keeping:
   are ignored, and an unparseable file keeps the last good config while surfacing the message
   in `getStatus().error` (and in the sync pages).
 - **`.env` stays a fallback**, not a competitor: `enabled` / start dates come from the file
-  when present, otherwise from `OKKO_SYNC_ENABLED` / `SHELL_SYNC_ENABLED` / `GPS_SYNC_ENABLED`
-  / `*_SYNC_START`. The shipped file deliberately keeps those `enabled` keys **commented out**
+  when present, otherwise from `OKKO_SYNC_ENABLED` / `SHELL_SYNC_ENABLED` / `UPG_SYNC_ENABLED` /
+  `PRIVAT_SYNC_ENABLED` / `GPS_SYNC_ENABLED` / `*_SYNC_START`. The shipped file deliberately keeps those `enabled` keys **commented out**
   so a deploy cannot silently stop a sync that `.env` had switched on.
 - **Schedules are dynamic jobs, not `@Cron` decorators** — a decorator fixes its expression at
   class-load time, so it cannot follow the file. Each service registers its jobs through
   `rescheduleJobs()` (`config/cron-jobs.ts`) in `onModuleInit` and again on every config change;
-  the job names (`fuel-sync#0`, `np-delivered-sync#0`, `gps-sync#0`) are what it replaces.
+  the job names (`fuel-sync#0`, `np-delivered-sync#0`, `gps-sync#0`, `privat-sync#0`) are what it
+  replaces.
   `SYNC_CONFIG_FILE` overrides the file location.
 
 ### Backend: vendor adapters + thin aggregating controllers
@@ -259,6 +260,50 @@ Nova Poshta) when a task touches their mapping.
   statement-row mapping follows the document and has **not** been seen on a real operation yet; a
   failing corporation is reported in `errors[]` and never turned into an empty list. Statement `id`
   per the doc is `ClientIdJur` or `Branch`; we send `Branch`.
+  **Field-by-field reference (verified on 56 910 live rows): `common/PrivatBank-Api/PRIVATBANK-transactions.md`.**
+  **`privat/privat-sync.service.ts` — account statement → Oracle `P_BANK.AddBankV` (table `VELDAT.BANKV`).**
+  A cron on `privat.everyHours` (1 = hourly at :00; `sync-config.json` → `privat`, `.env` fallback
+  `PRIVAT_SYNC_ENABLED`, **on by default** — it writes to the live DB) reads **today plus
+  `privat.lookbackDays` previous days** (default 1, so postings between the day's last run and
+  midnight are not lost; 0 = strictly today) and writes every posted row. Pure mapping in
+  `privat-bank.mapper.ts` (tested), SQL in `bank.repository.ts`. Facts that shape it (the package
+  source was read from `all_source`):
+  - `AddBankV` dedupes on `upper(bank || '_' || id)`, **only inserts (never updates)** and
+    **commits by itself after every call**, so a pass cannot be one transaction; the repository
+    first drops ids already in `BANKV`, which also makes a no-news hour cost one `SELECT`.
+    `KOD` comes from a `BEFORE INSERT` trigger (sequence), `DAT` is `trunc(sysdate)`.
+    **Trap (2026-11-11):** when someone rebuilds `BANKV` its generated `BANKV_$$PKG` body and the
+    `BANKV_$$2_VELDAT` trigger go INVALID (columns such as `NOTUSE`/`OPER`/`SUMAZAKR` vanished) and
+    every call fails with `ORA-04098` — check `all_objects.status` / `all_errors` first, as with
+    `P_API_TRUCK_PAY`. The repository stops a batch after 5 failures in a row with no success, so a
+    broken table is not hammered with hundreds of calls; the next hourly pass retries and writes
+    whatever is missing.
+  - `pBankTransId` is the bank's **`ID`** (`bank_row_id`), **not `id` = REF+REFN**: the latter is shared
+    by both legs of a transfer between our own accounts, so it would drop one. That is why the
+    sync uses its own `PrivatApiService.getTransactionsForSync()` (no REF+REFN dedupe, unique by
+    `ID`, throws on a truncated walk) instead of `getTransactions()`.
+  - **`pDk` follows the business meaning: money in → `1`, money out → `2`.** The bank's
+    `TRANTYPE` is the opposite of what "debit = income" suggests: `D` = money LEFT our account →
+    `2`, `C` = money came in → `1` (`dkOf()`). The procedure's comment «direction — debit-1/credit-2»
+    would give the reverse; if accounting turns out to want that, flip `dkOf()` — one place.
+  - Only posted rows (`PR_PR = r`) are written: the procedure never updates, so a row caught
+    while still `p` would stay half-baked forever.
+  - `BANKV` text columns are **bytes** and narrower than the statement's (`UR_BANK_NAME` 100 B vs
+    bank names up to 131 B) → every text goes through `clipText` (ORA-12899 guard). Dates cross
+    to Oracle as strings (`TO_DATE` in the block), so the result does not depend on the process TZ.
+  - **Manual period, run as a queue of windows.** `POST /api/privat/sync` takes `{}` (today +
+    `lookbackDays`, like the cron), `{from, to}` (any period; `to` defaults to and is clamped at
+    today, max `MAX_PERIOD_DAYS` = 1100) and `dryRun`. A period is split into `WINDOW_DAYS` = 7-day
+    windows walked **one after another, oldest first** (never in parallel — the bank allows ~1
+    request/s); the first failing window stops the pass and leaves the rest `pending`, so the next run
+    resumes there. Live progress (`windows[]`, `windowsDone/Total`) is kept in memory and shown by
+    `/workflow/sync/privat` (progress bar + window table, polled every 5 s while running). The
+    stored-ids check is bounded to the window (`[from, to]`) — unbounded it would reload the whole
+    later history for every window. Long writing periods ask for confirmation in the UI (> 31 days).
+  - `GET /api/privat/sync-status` (403 for guest) and `POST /api/privat/sync` (blocked for guest);
+    **`{"dryRun": true}` writes nothing** and returns the report plus a sample of the exact
+    `AddBankV` arguments — use it before enabling. A one-window dry run answers inline, a longer one
+    runs in the background (result in `sync-status`).
 - **`oracle/oracle.service.ts`** — the **pure Oracle access layer** (`node-oracledb`, THIN
   mode, no Instant Client), lazy connection pool (`poolMax: 4`). Imported with `import oracledb
   = require('oracledb')` because `esModuleInterop` is off. It exposes only generics — `query()`

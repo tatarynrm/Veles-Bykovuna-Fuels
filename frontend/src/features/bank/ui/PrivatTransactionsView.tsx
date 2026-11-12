@@ -59,12 +59,17 @@ const STATUS_BADGE: Record<string, string> = {
 
 const monthStart = () => `${localYmd().slice(0, 8)}01`;
 
-/** Діапазон для пресету. «Сьогодні» — це проміжна виписка банку (interim), а не період. */
+/**
+ * Діапазон для пресету. «Сьогодні» — виписка за період `сьогодні..сьогодні`, а НЕ проміжна
+ * (interim): проміжна віддає «від попереднього операційного дня до сьогодні», тобто разом із
+ * вчорашніми операціями (на живих даних 138 вчорашніх із 187), а за період — лише сьогоднішні,
+ * з тією самою останньою операцією.
+ */
 function presetRequest(key: Exclude<PresetKey, 'custom'>): PrivatRequest {
   const to = localYmd();
   switch (key) {
     case 'today':
-      return { scope: 'interim', from: to, to };
+      return { scope: 'period', from: to, to };
     case '7':
       return { scope: 'period', from: localYmd(-7), to };
     case '30':
@@ -83,8 +88,9 @@ export default function PrivatTransactionsView() {
 
   const { transactions, balances, loading, error, balanceError, load } = usePrivatStatements(ready);
 
-  const [preset, setPreset] = useState<PresetKey>('7');
-  const [from, setFrom] = useState(() => localYmd(-7));
+  // За замовчуванням — сьогодні (було 7 днів).
+  const [preset, setPreset] = useState<PresetKey>('today');
+  const [from, setFrom] = useState(() => localYmd());
   const [to, setTo] = useState(() => localYmd());
   /** Що саме показано зараз — щоб підпис і експорт не залежали від полів, які вже встигли змінити. */
   const [shown, setShown] = useState<PrivatRequest | null>(null);
@@ -105,9 +111,9 @@ export default function PrivatTransactionsView() {
     [load],
   );
 
-  // Перше завантаження — останні 7 днів.
+  // Перше завантаження — сьогодні.
   useEffect(() => {
-    if (ready) run(presetRequest('7'));
+    if (ready) run(presetRequest('today'));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
 
@@ -153,7 +159,9 @@ export default function PrivatTransactionsView() {
   const periodLabel = shown
     ? shown.scope === 'interim'
       ? 'сьогодні (проміжна виписка)'
-      : `${dmy(shown.from)} – ${dmy(shown.to)}`
+      : shown.from === shown.to
+        ? dmy(shown.from)
+        : `${dmy(shown.from)} – ${dmy(shown.to)}`
     : NO_DATA;
   const fileStem = `privat24_${shown?.scope === 'interim' ? 'today_' + localYmd() : `${shown?.from ?? ''}_${shown?.to ?? ''}`}`;
 

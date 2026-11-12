@@ -26,10 +26,19 @@ export interface GpsSyncConfig {
   everyMinutes: number;
 }
 
+export interface PrivatSyncConfig {
+  enabled: boolean;
+  /** Крок запуску, годин (1 = щогодини о :00). */
+  everyHours: number;
+  /** Скільки ПОПЕРЕДНІХ днів читати разом із сьогоднішнім (0 = лише сьогодні). */
+  lookbackDays: number;
+}
+
 export interface SyncConfig {
   fuel: FuelSyncConfig;
   novaposhta: NovaPoshtaSyncConfig;
   gps: GpsSyncConfig;
+  privat: PrivatSyncConfig;
 }
 
 /** Стан читання файлу — показуємо на сторінках синхронізації. */
