@@ -6,8 +6,10 @@ import { oracleErrorText } from "../common/oracle-error";
 import { OracleService } from "../oracle/oracle.service";
 import {
   addDays,
+  cronExpressions,
   isYmd,
   localYmd,
+  nextDailyRun,
   splitPeriod,
 } from "../fuel-sync/fuel-sync.utils";
 import { PrivatApiService } from "./privat-api.service";
@@ -105,16 +107,6 @@ export const WINDOW_DAYS = 7;
 /** Запобіжник від випадкового «з 2000 року»: до 3 років за один запуск. */
 export const MAX_PERIOD_DAYS = 1100;
 
-/** Наступний запуск крону `0 0 *\/N * * *` (о :00 кожної N-ї години доби). */
-export function nextHourlyRun(now: Date, everyHours: number): Date {
-  const next = new Date(now);
-  next.setMinutes(0, 0, 0);
-  do {
-    next.setHours(next.getHours() + 1);
-  } while (next.getHours() % everyHours !== 0 || next <= now);
-  return next;
-}
-
 const daysBetween = (from: string, to: string) =>
   Math.round(
     (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) /
@@ -124,10 +116,11 @@ const daysBetween = (from: string, to: string) =>
 /**
  * ПриватБанк → Oracle: транзакції рахунків у `P_BANK.AddBankV` (таблиця `BANKV`).
  *
- * Щогодини (`privat.everyHours` у sync-config.json) читає виписку за СЬОГОДНІ — разом із
- * `privat.lookbackDays` попередніх днів (за замовчуванням 1) — і передає процедурі кожну
- * проведену транзакцію. Попередній день потрібен не для «історії»: проведення, що прийшло
- * між останнім запуском доби та північчю, інакше випало б, бо о 00:00 вікно вже нове.
+ * У задані часи (`privat.times` у sync-config.json, за замовчуванням 08:30, 11:30, 14:30,
+ * 17:30) читає виписку за СЬОГОДНІ — разом із `privat.lookbackDays` попередніх днів (за
+ * замовчуванням 1, тобто сьогодні + учора) — і передає процедурі кожну проведену транзакцію.
+ * Попередній день потрібен не для «історії»: проведення, що прийшло між останнім запуском
+ * доби та північчю, інакше випало б, бо о 00:00 вікно вже нове.
  * Вручну можна обрати довільний період (`start({ from, to })`) — він іде вікнами по
  * WINDOW_DAYS днів, по черзі, від найстарішого.
  *
@@ -160,13 +153,9 @@ export class PrivatSyncService implements OnModuleInit {
     return this.syncConfig.get().privat;
   }
 
-  private cronExpression(): string {
-    return `0 0 */${this.settings.everyHours} * * *`;
-  }
-
   private cronLabel(): string {
-    const n = this.settings.everyHours;
-    return n === 1 ? "щогодини" : `кожні ${n} год`;
+    const times = this.settings.times;
+    return times.length ? `щодня о ${times.join(" і ")}` : "за розкладом";
   }
 
   onModuleInit(): void {
@@ -179,7 +168,9 @@ export class PrivatSyncService implements OnModuleInit {
   }
 
   private applySchedule(): void {
-    const expressions = this.settings.enabled ? [this.cronExpression()] : [];
+    const expressions = this.settings.enabled
+      ? cronExpressions(this.settings.times)
+      : [];
     rescheduleJobs(
       this.registry,
       "privat-sync",
@@ -206,10 +197,10 @@ export class PrivatSyncService implements OnModuleInit {
       windows: this.windows,
       lastRun: this.lastRun,
       nextRunAt: enabled
-        ? nextHourlyRun(new Date(), this.settings.everyHours).toISOString()
+        ? (nextDailyRun(new Date(), this.settings.times)?.toISOString() ?? null)
         : null,
       config: {
-        cron: this.cronExpression(),
+        cron: cronExpressions(this.settings.times).join(" · "),
         cronLabel: this.cronLabel(),
         lookbackDays: this.settings.lookbackDays,
         windowDays: WINDOW_DAYS,

@@ -14,7 +14,7 @@ const configOf = (enabled: boolean, times = ['09:00', '15:00'], lookbackDays = 7
   },
   novaposhta: { enabled: true, everyHours: 3, windowDays: 40 },
   gps: { enabled: false, everyMinutes: 1 },
-  privat: { enabled: false, everyHours: 1, lookbackDays: 1 },
+  privat: { enabled: false, times: ['08:30', '11:30', '14:30', '17:30'], lookbackDays: 1 },
 });
 
 /** Мінімальний нащадок із заглушками замість вендора й Oracle — перевіряємо лише запуск. */

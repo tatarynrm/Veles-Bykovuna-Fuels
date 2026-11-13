@@ -262,10 +262,11 @@ Nova Poshta) when a task touches their mapping.
   per the doc is `ClientIdJur` or `Branch`; we send `Branch`.
   **Field-by-field reference (verified on 56 910 live rows): `common/PrivatBank-Api/PRIVATBANK-transactions.md`.**
   **`privat/privat-sync.service.ts` — account statement → Oracle `P_BANK.AddBankV` (table `VELDAT.BANKV`).**
-  A cron on `privat.everyHours` (1 = hourly at :00; `sync-config.json` → `privat`, `.env` fallback
+  A cron on `privat.times` (daily clock times, default `08:30, 11:30, 14:30, 17:30` — same
+  `times`→cron helpers as fuel; `sync-config.json` → `privat`, `.env` fallback
   `PRIVAT_SYNC_ENABLED`, **on by default** — it writes to the live DB) reads **today plus
-  `privat.lookbackDays` previous days** (default 1, so postings between the day's last run and
-  midnight are not lost; 0 = strictly today) and writes every posted row. Pure mapping in
+  `privat.lookbackDays` previous days** (default 1 = today + yesterday, so postings between the
+  day's last run and midnight are not lost; 0 = strictly today) and writes every posted row. Pure mapping in
   `privat-bank.mapper.ts` (tested), SQL in `bank.repository.ts`. Facts that shape it (the package
   source was read from `all_source`):
   - `AddBankV` dedupes on `upper(bank || '_' || id)`, **only inserts (never updates)** and

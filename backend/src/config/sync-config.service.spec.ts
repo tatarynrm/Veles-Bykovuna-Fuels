@@ -58,18 +58,26 @@ describe('SyncConfigService', () => {
     cleanup();
   });
 
-  it('Privat: щогодини, з вчорашнім днем, увімкнено; .env вимикає, файл має пріоритет, биті значення ігноруються', () => {
+  it('Privat: за розкладом, з вчорашнім днем, увімкнено; .env вимикає, файл має пріоритет, биті значення ігноруються', () => {
     const plain = withFile('{}');
-    expect(plain.service.get().privat).toEqual({ enabled: true, everyHours: 1, lookbackDays: 1 });
+    expect(plain.service.get().privat).toEqual({
+      enabled: true,
+      times: ['08:30', '11:30', '14:30', '17:30'],
+      lookbackDays: 1,
+    });
     plain.cleanup();
-    const env = withFile('{ "privat": { "everyHours": 2, "lookbackDays": 0 } }', { PRIVAT_SYNC_ENABLED: 'false' });
-    expect(env.service.get().privat).toEqual({ enabled: false, everyHours: 2, lookbackDays: 0 });
+    const env = withFile('{ "privat": { "times": ["07:00", "19:00"], "lookbackDays": 0 } }', { PRIVAT_SYNC_ENABLED: 'false' });
+    expect(env.service.get().privat).toEqual({ enabled: false, times: ['07:00', '19:00'], lookbackDays: 0 });
     env.cleanup();
     const file = withFile('{ "privat": { "enabled": true } }', { PRIVAT_SYNC_ENABLED: 'false' });
     expect(file.service.get().privat.enabled).toBe(true);
     file.cleanup();
-    const bad = withFile('{ "privat": { "enabled": true, "everyHours": 99, "lookbackDays": -3 } }');
-    expect(bad.service.get().privat).toEqual({ enabled: true, everyHours: 1, lookbackDays: 1 });
+    const bad = withFile('{ "privat": { "enabled": true, "times": ["25:99", "nope"], "lookbackDays": -3 } }');
+    expect(bad.service.get().privat).toEqual({
+      enabled: true,
+      times: ['08:30', '11:30', '14:30', '17:30'],
+      lookbackDays: 1,
+    });
     bad.cleanup();
   });
 

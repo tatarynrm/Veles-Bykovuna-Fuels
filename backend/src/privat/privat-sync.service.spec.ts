@@ -1,5 +1,5 @@
 import { mapTransaction } from './privat.mapper';
-import { MAX_PERIOD_DAYS, PrivatSyncService, WINDOW_DAYS, nextHourlyRun } from './privat-sync.service';
+import { MAX_PERIOD_DAYS, PrivatSyncService, WINDOW_DAYS } from './privat-sync.service';
 import { addDays, localYmd } from '../fuel-sync/fuel-sync.utils';
 
 const row = (id: string, over: Record<string, unknown> = {}) =>
@@ -79,7 +79,7 @@ function build(opts: {
       }),
   } as any;
   const syncConfig = {
-    get: () => ({ privat: { enabled: opts.enabled ?? true, everyHours: 1, lookbackDays: opts.lookbackDays ?? 1 } }),
+    get: () => ({ privat: { enabled: opts.enabled ?? true, times: ['08:30', '11:30', '14:30', '17:30'], lookbackDays: opts.lookbackDays ?? 1 } }),
     getStatus: () => ({ file: 'sync-config.json', exists: true, loadedAt: null, error: null }),
     onChange: () => undefined,
   } as any;
@@ -273,16 +273,5 @@ describe('period and the queue of windows', () => {
     expect(await off.service.start({ from: ago(3), to: ago(0) })).toMatchObject({ started: false });
     const on = build({ rows: [], lookbackDays: 1 });
     expect((await on.service.start({})).message).toContain('вікон 1');
-  });
-});
-
-describe('nextHourlyRun', () => {
-  it('hourly: the next full hour', () => {
-    expect(nextHourlyRun(new Date(2026, 10, 11, 10, 30), 1)).toEqual(new Date(2026, 10, 11, 11, 0));
-    expect(nextHourlyRun(new Date(2026, 10, 11, 10, 0, 0), 1)).toEqual(new Date(2026, 10, 11, 11, 0));
-  });
-  it('every 3 hours: the next hour divisible by 3, rolling over midnight', () => {
-    expect(nextHourlyRun(new Date(2026, 10, 11, 10, 30), 3)).toEqual(new Date(2026, 10, 11, 12, 0));
-    expect(nextHourlyRun(new Date(2026, 10, 11, 22, 5), 3)).toEqual(new Date(2026, 10, 12, 0, 0));
   });
 });

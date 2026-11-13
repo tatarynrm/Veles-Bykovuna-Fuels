@@ -28,8 +28,8 @@ export interface GpsSyncConfig {
 
 export interface PrivatSyncConfig {
   enabled: boolean;
-  /** Крок запуску, годин (1 = щогодини о :00). */
-  everyHours: number;
+  /** Коли запускати щодня, місцевий час: ["08:30", "11:30", "14:30", "17:30"]. */
+  times: string[];
   /** Скільки ПОПЕРЕДНІХ днів читати разом із сьогоднішнім (0 = лише сьогодні). */
   lookbackDays: number;
 }

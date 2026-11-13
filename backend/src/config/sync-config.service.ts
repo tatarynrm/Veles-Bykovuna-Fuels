@@ -22,7 +22,11 @@ const DEFAULTS: SyncConfig = {
   },
   novaposhta: { enabled: true, everyHours: 3, windowDays: 40 },
   gps: { enabled: false, everyMinutes: 1 },
-  privat: { enabled: true, everyHours: 1, lookbackDays: 1 },
+  privat: {
+    enabled: true,
+    times: ["08:30", "11:30", "14:30", "17:30"],
+    lookbackDays: 1,
+  },
 };
 
 /**
@@ -267,7 +271,7 @@ export class SyncConfigService implements OnModuleDestroy {
           privat.enabled,
           this.envBool("PRIVAT_SYNC_ENABLED", DEFAULTS.privat.enabled),
         ),
-        everyHours: int(privat.everyHours, DEFAULTS.privat.everyHours, 1, 24),
+        times: timeList(privat.times, DEFAULTS.privat.times),
         lookbackDays: int(
           privat.lookbackDays,
           DEFAULTS.privat.lookbackDays,
