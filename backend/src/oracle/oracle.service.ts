@@ -4,6 +4,14 @@ import { ConfigService } from '@nestjs/config';
 // тож default-імпорт дав би undefined. Використовуємо import-equals.
 import oracledb = require('oracledb');
 
+/** Помилки, після яких з'єднання непридатне: таймаут виклику, обрив, «end-of-file on channel». */
+const BROKEN_CONNECTION = /DPI-1067|NJS-123|DPI-1080|ORA-03113|ORA-03114|ORA-03135|ORA-01013|NJS-500|NJS-503|ORA-12170/;
+
+function positiveInt(raw: unknown, fallback: number): number {
+  const n = Number(raw);
+  return Number.isInteger(n) && n > 0 ? n : fallback;
+}
+
 /**
  * Pure Oracle **access layer** (node-oracledb, THIN mode — no Instant Client).
  * Owns the lazy connection pool and generic execution primitives ONLY. It holds
@@ -21,8 +29,12 @@ export class OracleService implements OnModuleDestroy {
   private readonly user: string;
   private readonly password: string;
   private readonly connectString: string;
+  private readonly callTimeoutMs: number;
+  private readonly queueTimeoutMs: number;
 
   constructor(private readonly configService: ConfigService) {
+    this.callTimeoutMs = positiveInt(this.configService.get('ORACLE_CALL_TIMEOUT_MS'), 120_000);
+    this.queueTimeoutMs = positiveInt(this.configService.get('ORACLE_QUEUE_TIMEOUT_MS'), 60_000);
     this.user = this.configService.get<string>('ORACLE_USER') ?? '';
     this.password = this.configService.get<string>('ORACLE_PASSWORD') ?? '';
     // Напр.: host:1521/SERVICE_NAME  або  host:1521/ORCL
@@ -52,7 +64,13 @@ export class OracleService implements OnModuleDestroy {
           connectString: this.connectString,
           poolMin: 0,
           poolMax: 4,
+          // Вільне з'єднання закривається через 60 с простою.
           poolTimeout: 60,
+          // Keepalive: кожну хвилину простою з'єднання «тикається» до БД, щоб фаєрвол / профіль
+          // не рвав його мовчки (мертве з'єднання в пулі інакше висить до таймауту TCP).
+          expireTime: 1,
+          // Скільки (мс) запит чекає вільного слота, поки всі зайняті, — тоді NJS-040.
+          queueTimeout: this.queueTimeoutMs,
         });
         return this.pool;
       } catch (error) {
@@ -79,16 +97,48 @@ export class OracleService implements OnModuleDestroy {
     const pool = await this.getPool();
     if (!pool) throw new Error('Oracle не налаштовано або пул недоступний');
 
+    const waitStart = Date.now();
     const conn = await pool.getConnection();
+    const waited = Date.now() - waitStart;
+    if (waited > 3000) {
+      this.logger.warn(
+        `Oracle: слот чекали ${waited} мс — ${this.describePool(pool)}`,
+      );
+    }
+    // Верхня межа на ОДИН виклик до БД (мс): завислий виклик (блокування, обрив мережі) переривається
+    // помилкою, а не тримає слот пулу вічно.
+    conn.callTimeout = this.callTimeoutMs;
+
+    let drop = false;
     try {
       return await fn(conn);
+    } catch (error: any) {
+      // Таймаут чи обрив — з'єднання в невизначеному стані: не повертаємо його в пул.
+      if (BROKEN_CONNECTION.test(String(error?.message ?? error))) {
+        drop = true;
+        this.logger.error(
+          `Oracle: з'єднання відкидаю (${String(error.message).split('\n')[0]}) — ${this.describePool(pool)}`,
+        );
+      }
+      throw error;
     } finally {
       try {
-        await conn.close();
+        await conn.close(drop ? { drop: true } : undefined);
       } catch {
         /* ignore close errors */
       }
     }
+  }
+
+  /** Стан пулу для логів і діагностики: скільки з'єднань відкрито / зайнято / у черзі. */
+  getPoolStats(): { open: number; inUse: number; max: number } | null {
+    return this.pool
+      ? { open: this.pool.connectionsOpen, inUse: this.pool.connectionsInUse, max: this.pool.poolMax }
+      : null;
+  }
+
+  private describePool(pool: oracledb.Pool): string {
+    return `пул: відкрито ${pool.connectionsOpen}, зайнято ${pool.connectionsInUse}/${pool.poolMax}`;
   }
 
   /**
