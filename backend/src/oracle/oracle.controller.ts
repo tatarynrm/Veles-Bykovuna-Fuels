@@ -9,6 +9,12 @@ export class OracleController {
     private readonly osRepository: OsRepository,
   ) {}
 
+  /** GET /api/oracle/pool → стан пулу: відкрито / зайнято і хто тримає з'єднання (діагностика). */
+  @Get('pool')
+  getPool() {
+    return { configured: this.oracleService.isConfigured(), pool: this.oracleService.getPoolStats() };
+  }
+
   /** GET /api/oracle/os → select kod, pip from os */
   @Get('os')
   async getOs() {

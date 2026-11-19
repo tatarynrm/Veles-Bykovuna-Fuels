@@ -29,6 +29,8 @@ export class OracleService implements OnModuleDestroy {
   private readonly user: string;
   private readonly password: string;
   private readonly connectString: string;
+  private readonly holders = new Map<number, { caller: string; since: number }>();
+  private holderSeq = 0;
   private readonly callTimeoutMs: number;
   private readonly queueTimeoutMs: number;
 
@@ -94,17 +96,35 @@ export class OracleService implements OnModuleDestroy {
    * repository can batch many statements in a single transaction.
    */
   async withConnection<T>(fn: (conn: oracledb.Connection) => Promise<T>): Promise<T> {
+    // Хто викликав: перший рядок стеку поза цим файлом — для діагностики «хто тримає слот».
+    const caller = (new Error().stack ?? '')
+      .split('\n')
+      .slice(2)
+      .find((l) => !l.includes('oracle.service'))
+      ?.trim()
+      .replace(/^at /, '')
+      .replace(/\(.*[\\/]src[\\/]/, '(') ?? '?';
     const pool = await this.getPool();
     if (!pool) throw new Error('Oracle не налаштовано або пул недоступний');
 
     const waitStart = Date.now();
-    const conn = await pool.getConnection();
+    let conn: oracledb.Connection;
+    try {
+      conn = await pool.getConnection();
+    } catch (error: any) {
+      if (/NJS-040/.test(String(error?.message))) {
+        this.logger.error(`Oracle: слота не дочекались — ${this.describePool(pool)}; тримають: ${this.describeHolders()}`);
+      }
+      throw error;
+    }
     const waited = Date.now() - waitStart;
     if (waited > 3000) {
       this.logger.warn(
-        `Oracle: слот чекали ${waited} мс — ${this.describePool(pool)}`,
+        `Oracle: слот чекали ${waited} мс — ${this.describePool(pool)}; тримають: ${this.describeHolders()}`,
       );
     }
+    const holderId = ++this.holderSeq;
+    this.holders.set(holderId, { caller, since: Date.now() });
     // Верхня межа на ОДИН виклик до БД (мс): завислий виклик (блокування, обрив мережі) переривається
     // помилкою, а не тримає слот пулу вічно.
     conn.callTimeout = this.callTimeoutMs;
@@ -123,18 +143,38 @@ export class OracleService implements OnModuleDestroy {
       throw error;
     } finally {
       try {
-        await conn.close(drop ? { drop: true } : undefined);
-      } catch {
-        /* ignore close errors */
+        // УВАГА: `close(undefined)` кидає NJS-005 і тихо лишає з'єднання «зайнятим» назавжди —
+        // тому два окремі виклики, а не `close(drop ? {drop:true} : undefined)`.
+        if (drop) await conn.close({ drop: true });
+        else await conn.close();
+      } catch (closeError: any) {
+        // Не ковтаємо мовчки: невдале закриття = слот пулу втрачено.
+        this.logger.error(`Oracle: не вдалося повернути з'єднання в пул — ${closeError?.message}`);
+      } finally {
+        this.holders.delete(holderId);
       }
     }
   }
 
-  /** Стан пулу для логів і діагностики: скільки з'єднань відкрито / зайнято / у черзі. */
-  getPoolStats(): { open: number; inUse: number; max: number } | null {
-    return this.pool
-      ? { open: this.pool.connectionsOpen, inUse: this.pool.connectionsInUse, max: this.pool.poolMax }
-      : null;
+  /** Стан пулу для логів і діагностики: з'єднання відкрито / зайнято і хто саме їх тримає. */
+  getPoolStats() {
+    if (!this.pool) return null;
+    return {
+      open: this.pool.connectionsOpen,
+      inUse: this.pool.connectionsInUse,
+      max: this.pool.poolMax,
+      holders: [...this.holders.values()].map((h) => ({
+        caller: h.caller,
+        heldSeconds: Math.round((Date.now() - h.since) / 1000),
+      })),
+    };
+  }
+
+  private describeHolders(): string {
+    const list = [...this.holders.values()];
+    return list.length
+      ? list.map((h) => `${h.caller} (${Math.round((Date.now() - h.since) / 1000)} с)`).join('; ')
+      : 'ніхто з withConnection (!)';
   }
 
   private describePool(pool: oracledb.Pool): string {
